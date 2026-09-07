@@ -3,12 +3,13 @@ import pandas as pd
 import json
 import os
 import tempfile
+import time
 import re
 from google import genai
 
 
 # ============================================================
-# PAGE CONFIGURATION
+# PAGE CONFIG
 # ============================================================
 
 st.set_page_config(
@@ -19,7 +20,7 @@ st.set_page_config(
 
 
 # ============================================================
-# CUSTOM CSS
+# CSS
 # ============================================================
 
 st.markdown("""
@@ -32,27 +33,13 @@ st.markdown("""
 .title {
     font-size: 38px;
     font-weight: 700;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
 }
 
 .subtitle {
-    font-size: 17px;
+    font-size: 16px;
     color: #666;
     margin-bottom: 25px;
-}
-
-.success-box {
-    padding: 15px;
-    border-radius: 10px;
-    background-color: #e9f8ef;
-    border: 1px solid #b7e4c7;
-}
-
-.info-box {
-    padding: 15px;
-    border-radius: 10px;
-    background-color: #eef5ff;
-    border: 1px solid #c7dcff;
 }
 
 </style>
@@ -77,27 +64,29 @@ st.markdown(
 
 
 # ============================================================
-# GEMINI API CONFIGURATION
+# GEMINI CONFIGURATION
 # ============================================================
 
 if "GEMINI_API_KEY" not in st.secrets:
 
     st.error(
-        "❌ Gemini API key not found.\n\n"
-        "Please add GEMINI_API_KEY to Streamlit Secrets."
+        "❌ GEMINI_API_KEY is missing from Streamlit Secrets."
     )
 
     st.stop()
 
 
 try:
+
     client = genai.Client(
         api_key=st.secrets["GEMINI_API_KEY"]
     )
 
 except Exception as e:
 
-    st.error(f"❌ Unable to initialize Gemini API: {e}")
+    st.error(
+        f"❌ Could not initialize Gemini: {e}"
+    )
 
     st.stop()
 
@@ -106,19 +95,7 @@ except Exception as e:
 # MODEL
 # ============================================================
 
-# Current low-cost Gemini model optimized for document parsing
 MODEL_NAME = "gemini-3.5-flash-lite"
-
-
-# ============================================================
-# FILE UPLOAD
-# ============================================================
-
-uploaded_file = st.file_uploader(
-    "Upload your document",
-    type=["pdf", "png", "jpg", "jpeg"],
-    help="Upload an invoice, receipt, purchase order, bill or other business document."
-)
 
 
 # ============================================================
@@ -126,37 +103,38 @@ uploaded_file = st.file_uploader(
 # ============================================================
 
 EXTRACTION_PROMPT = """
-You are a highly accurate business-document data extraction system.
+You are an expert business-document data extraction system.
 
-Analyze the uploaded document carefully.
+Carefully analyze the uploaded document.
 
-Your job is to extract structured information from the document.
+Extract ONLY information that is actually visible in the document.
 
-IMPORTANT RULES:
+NEVER invent or guess missing information.
 
-1. Do NOT invent information.
-2. If a value is not present, return an empty string.
-3. Preserve numbers as they appear where possible.
-4. Carefully distinguish:
-   - Invoice number
-   - Invoice date
-   - Supplier/vendor
-   - Customer/buyer
-   - GSTIN
-   - Subtotal
-   - Tax
-   - Total
-5. Extract EVERY visible line item.
-6. Preserve product/service names accurately.
-7. Extract quantity, unit price, tax and line total when available.
-8. For Indian GST invoices, carefully identify:
-   - CGST
-   - SGST
-   - IGST
-   - GSTIN
-9. Do not merge separate line items.
-10. Do not create fake line items.
-11. If OCR is unclear, use your best interpretation but do not invent values.
+If a field does not exist, return an empty string.
+
+Extract EVERY visible line item.
+
+Do not merge different line items.
+
+For Indian invoices, carefully identify:
+
+- Invoice number
+- Invoice date
+- Supplier/vendor
+- Customer/buyer
+- Supplier GSTIN
+- Customer GSTIN
+- HSN/SAC if visible
+- Quantity
+- Unit
+- Unit price
+- Tax rate
+- CGST
+- SGST
+- IGST
+- Total tax
+- Grand total
 
 Return ONLY valid JSON.
 
@@ -193,7 +171,7 @@ Use exactly this structure:
 
 
 # ============================================================
-# HELPER FUNCTION - CLEAN GEMINI JSON
+# JSON CLEANER
 # ============================================================
 
 def clean_json_response(text):
@@ -203,40 +181,57 @@ def clean_json_response(text):
 
     text = text.strip()
 
-    # Remove markdown code fences if Gemini adds them
-    text = re.sub(r"^```json\s*", "", text, flags=re.IGNORECASE)
-    text = re.sub(r"^```\s*", "", text)
-    text = re.sub(r"\s*```$", "", text)
+    # Remove markdown fences
+    text = re.sub(
+        r"^```json\s*",
+        "",
+        text,
+        flags=re.IGNORECASE
+    )
+
+    text = re.sub(
+        r"^```\s*",
+        "",
+        text
+    )
+
+    text = re.sub(
+        r"\s*```$",
+        "",
+        text
+    )
 
     text = text.strip()
 
     try:
+
         return json.loads(text)
 
-    except json.JSONDecodeError:
+    except Exception:
 
-        # Try extracting the JSON object
         start = text.find("{")
         end = text.rfind("}")
 
-        if start != -1 and end != -1 and end > start:
-
-            possible_json = text[start:end + 1]
+        if start >= 0 and end > start:
 
             try:
-                return json.loads(possible_json)
+
+                return json.loads(
+                    text[start:end + 1]
+                )
 
             except Exception:
+
                 return None
 
         return None
 
 
 # ============================================================
-# HELPER FUNCTION - NORMALIZE DATA
+# SAFE VALUE
 # ============================================================
 
-def normalize_value(value):
+def safe_value(value):
 
     if value is None:
         return ""
@@ -245,6 +240,130 @@ def normalize_value(value):
         return str(value)
 
     return str(value)
+
+
+# ============================================================
+# WAIT FOR GEMINI FILE
+# ============================================================
+
+def wait_for_file_ready(
+    uploaded_file,
+    status_box,
+    progress_bar,
+    max_wait=60
+):
+
+    start_time = time.time()
+
+    while True:
+
+        try:
+
+            current_file = client.files.get(
+                name=uploaded_file.name
+            )
+
+        except Exception as e:
+
+            raise Exception(
+                f"Unable to check Gemini file status: {e}"
+            )
+
+
+        # Get state safely
+        state = getattr(
+            current_file,
+            "state",
+            None
+        )
+
+        state_name = getattr(
+            state,
+            "name",
+            str(state)
+        )
+
+        state_name = str(
+            state_name
+        ).upper()
+
+
+        # ----------------------------------------------------
+        # FILE READY
+        # ----------------------------------------------------
+
+        if "ACTIVE" in state_name:
+
+            progress_bar.progress(45)
+
+            status_box.success(
+                "✅ Document uploaded and ready for analysis."
+            )
+
+            return current_file
+
+
+        # ----------------------------------------------------
+        # FILE FAILED
+        # ----------------------------------------------------
+
+        if "FAILED" in state_name:
+
+            raise Exception(
+                "Gemini could not process this document."
+            )
+
+
+        # ----------------------------------------------------
+        # STILL PROCESSING
+        # ----------------------------------------------------
+
+        elapsed = int(
+            time.time() - start_time
+        )
+
+        if elapsed >= max_wait:
+
+            raise Exception(
+                "Gemini took too long to process the "
+                "uploaded document. Please try again."
+            )
+
+
+        progress = min(
+            45,
+            25 + int(elapsed / max_wait * 20)
+        )
+
+        progress_bar.progress(
+            progress
+        )
+
+        status_box.info(
+            f"⏳ Gemini is processing the document... "
+            f"{elapsed}s"
+        )
+
+        time.sleep(2)
+
+
+# ============================================================
+# FILE UPLOADER
+# ============================================================
+
+uploaded_file = st.file_uploader(
+    "Upload your document",
+    type=[
+        "pdf",
+        "png",
+        "jpg",
+        "jpeg"
+    ],
+    help=(
+        "Upload an invoice, receipt, purchase order, "
+        "bill or business document."
+    )
+)
 
 
 # ============================================================
@@ -257,7 +376,7 @@ if uploaded_file is not None:
 
     st.subheader("📄 Document")
 
-    col1, col2 = st.columns([2, 1])
+    col1, col2 = st.columns(2)
 
     with col1:
 
@@ -268,13 +387,14 @@ if uploaded_file is not None:
     with col2:
 
         st.write(
-            f"**Size:** {uploaded_file.size / 1024:.1f} KB"
+            f"**Size:** "
+            f"{uploaded_file.size / 1024:.1f} KB"
         )
 
 
-    # --------------------------------------------------------
-    # PROCESS BUTTON
-    # --------------------------------------------------------
+    # ========================================================
+    # EXTRACT BUTTON
+    # ========================================================
 
     if st.button(
         "🚀 Extract Data",
@@ -283,89 +403,138 @@ if uploaded_file is not None:
     ):
 
         temp_path = None
-        uploaded_gemini_file = None
+        excel_path = None
+        gemini_file = None
+
+        progress_bar = st.progress(0)
+
+        status_box = st.empty()
 
         try:
 
-            # ------------------------------------------------
-            # SAVE UPLOADED FILE TEMPORARILY
-            # ------------------------------------------------
+            # =================================================
+            # STEP 1 - SAVE FILE
+            # =================================================
 
-            file_extension = os.path.splitext(
+            status_box.info(
+                "📥 Preparing your document..."
+            )
+
+            extension = os.path.splitext(
                 uploaded_file.name
             )[1]
 
             with tempfile.NamedTemporaryFile(
                 delete=False,
-                suffix=file_extension
-            ) as temp_file:
+                suffix=extension
+            ) as temp:
 
-                temp_file.write(
+                temp.write(
                     uploaded_file.getbuffer()
                 )
 
-                temp_path = temp_file.name
+                temp_path = temp.name
+
+            progress_bar.progress(10)
 
 
-            # ------------------------------------------------
-            # PROGRESS
-            # ------------------------------------------------
+            # =================================================
+            # STEP 2 - UPLOAD TO GEMINI
+            # =================================================
 
-            progress = st.progress(0)
+            status_box.info(
+                "📤 Uploading document to Gemini..."
+            )
 
-            status = st.empty()
-
-            status.info("📤 Uploading document to Gemini...")
-
-            progress.progress(20)
-
-
-            # ------------------------------------------------
-            # UPLOAD TO GEMINI FILES API
-            # ------------------------------------------------
-
-            uploaded_gemini_file = client.files.upload(
+            gemini_file = client.files.upload(
                 file=temp_path
             )
 
-            progress.progress(40)
+            progress_bar.progress(25)
 
-            status.info(
-                "🤖 Gemini is analyzing your document..."
+
+            # =================================================
+            # STEP 3 - WAIT UNTIL READY
+            # =================================================
+
+            gemini_file = wait_for_file_ready(
+                gemini_file,
+                status_box,
+                progress_bar
             )
 
 
-            # ------------------------------------------------
-            # GEMINI EXTRACTION
-            # ------------------------------------------------
+            # =================================================
+            # STEP 4 - ANALYZE
+            # =================================================
 
-            response = client.models.generate_content(
+            status_box.info(
+                "🤖 Extracting information..."
+            )
 
-                model=MODEL_NAME,
+            progress_bar.progress(50)
 
-                contents=[
-                    uploaded_gemini_file,
-                    EXTRACTION_PROMPT
-                ],
 
-                config={
-                    "response_mime_type": "application/json"
-                }
+            response = None
+
+            last_error = None
+
+
+            # Retry up to 3 times
+            for attempt in range(3):
+
+                try:
+
+                    response = client.models.generate_content(
+
+                        model=MODEL_NAME,
+
+                        contents=[
+                            gemini_file,
+                            EXTRACTION_PROMPT
+                        ],
+
+                        config={
+                            "response_mime_type": "application/json"
+                        }
+                    )
+
+                    break
+
+                except Exception as e:
+
+                    last_error = e
+
+                    if attempt < 2:
+
+                        status_box.warning(
+                            "⚠️ Temporary Gemini issue. "
+                            f"Retrying ({attempt + 2}/3)..."
+                        )
+
+                        time.sleep(3)
+
+                    else:
+
+                        raise last_error
+
+
+            progress_bar.progress(75)
+
+            status_box.info(
+                "📊 Preparing Excel and CSV..."
             )
 
 
-            progress.progress(80)
+            # =================================================
+            # STEP 5 - PARSE RESPONSE
+            # =================================================
 
-            status.info(
-                "📊 Preparing Excel data..."
+            raw_response = getattr(
+                response,
+                "text",
+                ""
             )
-
-
-            # ------------------------------------------------
-            # GET RESPONSE
-            # ------------------------------------------------
-
-            raw_response = response.text
 
             extracted_data = clean_json_response(
                 raw_response
@@ -374,343 +543,196 @@ if uploaded_file is not None:
 
             if extracted_data is None:
 
-                progress.empty()
-                status.empty()
-
-                st.error(
-                    "❌ Gemini returned an invalid response. "
-                    "Please try the document again."
+                raise Exception(
+                    "Gemini returned an invalid JSON response."
                 )
 
-                with st.expander("Technical response"):
 
-                    st.code(
-                        raw_response or "No response received."
-                    )
+            # =================================================
+            # STEP 6 - MAIN FIELDS
+            # =================================================
 
-                st.stop()
-
-
-            # ------------------------------------------------
-            # NORMALIZE MAIN FIELDS
-            # ------------------------------------------------
-
-            document_type = normalize_value(
-                extracted_data.get("document_type")
+            document_type = safe_value(
+                extracted_data.get(
+                    "document_type"
+                )
             )
 
-            document_number = normalize_value(
-                extracted_data.get("document_number")
+            document_number = safe_value(
+                extracted_data.get(
+                    "document_number"
+                )
             )
 
-            document_date = normalize_value(
-                extracted_data.get("date")
+            document_date = safe_value(
+                extracted_data.get(
+                    "date"
+                )
             )
 
-            supplier = normalize_value(
-                extracted_data.get("supplier")
+            supplier = safe_value(
+                extracted_data.get(
+                    "supplier"
+                )
             )
 
-            customer = normalize_value(
-                extracted_data.get("customer")
+            customer = safe_value(
+                extracted_data.get(
+                    "customer"
+                )
             )
 
-            supplier_gstin = normalize_value(
-                extracted_data.get("supplier_gstin")
+            supplier_gstin = safe_value(
+                extracted_data.get(
+                    "supplier_gstin"
+                )
             )
 
-            customer_gstin = normalize_value(
-                extracted_data.get("customer_gstin")
+            customer_gstin = safe_value(
+                extracted_data.get(
+                    "customer_gstin"
+                )
             )
 
-            currency = normalize_value(
-                extracted_data.get("currency")
+            currency = safe_value(
+                extracted_data.get(
+                    "currency"
+                )
             )
 
-            subtotal = normalize_value(
-                extracted_data.get("subtotal")
+            subtotal = safe_value(
+                extracted_data.get(
+                    "subtotal"
+                )
             )
 
-            cgst = normalize_value(
-                extracted_data.get("cgst")
+            cgst = safe_value(
+                extracted_data.get(
+                    "cgst"
+                )
             )
 
-            sgst = normalize_value(
-                extracted_data.get("sgst")
+            sgst = safe_value(
+                extracted_data.get(
+                    "sgst"
+                )
             )
 
-            igst = normalize_value(
-                extracted_data.get("igst")
+            igst = safe_value(
+                extracted_data.get(
+                    "igst"
+                )
             )
 
-            tax = normalize_value(
-                extracted_data.get("tax")
+            tax = safe_value(
+                extracted_data.get(
+                    "tax"
+                )
             )
 
-            total = normalize_value(
-                extracted_data.get("total")
+            total = safe_value(
+                extracted_data.get(
+                    "total"
+                )
             )
 
 
-            # ------------------------------------------------
-            # LINE ITEMS
-            # ------------------------------------------------
+            # =================================================
+            # STEP 7 - LINE ITEMS
+            # =================================================
 
             line_items = extracted_data.get(
                 "line_items",
                 []
             )
 
-            if not isinstance(line_items, list):
+            if not isinstance(
+                line_items,
+                list
+            ):
 
                 line_items = []
 
 
-            # ------------------------------------------------
-            # SUCCESS
-            # ------------------------------------------------
+            rows = []
 
-            progress.progress(100)
+            for item in line_items:
 
-            status.success(
-                "✅ Document processed successfully!"
-            )
+                if not isinstance(
+                    item,
+                    dict
+                ):
+                    continue
 
+                rows.append({
 
-            # =================================================
-            # DISPLAY EXTRACTED INFORMATION
-            # =================================================
-
-            st.divider()
-
-            st.subheader("📋 Extracted Information")
-
-
-            col1, col2, col3 = st.columns(3)
-
-
-            with col1:
-
-                st.metric(
-                    "Document Type",
-                    document_type or "Not found"
-                )
-
-                st.write(
-                    "**Document Number**"
-                )
-
-                st.write(
-                    document_number or "Not found"
-                )
-
-                st.write(
-                    "**Date**"
-                )
-
-                st.write(
-                    document_date or "Not found"
-                )
-
-
-            with col2:
-
-                st.write(
-                    "**Supplier / Vendor**"
-                )
-
-                st.write(
-                    supplier or "Not found"
-                )
-
-                st.write(
-                    "**Supplier GSTIN**"
-                )
-
-                st.write(
-                    supplier_gstin or "Not found"
-                )
-
-                st.write(
-                    "**Customer**"
-                )
-
-                st.write(
-                    customer or "Not found"
-                )
-
-
-            with col3:
-
-                st.write(
-                    "**Customer GSTIN**"
-                )
-
-                st.write(
-                    customer_gstin or "Not found"
-                )
-
-                st.write(
-                    "**Currency**"
-                )
-
-                st.write(
-                    currency or "Not found"
-                )
-
-                st.write(
-                    "**Total**"
-                )
-
-                st.write(
-                    total or "Not found"
-                )
-
-
-            # =================================================
-            # TAX SUMMARY
-            # =================================================
-
-            st.subheader("💰 Amount Summary")
-
-
-            amount_data = pd.DataFrame({
-
-                "Field": [
-                    "Subtotal",
-                    "CGST",
-                    "SGST",
-                    "IGST",
-                    "Total Tax",
-                    "Grand Total"
-                ],
-
-                "Value": [
-                    subtotal,
-                    cgst,
-                    sgst,
-                    igst,
-                    tax,
-                    total
-                ]
-
-            })
-
-
-            st.dataframe(
-                amount_data,
-                use_container_width=True,
-                hide_index=True
-            )
-
-
-            # =================================================
-            # LINE ITEMS TABLE
-            # =================================================
-
-            st.subheader(
-                f"🧾 Line Items ({len(line_items)})"
-            )
-
-
-            if len(line_items) > 0:
-
-                line_item_rows = []
-
-                for item in line_items:
-
-                    if not isinstance(item, dict):
-                        continue
-
-                    line_item_rows.append({
-
-                        "Description": normalize_value(
-                            item.get("description")
-                        ),
-
-                        "Quantity": normalize_value(
-                            item.get("quantity")
-                        ),
-
-                        "Unit": normalize_value(
-                            item.get("unit")
-                        ),
-
-                        "Unit Price": normalize_value(
-                            item.get("unit_price")
-                        ),
-
-                        "Tax Rate": normalize_value(
-                            item.get("tax_rate")
-                        ),
-
-                        "Tax Amount": normalize_value(
-                            item.get("tax_amount")
-                        ),
-
-                        "Line Total": normalize_value(
-                            item.get("line_total")
+                    "Description": safe_value(
+                        item.get(
+                            "description"
                         )
+                    ),
 
-                    })
+                    "Quantity": safe_value(
+                        item.get(
+                            "quantity"
+                        )
+                    ),
 
+                    "Unit": safe_value(
+                        item.get(
+                            "unit"
+                        )
+                    ),
 
-                if line_item_rows:
+                    "Unit Price": safe_value(
+                        item.get(
+                            "unit_price"
+                        )
+                    ),
 
-                    line_items_df = pd.DataFrame(
-                        line_item_rows
+                    "Tax Rate": safe_value(
+                        item.get(
+                            "tax_rate"
+                        )
+                    ),
+
+                    "Tax Amount": safe_value(
+                        item.get(
+                            "tax_amount"
+                        )
+                    ),
+
+                    "Line Total": safe_value(
+                        item.get(
+                            "line_total"
+                        )
                     )
 
-                    st.data_editor(
-                        line_items_df,
-                        use_container_width=True,
-                        num_rows="dynamic"
-                    )
+                })
 
-                else:
 
-                    line_items_df = pd.DataFrame(
-                        columns=[
-                            "Description",
-                            "Quantity",
-                            "Unit",
-                            "Unit Price",
-                            "Tax Rate",
-                            "Tax Amount",
-                            "Line Total"
-                        ]
-                    )
-
-                    st.info(
-                        "No line items were detected."
-                    )
-
-            else:
-
-                line_items_df = pd.DataFrame(
-                    columns=[
-                        "Description",
-                        "Quantity",
-                        "Unit",
-                        "Unit Price",
-                        "Tax Rate",
-                        "Tax Amount",
-                        "Line Total"
-                    ]
-                )
-
-                st.info(
-                    "No line items were detected."
-                )
+            line_items_df = pd.DataFrame(
+                rows,
+                columns=[
+                    "Description",
+                    "Quantity",
+                    "Unit",
+                    "Unit Price",
+                    "Tax Rate",
+                    "Tax Amount",
+                    "Line Total"
+                ]
+            )
 
 
             # =================================================
-            # CREATE EXCEL FILE
+            # STEP 8 - SUMMARY
             # =================================================
 
             summary_df = pd.DataFrame({
 
                 "Field": [
+
                     "Document Type",
                     "Document Number",
                     "Date",
@@ -725,9 +747,11 @@ if uploaded_file is not None:
                     "IGST",
                     "Tax",
                     "Total"
+
                 ],
 
                 "Value": [
+
                     document_type,
                     document_number,
                     document_date,
@@ -742,15 +766,24 @@ if uploaded_file is not None:
                     igst,
                     tax,
                     total
+
                 ]
 
             })
 
 
-            excel_path = tempfile.NamedTemporaryFile(
+            # =================================================
+            # STEP 9 - CREATE EXCEL
+            # =================================================
+
+            excel_file = tempfile.NamedTemporaryFile(
                 delete=False,
                 suffix=".xlsx"
-            ).name
+            )
+
+            excel_path = excel_file.name
+
+            excel_file.close()
 
 
             with pd.ExcelWriter(
@@ -772,16 +805,160 @@ if uploaded_file is not None:
 
 
             # =================================================
-            # CSV
+            # STEP 10 - COMPLETE
             # =================================================
 
-            csv_data = line_items_df.to_csv(
-                index=False
+            progress_bar.progress(100)
+
+            status_box.success(
+                "✅ Extraction completed successfully!"
             )
 
 
             # =================================================
-            # DOWNLOAD SECTION
+            # DISPLAY RESULTS
+            # =================================================
+
+            st.divider()
+
+            st.subheader(
+                "📋 Extracted Information"
+            )
+
+
+            c1, c2, c3 = st.columns(3)
+
+
+            with c1:
+
+                st.write("**Document Type**")
+                st.write(
+                    document_type or "Not found"
+                )
+
+                st.write("**Document Number**")
+                st.write(
+                    document_number or "Not found"
+                )
+
+                st.write("**Date**")
+                st.write(
+                    document_date or "Not found"
+                )
+
+
+            with c2:
+
+                st.write("**Supplier / Vendor**")
+                st.write(
+                    supplier or "Not found"
+                )
+
+                st.write("**Supplier GSTIN**")
+                st.write(
+                    supplier_gstin or "Not found"
+                )
+
+                st.write("**Customer**")
+                st.write(
+                    customer or "Not found"
+                )
+
+
+            with c3:
+
+                st.write("**Customer GSTIN**")
+                st.write(
+                    customer_gstin or "Not found"
+                )
+
+                st.write("**Currency**")
+                st.write(
+                    currency or "Not found"
+                )
+
+                st.write("**Grand Total**")
+                st.write(
+                    total or "Not found"
+                )
+
+
+            # =================================================
+            # AMOUNT SUMMARY
+            # =================================================
+
+            st.subheader(
+                "💰 Amount Summary"
+            )
+
+            amount_df = pd.DataFrame({
+
+                "Field": [
+
+                    "Subtotal",
+                    "CGST",
+                    "SGST",
+                    "IGST",
+                    "Total Tax",
+                    "Grand Total"
+
+                ],
+
+                "Value": [
+
+                    subtotal,
+                    cgst,
+                    sgst,
+                    igst,
+                    tax,
+                    total
+
+                ]
+
+            })
+
+
+            st.dataframe(
+                amount_df,
+                use_container_width=True,
+                hide_index=True
+            )
+
+
+            # =================================================
+            # LINE ITEMS
+            # =================================================
+
+            st.subheader(
+                f"🧾 Line Items ({len(line_items_df)})"
+            )
+
+
+            if not line_items_df.empty:
+
+                edited_df = st.data_editor(
+
+                    line_items_df,
+
+                    use_container_width=True,
+
+                    num_rows="dynamic",
+
+                    key="line_items_editor"
+
+                )
+
+            else:
+
+                edited_df = line_items_df
+
+                st.info(
+                    "No line items were detected."
+                )
+
+
+            # =================================================
+            # DOWNLOAD
             # =================================================
 
             st.divider()
@@ -791,28 +968,58 @@ if uploaded_file is not None:
             )
 
 
-            col1, col2 = st.columns(2)
+            # Create Excel again using edited data
+            final_excel_path = tempfile.NamedTemporaryFile(
+                delete=False,
+                suffix=".xlsx"
+            ).name
+
+
+            with pd.ExcelWriter(
+                final_excel_path,
+                engine="openpyxl"
+            ) as writer:
+
+                summary_df.to_excel(
+                    writer,
+                    sheet_name="Summary",
+                    index=False
+                )
+
+                edited_df.to_excel(
+                    writer,
+                    sheet_name="Line Items",
+                    index=False
+                )
 
 
             with open(
-                excel_path,
+                final_excel_path,
                 "rb"
-            ) as excel_file:
+            ) as f:
 
-                excel_bytes = excel_file.read()
+                excel_bytes = f.read()
 
 
-            with col1:
+            csv_bytes = edited_df.to_csv(
+                index=False
+            ).encode(
+                "utf-8"
+            )
+
+
+            c1, c2 = st.columns(2)
+
+
+            with c1:
 
                 st.download_button(
 
-                    label="📊 Download Excel",
+                    "📊 Download Excel",
 
                     data=excel_bytes,
 
-                    file_name=(
-                        "nexora_extracted_data.xlsx"
-                    ),
+                    file_name="nexora_extracted_data.xlsx",
 
                     mime=(
                         "application/vnd.openxmlformats-officedocument."
@@ -820,39 +1027,34 @@ if uploaded_file is not None:
                     ),
 
                     use_container_width=True
+
                 )
 
 
-            with col2:
+            with c2:
 
                 st.download_button(
 
-                    label="📄 Download CSV",
+                    "📄 Download CSV",
 
-                    data=csv_data,
+                    data=csv_bytes,
 
-                    file_name=(
-                        "nexora_line_items.csv"
-                    ),
+                    file_name="nexora_line_items.csv",
 
                     mime="text/csv",
 
                     use_container_width=True
+
                 )
 
 
-            # =================================================
-            # SUCCESS MESSAGE
-            # =================================================
-
             st.success(
-                "🎉 Your document has been successfully converted "
-                "into structured data."
+                "🎉 Your Excel and CSV files are ready."
             )
 
 
             # =================================================
-            # DEBUG INFORMATION
+            # DEBUG JSON
             # =================================================
 
             with st.expander(
@@ -864,38 +1066,48 @@ if uploaded_file is not None:
                 )
 
 
-            # ------------------------------------------------
-            # CLEAN EXCEL TEMP FILE
-            # ------------------------------------------------
+            # =================================================
+            # CLEAN EXCEL
+            # =================================================
 
             try:
 
                 os.remove(
-                    excel_path
+                    final_excel_path
                 )
 
             except Exception:
+
                 pass
 
 
         except Exception as e:
 
-            progress.empty() if "progress" in locals() else None
-            status.empty() if "status" in locals() else None
+            progress_bar.empty()
+
+            status_box.empty()
 
             st.error(
-                "❌ Something went wrong while processing "
-                "the document."
+                "❌ Document processing failed."
             )
 
-            st.exception(e)
+            st.warning(
+                "Please read the detailed error below. "
+                "If this happens again, send me the screenshot."
+            )
+
+            with st.expander(
+                "🔧 Technical error"
+            ):
+
+                st.exception(e)
 
 
         finally:
 
-            # ------------------------------------------------
-            # CLEAN LOCAL TEMP FILE
-            # ------------------------------------------------
+            # =================================================
+            # CLEAN TEMP FILE
+            # =================================================
 
             if temp_path:
 
@@ -906,19 +1118,5 @@ if uploaded_file is not None:
                     )
 
                 except Exception:
+
                     pass
-
-
-# ============================================================
-# FOOTER
-# ============================================================
-
-st.divider()
-
-st.caption(
-    "Nexora DocumentFlow • AI-powered document extraction"
-)
-
-st.caption(
-    "For testing, use sample or non-confidential documents."
-)
