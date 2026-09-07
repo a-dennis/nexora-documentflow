@@ -1,14 +1,15 @@
 import streamlit as st
 import pandas as pd
 import json
-import tempfile
 import os
+import tempfile
+import re
 from google import genai
 
 
-# ---------------------------------------------------------
+# ============================================================
 # PAGE CONFIGURATION
-# ---------------------------------------------------------
+# ============================================================
 
 st.set_page_config(
     page_title="Nexora DocumentFlow",
@@ -17,135 +18,278 @@ st.set_page_config(
 )
 
 
-# ---------------------------------------------------------
-# CUSTOM STYLING
-# ---------------------------------------------------------
+# ============================================================
+# CUSTOM CSS
+# ============================================================
 
 st.markdown("""
 <style>
 
 .main {
-    background-color: #ffffff;
+    padding-top: 1rem;
 }
 
-.block-container {
-    max-width: 1100px;
-    padding-top: 2rem;
-}
-
-.hero {
-    padding: 25px 0 10px 0;
-}
-
-.hero-title {
-    font-size: 42px;
-    font-weight: 800;
+.title {
+    font-size: 38px;
+    font-weight: 700;
     margin-bottom: 5px;
 }
 
-.hero-subtitle {
-    font-size: 20px;
-    color: #555;
+.subtitle {
+    font-size: 17px;
+    color: #666;
     margin-bottom: 25px;
 }
 
-.info-card {
-    padding: 18px;
-    border-radius: 12px;
-    background: #f7f9fc;
-    border: 1px solid #e5e7eb;
-    margin-bottom: 20px;
+.success-box {
+    padding: 15px;
+    border-radius: 10px;
+    background-color: #e9f8ef;
+    border: 1px solid #b7e4c7;
 }
 
-.small-text {
-    color: #666;
-    font-size: 14px;
+.info-box {
+    padding: 15px;
+    border-radius: 10px;
+    background-color: #eef5ff;
+    border: 1px solid #c7dcff;
 }
 
 </style>
 """, unsafe_allow_html=True)
 
 
-# ---------------------------------------------------------
+# ============================================================
 # HEADER
-# ---------------------------------------------------------
+# ============================================================
 
-st.markdown("""
-<div class="hero">
-    <div class="hero-title">📄 Nexora DocumentFlow</div>
-    <div class="hero-subtitle">
-        Turn invoices, receipts and documents into clean Excel data.
-    </div>
-</div>
-""", unsafe_allow_html=True)
+st.markdown(
+    '<div class="title">📄 Nexora DocumentFlow</div>',
+    unsafe_allow_html=True
+)
 
-
-st.markdown("""
-<div class="info-card">
-<b>How it works</b><br><br>
-1️⃣ Upload a PDF or image<br>
-2️⃣ Nexora analyzes the document<br>
-3️⃣ Extracted information appears below<br>
-4️⃣ Download the result as Excel or CSV
-</div>
-""", unsafe_allow_html=True)
+st.markdown(
+    '<div class="subtitle">'
+    'Turn invoices, PDFs and business documents into clean Excel data automatically.'
+    '</div>',
+    unsafe_allow_html=True
+)
 
 
-# ---------------------------------------------------------
-# CHECK API KEY
-# ---------------------------------------------------------
+# ============================================================
+# GEMINI API CONFIGURATION
+# ============================================================
 
 if "GEMINI_API_KEY" not in st.secrets:
 
     st.error(
-        "Gemini API key is not configured. "
+        "❌ Gemini API key not found.\n\n"
         "Please add GEMINI_API_KEY to Streamlit Secrets."
     )
 
     st.stop()
 
 
-# ---------------------------------------------------------
-# GEMINI CLIENT
-# ---------------------------------------------------------
+try:
+    client = genai.Client(
+        api_key=st.secrets["GEMINI_API_KEY"]
+    )
 
-client = genai.Client(
-    api_key=st.secrets["GEMINI_API_KEY"]
-)
+except Exception as e:
+
+    st.error(f"❌ Unable to initialize Gemini API: {e}")
+
+    st.stop()
 
 
-# ---------------------------------------------------------
-# FILE UPLOADER
-# ---------------------------------------------------------
+# ============================================================
+# MODEL
+# ============================================================
+
+# Current low-cost Gemini model optimized for document parsing
+MODEL_NAME = "gemini-3.5-flash-lite"
+
+
+# ============================================================
+# FILE UPLOAD
+# ============================================================
 
 uploaded_file = st.file_uploader(
     "Upload your document",
     type=["pdf", "png", "jpg", "jpeg"],
-    help="For testing, use a sample invoice or receipt without sensitive personal information."
+    help="Upload an invoice, receipt, purchase order, bill or other business document."
 )
 
 
-# ---------------------------------------------------------
+# ============================================================
+# EXTRACTION PROMPT
+# ============================================================
+
+EXTRACTION_PROMPT = """
+You are a highly accurate business-document data extraction system.
+
+Analyze the uploaded document carefully.
+
+Your job is to extract structured information from the document.
+
+IMPORTANT RULES:
+
+1. Do NOT invent information.
+2. If a value is not present, return an empty string.
+3. Preserve numbers as they appear where possible.
+4. Carefully distinguish:
+   - Invoice number
+   - Invoice date
+   - Supplier/vendor
+   - Customer/buyer
+   - GSTIN
+   - Subtotal
+   - Tax
+   - Total
+5. Extract EVERY visible line item.
+6. Preserve product/service names accurately.
+7. Extract quantity, unit price, tax and line total when available.
+8. For Indian GST invoices, carefully identify:
+   - CGST
+   - SGST
+   - IGST
+   - GSTIN
+9. Do not merge separate line items.
+10. Do not create fake line items.
+11. If OCR is unclear, use your best interpretation but do not invent values.
+
+Return ONLY valid JSON.
+
+Use exactly this structure:
+
+{
+    "document_type": "",
+    "document_number": "",
+    "date": "",
+    "supplier": "",
+    "customer": "",
+    "supplier_gstin": "",
+    "customer_gstin": "",
+    "currency": "",
+    "subtotal": "",
+    "cgst": "",
+    "sgst": "",
+    "igst": "",
+    "tax": "",
+    "total": "",
+    "line_items": [
+        {
+            "description": "",
+            "quantity": "",
+            "unit": "",
+            "unit_price": "",
+            "tax_rate": "",
+            "tax_amount": "",
+            "line_total": ""
+        }
+    ]
+}
+"""
+
+
+# ============================================================
+# HELPER FUNCTION - CLEAN GEMINI JSON
+# ============================================================
+
+def clean_json_response(text):
+
+    if not text:
+        return None
+
+    text = text.strip()
+
+    # Remove markdown code fences if Gemini adds them
+    text = re.sub(r"^```json\s*", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"^```\s*", "", text)
+    text = re.sub(r"\s*```$", "", text)
+
+    text = text.strip()
+
+    try:
+        return json.loads(text)
+
+    except json.JSONDecodeError:
+
+        # Try extracting the JSON object
+        start = text.find("{")
+        end = text.rfind("}")
+
+        if start != -1 and end != -1 and end > start:
+
+            possible_json = text[start:end + 1]
+
+            try:
+                return json.loads(possible_json)
+
+            except Exception:
+                return None
+
+        return None
+
+
+# ============================================================
+# HELPER FUNCTION - NORMALIZE DATA
+# ============================================================
+
+def normalize_value(value):
+
+    if value is None:
+        return ""
+
+    if isinstance(value, (dict, list)):
+        return str(value)
+
+    return str(value)
+
+
+# ============================================================
 # PROCESS DOCUMENT
-# ---------------------------------------------------------
+# ============================================================
 
 if uploaded_file is not None:
 
-    st.success(f"File received: {uploaded_file.name}")
+    st.divider()
 
-    process_button = st.button(
-        "🚀 Analyze Document",
+    st.subheader("📄 Document")
+
+    col1, col2 = st.columns([2, 1])
+
+    with col1:
+
+        st.write(
+            f"**File:** {uploaded_file.name}"
+        )
+
+    with col2:
+
+        st.write(
+            f"**Size:** {uploaded_file.size / 1024:.1f} KB"
+        )
+
+
+    # --------------------------------------------------------
+    # PROCESS BUTTON
+    # --------------------------------------------------------
+
+    if st.button(
+        "🚀 Extract Data",
         type="primary",
         use_container_width=True
-    )
+    ):
 
-    if process_button:
+        temp_path = None
+        uploaded_gemini_file = None
 
         try:
 
-            # -------------------------------------------------
+            # ------------------------------------------------
             # SAVE UPLOADED FILE TEMPORARILY
-            # -------------------------------------------------
+            # ------------------------------------------------
 
             file_extension = os.path.splitext(
                 uploaded_file.name
@@ -157,227 +301,456 @@ if uploaded_file is not None:
             ) as temp_file:
 
                 temp_file.write(
-                    uploaded_file.getvalue()
+                    uploaded_file.getbuffer()
                 )
 
                 temp_path = temp_file.name
 
 
-            # -------------------------------------------------
+            # ------------------------------------------------
+            # PROGRESS
+            # ------------------------------------------------
+
+            progress = st.progress(0)
+
+            status = st.empty()
+
+            status.info("📤 Uploading document to Gemini...")
+
+            progress.progress(20)
+
+
+            # ------------------------------------------------
             # UPLOAD TO GEMINI FILES API
-            # -------------------------------------------------
+            # ------------------------------------------------
 
-            with st.spinner(
-                "Analyzing your document..."
-            ):
-
-                gemini_file = client.files.upload(
-                    file=temp_path
-                )
-
-
-                # -------------------------------------------------
-                # EXTRACTION PROMPT
-                # -------------------------------------------------
-
-                prompt = """
-You are Nexora DocumentFlow, a document data extraction engine.
-
-Analyze the uploaded document carefully.
-
-Your job is to extract structured business information from it.
-
-Return ONLY valid JSON.
-
-Use this exact structure:
-
-{
-    "document_type": "",
-    "document_number": "",
-    "document_date": "",
-    "supplier_name": "",
-    "supplier_address": "",
-    "customer_name": "",
-    "customer_address": "",
-    "gst_number": "",
-    "subtotal": "",
-    "tax_amount": "",
-    "total_amount": "",
-    "currency": "",
-    "line_items": [
-        {
-            "description": "",
-            "quantity": "",
-            "unit_price": "",
-            "tax": "",
-            "amount": ""
-        }
-    ]
-}
-
-IMPORTANT RULES:
-
-1. Do not invent information.
-2. If a field does not exist, return an empty string.
-3. Preserve numbers as they appear in the document.
-4. Extract every visible line item.
-5. Carefully distinguish subtotal, tax and final total.
-6. If the document is not an invoice, still extract whatever fields are relevant.
-7. Put line items inside the line_items array.
-8. Return JSON only.
-"""
-
-
-                # -------------------------------------------------
-                # GEMINI ANALYSIS
-                # -------------------------------------------------
-
-                response = client.models.generate_content(
-                    model="gemini-2.5-flash",
-                    contents=[
-                        gemini_file,
-                        prompt
-                    ],
-                    config={
-                        "response_mime_type": "application/json"
-                    }
-                )
-
-
-                # -------------------------------------------------
-                # PARSE RESPONSE
-                # -------------------------------------------------
-
-                raw_text = response.text.strip()
-
-                data = json.loads(raw_text)
-
-
-            # -------------------------------------------------
-            # REMOVE TEMP FILE
-            # -------------------------------------------------
-
-            try:
-                os.remove(temp_path)
-            except:
-                pass
-
-
-            # -------------------------------------------------
-            # DISPLAY RESULTS
-            # -------------------------------------------------
-
-            st.success(
-                "✅ Document analyzed successfully!"
+            uploaded_gemini_file = client.files.upload(
+                file=temp_path
             )
+
+            progress.progress(40)
+
+            status.info(
+                "🤖 Gemini is analyzing your document..."
+            )
+
+
+            # ------------------------------------------------
+            # GEMINI EXTRACTION
+            # ------------------------------------------------
+
+            response = client.models.generate_content(
+
+                model=MODEL_NAME,
+
+                contents=[
+                    uploaded_gemini_file,
+                    EXTRACTION_PROMPT
+                ],
+
+                config={
+                    "response_mime_type": "application/json"
+                }
+            )
+
+
+            progress.progress(80)
+
+            status.info(
+                "📊 Preparing Excel data..."
+            )
+
+
+            # ------------------------------------------------
+            # GET RESPONSE
+            # ------------------------------------------------
+
+            raw_response = response.text
+
+            extracted_data = clean_json_response(
+                raw_response
+            )
+
+
+            if extracted_data is None:
+
+                progress.empty()
+                status.empty()
+
+                st.error(
+                    "❌ Gemini returned an invalid response. "
+                    "Please try the document again."
+                )
+
+                with st.expander("Technical response"):
+
+                    st.code(
+                        raw_response or "No response received."
+                    )
+
+                st.stop()
+
+
+            # ------------------------------------------------
+            # NORMALIZE MAIN FIELDS
+            # ------------------------------------------------
+
+            document_type = normalize_value(
+                extracted_data.get("document_type")
+            )
+
+            document_number = normalize_value(
+                extracted_data.get("document_number")
+            )
+
+            document_date = normalize_value(
+                extracted_data.get("date")
+            )
+
+            supplier = normalize_value(
+                extracted_data.get("supplier")
+            )
+
+            customer = normalize_value(
+                extracted_data.get("customer")
+            )
+
+            supplier_gstin = normalize_value(
+                extracted_data.get("supplier_gstin")
+            )
+
+            customer_gstin = normalize_value(
+                extracted_data.get("customer_gstin")
+            )
+
+            currency = normalize_value(
+                extracted_data.get("currency")
+            )
+
+            subtotal = normalize_value(
+                extracted_data.get("subtotal")
+            )
+
+            cgst = normalize_value(
+                extracted_data.get("cgst")
+            )
+
+            sgst = normalize_value(
+                extracted_data.get("sgst")
+            )
+
+            igst = normalize_value(
+                extracted_data.get("igst")
+            )
+
+            tax = normalize_value(
+                extracted_data.get("tax")
+            )
+
+            total = normalize_value(
+                extracted_data.get("total")
+            )
+
+
+            # ------------------------------------------------
+            # LINE ITEMS
+            # ------------------------------------------------
+
+            line_items = extracted_data.get(
+                "line_items",
+                []
+            )
+
+            if not isinstance(line_items, list):
+
+                line_items = []
+
+
+            # ------------------------------------------------
+            # SUCCESS
+            # ------------------------------------------------
+
+            progress.progress(100)
+
+            status.success(
+                "✅ Document processed successfully!"
+            )
+
+
+            # =================================================
+            # DISPLAY EXTRACTED INFORMATION
+            # =================================================
 
             st.divider()
 
             st.subheader("📋 Extracted Information")
 
+
             col1, col2, col3 = st.columns(3)
 
+
             with col1:
-                st.write("**Document Type**")
-                st.write(
-                    data.get("document_type", "")
+
+                st.metric(
+                    "Document Type",
+                    document_type or "Not found"
                 )
 
-                st.write("**Document Number**")
                 st.write(
-                    data.get("document_number", "")
+                    "**Document Number**"
                 )
 
-                st.write("**Document Date**")
                 st.write(
-                    data.get("document_date", "")
+                    document_number or "Not found"
                 )
+
+                st.write(
+                    "**Date**"
+                )
+
+                st.write(
+                    document_date or "Not found"
+                )
+
 
             with col2:
-                st.write("**Supplier**")
+
                 st.write(
-                    data.get("supplier_name", "")
+                    "**Supplier / Vendor**"
                 )
 
-                st.write("**Customer**")
                 st.write(
-                    data.get("customer_name", "")
+                    supplier or "Not found"
                 )
 
-                st.write("**GST Number**")
                 st.write(
-                    data.get("gst_number", "")
+                    "**Supplier GSTIN**"
                 )
+
+                st.write(
+                    supplier_gstin or "Not found"
+                )
+
+                st.write(
+                    "**Customer**"
+                )
+
+                st.write(
+                    customer or "Not found"
+                )
+
 
             with col3:
-                st.write("**Subtotal**")
+
                 st.write(
-                    data.get("subtotal", "")
+                    "**Customer GSTIN**"
                 )
 
-                st.write("**Tax**")
                 st.write(
-                    data.get("tax_amount", "")
+                    customer_gstin or "Not found"
                 )
 
-                st.write("**Total**")
                 st.write(
-                    data.get("total_amount", "")
+                    "**Currency**"
+                )
+
+                st.write(
+                    currency or "Not found"
+                )
+
+                st.write(
+                    "**Total**"
+                )
+
+                st.write(
+                    total or "Not found"
                 )
 
 
-            # -------------------------------------------------
-            # LINE ITEMS
-            # -------------------------------------------------
+            # =================================================
+            # TAX SUMMARY
+            # =================================================
 
-            st.divider()
+            st.subheader("💰 Amount Summary")
 
-            st.subheader("🧾 Line Items")
 
-            line_items = data.get(
-                "line_items",
-                []
+            amount_data = pd.DataFrame({
+
+                "Field": [
+                    "Subtotal",
+                    "CGST",
+                    "SGST",
+                    "IGST",
+                    "Total Tax",
+                    "Grand Total"
+                ],
+
+                "Value": [
+                    subtotal,
+                    cgst,
+                    sgst,
+                    igst,
+                    tax,
+                    total
+                ]
+
+            })
+
+
+            st.dataframe(
+                amount_data,
+                use_container_width=True,
+                hide_index=True
             )
 
-            if line_items:
 
-                df = pd.DataFrame(
-                    line_items
-                )
+            # =================================================
+            # LINE ITEMS TABLE
+            # =================================================
 
-                st.dataframe(
-                    df,
-                    use_container_width=True,
-                    hide_index=True
-                )
+            st.subheader(
+                f"🧾 Line Items ({len(line_items)})"
+            )
+
+
+            if len(line_items) > 0:
+
+                line_item_rows = []
+
+                for item in line_items:
+
+                    if not isinstance(item, dict):
+                        continue
+
+                    line_item_rows.append({
+
+                        "Description": normalize_value(
+                            item.get("description")
+                        ),
+
+                        "Quantity": normalize_value(
+                            item.get("quantity")
+                        ),
+
+                        "Unit": normalize_value(
+                            item.get("unit")
+                        ),
+
+                        "Unit Price": normalize_value(
+                            item.get("unit_price")
+                        ),
+
+                        "Tax Rate": normalize_value(
+                            item.get("tax_rate")
+                        ),
+
+                        "Tax Amount": normalize_value(
+                            item.get("tax_amount")
+                        ),
+
+                        "Line Total": normalize_value(
+                            item.get("line_total")
+                        )
+
+                    })
+
+
+                if line_item_rows:
+
+                    line_items_df = pd.DataFrame(
+                        line_item_rows
+                    )
+
+                    st.data_editor(
+                        line_items_df,
+                        use_container_width=True,
+                        num_rows="dynamic"
+                    )
+
+                else:
+
+                    line_items_df = pd.DataFrame(
+                        columns=[
+                            "Description",
+                            "Quantity",
+                            "Unit",
+                            "Unit Price",
+                            "Tax Rate",
+                            "Tax Amount",
+                            "Line Total"
+                        ]
+                    )
+
+                    st.info(
+                        "No line items were detected."
+                    )
 
             else:
+
+                line_items_df = pd.DataFrame(
+                    columns=[
+                        "Description",
+                        "Quantity",
+                        "Unit",
+                        "Unit Price",
+                        "Tax Rate",
+                        "Tax Amount",
+                        "Line Total"
+                    ]
+                )
 
                 st.info(
                     "No line items were detected."
                 )
 
-                df = pd.DataFrame()
+
+            # =================================================
+            # CREATE EXCEL FILE
+            # =================================================
+
+            summary_df = pd.DataFrame({
+
+                "Field": [
+                    "Document Type",
+                    "Document Number",
+                    "Date",
+                    "Supplier",
+                    "Customer",
+                    "Supplier GSTIN",
+                    "Customer GSTIN",
+                    "Currency",
+                    "Subtotal",
+                    "CGST",
+                    "SGST",
+                    "IGST",
+                    "Tax",
+                    "Total"
+                ],
+
+                "Value": [
+                    document_type,
+                    document_number,
+                    document_date,
+                    supplier,
+                    customer,
+                    supplier_gstin,
+                    customer_gstin,
+                    currency,
+                    subtotal,
+                    cgst,
+                    sgst,
+                    igst,
+                    tax,
+                    total
+                ]
+
+            })
 
 
-            # -------------------------------------------------
-            # DOWNLOAD FILES
-            # -------------------------------------------------
-
-            st.divider()
-
-            st.subheader(
-                "⬇️ Download Your Data"
-            )
-
-            # Create complete Excel workbook
-            excel_file = tempfile.NamedTemporaryFile(
+            excel_path = tempfile.NamedTemporaryFile(
                 delete=False,
                 suffix=".xlsx"
-            )
-
-            excel_path = excel_file.name
-            excel_file.close()
+            ).name
 
 
             with pd.ExcelWriter(
@@ -385,153 +758,167 @@ IMPORTANT RULES:
                 engine="openpyxl"
             ) as writer:
 
-                summary = pd.DataFrame([
-                    {
-                        "Field": "Document Type",
-                        "Value": data.get(
-                            "document_type", ""
-                        )
-                    },
-                    {
-                        "Field": "Document Number",
-                        "Value": data.get(
-                            "document_number", ""
-                        )
-                    },
-                    {
-                        "Field": "Document Date",
-                        "Value": data.get(
-                            "document_date", ""
-                        )
-                    },
-                    {
-                        "Field": "Supplier",
-                        "Value": data.get(
-                            "supplier_name", ""
-                        )
-                    },
-                    {
-                        "Field": "Customer",
-                        "Value": data.get(
-                            "customer_name", ""
-                        )
-                    },
-                    {
-                        "Field": "GST Number",
-                        "Value": data.get(
-                            "gst_number", ""
-                        )
-                    },
-                    {
-                        "Field": "Subtotal",
-                        "Value": data.get(
-                            "subtotal", ""
-                        )
-                    },
-                    {
-                        "Field": "Tax",
-                        "Value": data.get(
-                            "tax_amount", ""
-                        )
-                    },
-                    {
-                        "Field": "Total",
-                        "Value": data.get(
-                            "total_amount", ""
-                        )
-                    }
-                ])
-
-                summary.to_excel(
+                summary_df.to_excel(
                     writer,
-                    index=False,
-                    sheet_name="Summary"
+                    sheet_name="Summary",
+                    index=False
+                )
+
+                line_items_df.to_excel(
+                    writer,
+                    sheet_name="Line Items",
+                    index=False
                 )
 
 
-                if not df.empty:
+            # =================================================
+            # CSV
+            # =================================================
 
-                    df.to_excel(
-                        writer,
-                        index=False,
-                        sheet_name="Line Items"
-                    )
-
-
-            with open(
-                excel_path,
-                "rb"
-            ) as f:
-
-                excel_bytes = f.read()
+            csv_data = line_items_df.to_csv(
+                index=False
+            )
 
 
-            csv_bytes = (
-                df.to_csv(
-                    index=False
-                ).encode("utf-8")
-                if not df.empty
-                else b""
+            # =================================================
+            # DOWNLOAD SECTION
+            # =================================================
+
+            st.divider()
+
+            st.subheader(
+                "⬇️ Download Results"
             )
 
 
             col1, col2 = st.columns(2)
 
+
+            with open(
+                excel_path,
+                "rb"
+            ) as excel_file:
+
+                excel_bytes = excel_file.read()
+
+
             with col1:
 
                 st.download_button(
+
                     label="📊 Download Excel",
+
                     data=excel_bytes,
-                    file_name="nexora_document.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+
+                    file_name=(
+                        "nexora_extracted_data.xlsx"
+                    ),
+
+                    mime=(
+                        "application/vnd.openxmlformats-officedocument."
+                        "spreadsheetml.sheet"
+                    ),
+
                     use_container_width=True
                 )
 
 
             with col2:
 
-                if csv_bytes:
+                st.download_button(
 
-                    st.download_button(
-                        label="📄 Download CSV",
-                        data=csv_bytes,
-                        file_name="nexora_line_items.csv",
-                        mime="text/csv",
-                        use_container_width=True
-                    )
+                    label="📄 Download CSV",
 
+                    data=csv_data,
+
+                    file_name=(
+                        "nexora_line_items.csv"
+                    ),
+
+                    mime="text/csv",
+
+                    use_container_width=True
+                )
+
+
+            # =================================================
+            # SUCCESS MESSAGE
+            # =================================================
+
+            st.success(
+                "🎉 Your document has been successfully converted "
+                "into structured data."
+            )
+
+
+            # =================================================
+            # DEBUG INFORMATION
+            # =================================================
+
+            with st.expander(
+                "🔍 View extracted JSON"
+            ):
+
+                st.json(
+                    extracted_data
+                )
+
+
+            # ------------------------------------------------
+            # CLEAN EXCEL TEMP FILE
+            # ------------------------------------------------
 
             try:
-                os.remove(excel_path)
-            except:
+
+                os.remove(
+                    excel_path
+                )
+
+            except Exception:
                 pass
-
-
-        except json.JSONDecodeError:
-
-            st.error(
-                "Gemini returned an unexpected format. "
-                "Please try the document again."
-            )
 
 
         except Exception as e:
 
+            progress.empty() if "progress" in locals() else None
+            status.empty() if "status" in locals() else None
+
             st.error(
-                "Something went wrong while processing the document."
+                "❌ Something went wrong while processing "
+                "the document."
             )
 
-            st.code(
-                str(e)
-            )
+            st.exception(e)
 
 
-# ---------------------------------------------------------
+        finally:
+
+            # ------------------------------------------------
+            # CLEAN LOCAL TEMP FILE
+            # ------------------------------------------------
+
+            if temp_path:
+
+                try:
+
+                    os.remove(
+                        temp_path
+                    )
+
+                except Exception:
+                    pass
+
+
+# ============================================================
 # FOOTER
-# ---------------------------------------------------------
+# ============================================================
 
 st.divider()
 
 st.caption(
-    "Nexora DocumentFlow • Early MVP • Built for document-to-data automation"
+    "Nexora DocumentFlow • AI-powered document extraction"
+)
+
+st.caption(
+    "For testing, use sample or non-confidential documents."
 )
