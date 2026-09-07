@@ -1,2 +1,2 @@
-streamlit
+streamlit 
 google-genai>=2.22.0
