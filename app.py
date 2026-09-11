@@ -10,8 +10,11 @@ from google import genai
 
 # ============================================================
 # NEXORA — TALK TO YOUR DOCUMENTS
-# Native Streamlit UI
-# NO CUSTOM HTML
+# Compact Professional Native Streamlit UI
+#
+# IMPORTANT:
+# Processing logic is intentionally preserved.
+# UI/layout is the main change in this version.
 # ============================================================
 
 APP_NAME = "NEXORA"
@@ -52,9 +55,12 @@ DEFAULTS = {
 }
 
 for key, value in DEFAULTS.items():
+
     if key not in st.session_state:
+
         if isinstance(value, list):
             st.session_state[key] = []
+
         else:
             st.session_state[key] = value
 
@@ -68,10 +74,13 @@ def get_client():
 
     try:
         api_key = st.secrets["GEMINI_API_KEY"]
+
     except Exception:
+
         st.error(
             "GEMINI_API_KEY is missing from Streamlit Secrets."
         )
+
         st.stop()
 
     return genai.Client(api_key=api_key)
@@ -113,12 +122,20 @@ def validate_file(file):
     if mime == "application/pdf":
 
         if file.size > MAX_PDF_SIZE:
-            return False, "PDF files must be 50 MB or smaller."
+
+            return (
+                False,
+                "PDF files must be 50 MB or smaller."
+            )
 
     elif mime.startswith("image/"):
 
         if file.size > MAX_IMAGE_SIZE:
-            return False, "Images must be 20 MB or smaller."
+
+            return (
+                False,
+                "Images must be 20 MB or smaller."
+            )
 
     else:
 
@@ -134,7 +151,9 @@ def make_document_part(file):
 
     raw = file.getvalue()
 
-    encoded = base64.b64encode(raw).decode("utf-8")
+    encoded = base64.b64encode(
+        raw
+    ).decode("utf-8")
 
     mime = get_mime_type(file)
 
@@ -154,7 +173,7 @@ def make_document_part(file):
 
 
 # ============================================================
-# RESET
+# RESET WORKSPACE
 # ============================================================
 
 def reset_workspace():
@@ -162,9 +181,11 @@ def reset_workspace():
     for key, value in DEFAULTS.items():
 
         if isinstance(value, list):
+
             st.session_state[key] = []
 
         else:
+
             st.session_state[key] = value
 
 
@@ -293,15 +314,23 @@ def process_document(file):
 
             return False
 
-        st.session_state.interaction_id = interaction_id
+        st.session_state.interaction_id = (
+            interaction_id
+        )
 
         st.session_state.summary = output
 
-        st.session_state.document_name = file.name
+        st.session_state.document_name = (
+            file.name
+        )
 
-        st.session_state.document_type = get_mime_type(file)
+        st.session_state.document_type = (
+            get_mime_type(file)
+        )
 
-        st.session_state.document_bytes = file.getvalue()
+        st.session_state.document_bytes = (
+            file.getvalue()
+        )
 
         st.session_state.document_ready = True
 
@@ -346,6 +375,7 @@ def process_document(file):
             )
 
         with st.expander("Technical details"):
+
             st.code(text)
 
         return False
@@ -439,6 +469,7 @@ def ask_document(question, placeholder):
         )
 
         with st.expander("Technical details"):
+
             st.code(str(error))
 
         return ""
@@ -555,6 +586,7 @@ Rules:
         )
 
         with st.expander("Technical details"):
+
             st.code(str(error))
 
 
@@ -603,7 +635,9 @@ Use clear headings and bullet points.
                 },
             )
 
-        st.session_state.interaction_id = response.id
+        st.session_state.interaction_id = (
+            response.id
+        )
 
         st.session_state.analysis_result = (
             getattr(
@@ -624,6 +658,7 @@ Use clear headings and bullet points.
         )
 
         with st.expander("Technical details"):
+
             st.code(str(error))
 
 
@@ -674,34 +709,37 @@ def create_excel():
 
 
 # ============================================================
-# TOP BRAND
+# TOP HEADER
 # ============================================================
 
-brand_left, brand_right = st.columns(
-    [5, 1],
+brand_column, status_column = st.columns(
+    [4, 1],
+    gap="small",
     vertical_alignment="center"
 )
 
-with brand_left:
+with brand_column:
 
     st.title("✦ NEXORA")
 
     st.caption(
-        "AI Document Workspace · Talk to your documents"
+        "AI Document Workspace · "
+        "Understand · Analyze · Extract · Ask"
     )
 
-with brand_right:
+with status_column:
 
-    if st.session_state.document_ready:
+    if not st.session_state.document_ready:
 
-        if st.button(
-            "＋ New document",
-            use_container_width=True
-        ):
+        st.info(
+            "AI Document Intelligence"
+        )
 
-            reset_workspace()
+    else:
 
-            st.rerun()
+        st.success(
+            "Document Ready"
+        )
 
 
 st.divider()
@@ -713,36 +751,44 @@ st.divider()
 
 if not st.session_state.document_ready:
 
-    st.title(
-        "Talk to your documents."
-    )
+    # --------------------------------------------------------
+    # COMPACT HERO + CAPABILITIES
+    # --------------------------------------------------------
 
-    st.subheader(
-        "Understand. Analyze. Extract. Ask."
-    )
-
-    st.write(
-        "Upload a document and Nexora will summarize it, "
-        "extract useful information, analyze important details "
-        "and answer your questions."
-    )
-
-    st.write("")
-
-    upload_column, info_column = st.columns(
-        [2.2, 1],
+    hero_column, capability_column = st.columns(
+        [1.65, 1],
         gap="small",
         vertical_alignment="top"
     )
 
-    with upload_column:
+    # ========================================================
+    # HERO / UPLOAD
+    # ========================================================
+
+    with hero_column:
+
+        st.header(
+            "Talk to your documents."
+        )
+
+        st.subheader(
+            "Understand. Analyze. Extract. Ask."
+        )
+
+        st.write(
+            "Upload a document and Nexora will turn it "
+            "into useful information you can understand, "
+            "search and question."
+        )
+
+        st.write("")
 
         with st.container(
             border=True
         ):
 
             st.subheader(
-                "Upload your document"
+                "📤 Upload your document"
             )
 
             st.caption(
@@ -773,10 +819,8 @@ if not st.session_state.document_ready:
                 else:
 
                     st.success(
-                        f"Ready to analyze: {uploaded_file.name}"
+                        f"✓ Ready: {uploaded_file.name}"
                     )
-
-                    st.write("")
 
                     if st.button(
                         "✨ Analyze Document",
@@ -790,14 +834,25 @@ if not st.session_state.document_ready:
 
                             st.rerun()
 
-    with info_column:
+            else:
+
+                st.caption(
+                    "Drag and drop your document here, "
+                    "or click Browse to select a file."
+                )
+
+    # ========================================================
+    # CAPABILITIES
+    # ========================================================
+
+    with capability_column:
 
         with st.container(
             border=True
         ):
 
             st.subheader(
-                "What Nexora can do"
+                "✨ What Nexora can do"
             )
 
             st.write(
@@ -805,7 +860,8 @@ if not st.session_state.document_ready:
             )
 
             st.caption(
-                "Understand long documents quickly."
+                "Get the important points without reading "
+                "the entire document."
             )
 
             st.write(
@@ -813,7 +869,8 @@ if not st.session_state.document_ready:
             )
 
             st.caption(
-                "Ask questions about your document."
+                "Ask questions and get answers from "
+                "the document."
             )
 
             st.write(
@@ -821,7 +878,8 @@ if not st.session_state.document_ready:
             )
 
             st.caption(
-                "Convert document information into structured data."
+                "Turn document information into structured "
+                "data and Excel."
             )
 
             st.write(
@@ -829,13 +887,82 @@ if not st.session_state.document_ready:
             )
 
             st.caption(
-                "Find risks, missing information and important details."
+                "Identify risks, missing information, "
+                "inconsistencies and important details."
+            )
+
+    # --------------------------------------------------------
+    # COMPACT FEATURE STRIP
+    # --------------------------------------------------------
+
+    st.write("")
+
+    feature_1, feature_2, feature_3, feature_4 = st.columns(
+        4,
+        gap="small"
+    )
+
+    with feature_1:
+
+        with st.container(border=True):
+
+            st.write("⚡")
+
+            st.markdown(
+                "**Fast understanding**"
+            )
+
+            st.caption(
+                "Get a useful overview quickly."
+            )
+
+    with feature_2:
+
+        with st.container(border=True):
+
+            st.write("🎯")
+
+            st.markdown(
+                "**Focused answers**"
+            )
+
+            st.caption(
+                "Ask questions instead of searching."
+            )
+
+    with feature_3:
+
+        with st.container(border=True):
+
+            st.write("📋")
+
+            st.markdown(
+                "**Structured information**"
+            )
+
+            st.caption(
+                "Extract useful fields and line items."
+            )
+
+    with feature_4:
+
+        with st.container(border=True):
+
+            st.write("🔎")
+
+            st.markdown(
+                "**Document intelligence**"
+            )
+
+            st.caption(
+                "Find important details and risks."
             )
 
     st.write("")
 
     st.info(
-        "Your document stays in this workspace while you work with it."
+        "Nexora keeps your document and AI tools together "
+        "in one focused workspace."
     )
 
 
@@ -845,13 +972,17 @@ if not st.session_state.document_ready:
 
 else:
 
-    header_left, header_right = st.columns(
+    # --------------------------------------------------------
+    # DOCUMENT HEADER
+    # --------------------------------------------------------
+
+    document_header, new_document = st.columns(
         [5, 1],
         gap="small",
         vertical_alignment="center"
     )
 
-    with header_left:
+    with document_header:
 
         st.subheader(
             f"📄 {st.session_state.document_name}"
@@ -861,10 +992,10 @@ else:
             "● Document analyzed and ready"
         )
 
-    with header_right:
+    with new_document:
 
         if st.button(
-            "New document",
+            "＋ New document",
             use_container_width=True
         ):
 
@@ -905,7 +1036,7 @@ else:
     st.divider()
 
     # --------------------------------------------------------
-    # MAIN TWO-COLUMN WORKSPACE
+    # DOCUMENT + CHAT
     # --------------------------------------------------------
 
     document_column, chat_column = st.columns(
@@ -1251,5 +1382,5 @@ else:
 st.divider()
 
 st.caption(
-    "NEXORA · AI Document Workspace"
+    "✦ NEXORA · AI Document Workspace"
 )
