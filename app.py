@@ -10,7 +10,8 @@ from google import genai
 
 # ============================================================
 # NEXORA — TALK TO YOUR DOCUMENTS
-# Professional document workspace
+# Native Streamlit UI
+# NO CUSTOM HTML
 # ============================================================
 
 APP_NAME = "NEXORA"
@@ -21,7 +22,7 @@ MAX_IMAGE_SIZE = 20 * 1024 * 1024
 
 
 # ============================================================
-# PAGE CONFIG
+# PAGE CONFIGURATION
 # ============================================================
 
 st.set_page_config(
@@ -29,253 +30,6 @@ st.set_page_config(
     page_icon="✦",
     layout="wide",
     initial_sidebar_state="collapsed",
-)
-
-
-# ============================================================
-# PROFESSIONAL THEME
-# ============================================================
-
-st.markdown(
-    """
-<style>
-
-:root {
-    --nx-blue: #2563eb;
-    --nx-blue-dark: #1d4ed8;
-    --nx-purple: #6d28d9;
-    --nx-text: #172033;
-    --nx-muted: #667085;
-    --nx-border: #e4e7ec;
-    --nx-bg: #f7f8fa;
-    --nx-card: #ffffff;
-}
-
-
-/* PAGE */
-
-.stApp {
-    background: var(--nx-bg);
-    color: var(--nx-text);
-}
-
-.block-container {
-    max-width: 1320px;
-    padding-top: 1.1rem;
-    padding-bottom: 2rem;
-}
-
-
-/* REDUCE DEFAULT SPACING */
-
-.element-container {
-    margin-bottom: 0.15rem;
-}
-
-div[data-testid="stVerticalBlock"] {
-    gap: 0.45rem;
-}
-
-
-/* TOP BAR */
-
-[data-testid="stHeader"] {
-    background: transparent;
-}
-
-.nx-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 4px 0 12px 0;
-    border-bottom: 1px solid var(--nx-border);
-    margin-bottom: 12px;
-}
-
-.nx-brand {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-}
-
-.nx-logo {
-    width: 34px;
-    height: 34px;
-    border-radius: 9px;
-    background: linear-gradient(
-        135deg,
-        #111827,
-        #2563eb
-    );
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    font-weight: 800;
-}
-
-.nx-name {
-    font-size: 19px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-    color: #101828;
-}
-
-.nx-tag {
-    font-size: 11px;
-    color: #98a2b3;
-}
-
-
-/* HOME HERO */
-
-.nx-hero {
-    text-align: center;
-    padding: 55px 20px 25px 20px;
-}
-
-.nx-hero-title {
-    font-size: 48px;
-    font-weight: 800;
-    letter-spacing: -2px;
-    color: #101828;
-    line-height: 1.05;
-}
-
-.nx-hero-gradient {
-    background: linear-gradient(
-        90deg,
-        #2563eb,
-        #7c3aed
-    );
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.nx-hero-sub {
-    max-width: 650px;
-    margin: 12px auto 0 auto;
-    color: #667085;
-    font-size: 17px;
-    line-height: 1.5;
-}
-
-
-/* CARDS */
-
-[data-testid="stVerticalBlockBorderWrapper"] {
-    border-color: var(--nx-border);
-    border-radius: 14px;
-    background: white;
-}
-
-
-/* UPLOAD AREA */
-
-[data-testid="stFileUploader"] {
-    background: white;
-    border: 1px solid var(--nx-border);
-    border-radius: 14px;
-    padding: 8px;
-}
-
-
-/* BUTTONS */
-
-.stButton > button {
-    border-radius: 8px;
-    min-height: 38px;
-    font-weight: 650;
-    border-color: #d0d5dd;
-}
-
-.stButton > button[kind="primary"] {
-    background: var(--nx-blue);
-    border-color: var(--nx-blue);
-}
-
-.stButton > button[kind="primary"]:hover {
-    background: var(--nx-blue-dark);
-}
-
-
-/* DOWNLOAD */
-
-.stDownloadButton > button {
-    border-radius: 8px;
-    min-height: 38px;
-    font-weight: 650;
-}
-
-
-/* DOCUMENT WORKSPACE */
-
-.nx-section-title {
-    font-size: 15px;
-    font-weight: 750;
-    color: #344054;
-}
-
-.nx-file-title {
-    font-size: 16px;
-    font-weight: 750;
-    color: #101828;
-}
-
-.nx-status {
-    font-size: 12px;
-    color: #12b76a;
-    font-weight: 600;
-}
-
-
-/* CHAT */
-
-.nx-chat-title {
-    font-size: 16px;
-    font-weight: 750;
-    color: #101828;
-}
-
-.nx-chat-sub {
-    font-size: 12px;
-    color: #667085;
-}
-
-
-/* FEATURE */
-
-.nx-feature-title {
-    font-weight: 700;
-    font-size: 14px;
-    color: #101828;
-}
-
-.nx-feature-text {
-    font-size: 12px;
-    color: #667085;
-    line-height: 1.45;
-}
-
-
-/* MOBILE */
-
-@media (max-width: 800px) {
-
-    .nx-hero-title {
-        font-size: 36px;
-    }
-
-    .nx-hero {
-        padding-top: 30px;
-    }
-
-}
-
-</style>
-""",
-    unsafe_allow_html=True,
 )
 
 
@@ -298,34 +52,29 @@ DEFAULTS = {
 }
 
 for key, value in DEFAULTS.items():
-
     if key not in st.session_state:
-
-        st.session_state[key] = value
+        if isinstance(value, list):
+            st.session_state[key] = []
+        else:
+            st.session_state[key] = value
 
 
 # ============================================================
-# GEMINI
+# GEMINI CLIENT
 # ============================================================
 
 @st.cache_resource
 def get_client():
 
     try:
-
         api_key = st.secrets["GEMINI_API_KEY"]
-
     except Exception:
-
         st.error(
             "GEMINI_API_KEY is missing from Streamlit Secrets."
         )
-
         st.stop()
 
-    return genai.Client(
-        api_key=api_key
-    )
+    return genai.Client(api_key=api_key)
 
 
 client = get_client()
@@ -338,7 +87,6 @@ client = get_client()
 def get_mime_type(file):
 
     if file.type:
-
         return file.type
 
     name = file.name.lower()
@@ -365,20 +113,12 @@ def validate_file(file):
     if mime == "application/pdf":
 
         if file.size > MAX_PDF_SIZE:
-
-            return (
-                False,
-                "PDF files must be 50 MB or smaller."
-            )
+            return False, "PDF files must be 50 MB or smaller."
 
     elif mime.startswith("image/"):
 
         if file.size > MAX_IMAGE_SIZE:
-
-            return (
-                False,
-                "Images must be 20 MB or smaller."
-            )
+            return False, "Images must be 20 MB or smaller."
 
     else:
 
@@ -394,9 +134,7 @@ def make_document_part(file):
 
     raw = file.getvalue()
 
-    encoded = base64.b64encode(
-        raw
-    ).decode("utf-8")
+    encoded = base64.b64encode(raw).decode("utf-8")
 
     mime = get_mime_type(file)
 
@@ -424,16 +162,14 @@ def reset_workspace():
     for key, value in DEFAULTS.items():
 
         if isinstance(value, list):
-
             st.session_state[key] = []
 
         else:
-
             st.session_state[key] = value
 
 
 # ============================================================
-# INITIAL AI ANALYSIS
+# DOCUMENT ANALYSIS
 # ============================================================
 
 def analyze_document(file):
@@ -443,21 +179,22 @@ def analyze_document(file):
     prompt = """
 You are Nexora, a professional AI document assistant.
 
-Read and understand the uploaded document.
+Read and understand the uploaded document carefully.
 
-Create a highly useful document overview.
+Create a useful, accurate and easy-to-read document overview.
 
-Return:
+Return the following sections:
 
 ## Executive Summary
 
-A concise explanation of what this document is about.
+Give a concise explanation of what the document is about.
 
 ## Key Information
 
 List the most important facts.
 
-Include important:
+Include important information such as:
+
 - Names
 - Dates
 - Amounts
@@ -474,6 +211,7 @@ Give the most useful points a person should know.
 ## Risks and Concerns
 
 Identify:
+
 - Missing information
 - Potential risks
 - Inconsistencies
@@ -484,15 +222,17 @@ If none are obvious, clearly say so.
 
 ## Suggested Questions
 
-Give 5 useful questions the user can ask about this document.
+Give 5 useful questions the user could ask about this document.
 
 Rules:
+
 - Do not invent information.
 - Use only information present in the document.
 - Preserve dates accurately.
 - Preserve numbers accurately.
 - If something is unclear, say so.
-- Keep the result professional and easy to scan.
+- Keep the result professional.
+- Make the response easy to scan.
 """
 
     return client.interactions.create(
@@ -523,9 +263,7 @@ def process_document(file):
             "Nexora is understanding your document..."
         ):
 
-            interaction = analyze_document(
-                file
-            )
+            interaction = analyze_document(file)
 
         interaction_id = getattr(
             interaction,
@@ -555,23 +293,15 @@ def process_document(file):
 
             return False
 
-        st.session_state.interaction_id = (
-            interaction_id
-        )
+        st.session_state.interaction_id = interaction_id
 
         st.session_state.summary = output
 
-        st.session_state.document_name = (
-            file.name
-        )
+        st.session_state.document_name = file.name
 
-        st.session_state.document_type = (
-            get_mime_type(file)
-        )
+        st.session_state.document_type = get_mime_type(file)
 
-        st.session_state.document_bytes = (
-            file.getvalue()
-        )
+        st.session_state.document_bytes = file.getvalue()
 
         st.session_state.document_ready = True
 
@@ -602,14 +332,11 @@ def process_document(file):
                 "Please wait a little and try again."
             )
 
-        elif (
-            "500" in text
-            or "503" in text
-        ):
+        elif "500" in text or "503" in text:
 
             st.warning(
                 "Gemini is temporarily busy. "
-                "Please click Analyze Document again."
+                "Please try again."
             )
 
         else:
@@ -618,17 +345,14 @@ def process_document(file):
                 "Please try the Analyze Document button again."
             )
 
-        with st.expander(
-            "Technical details"
-        ):
-
+        with st.expander("Technical details"):
             st.code(text)
 
         return False
 
 
 # ============================================================
-# CHAT
+# DOCUMENT CHAT
 # ============================================================
 
 def ask_document(question, placeholder):
@@ -714,13 +438,8 @@ def ask_document(question, placeholder):
             "Nexora could not answer the question."
         )
 
-        with st.expander(
-            "Technical details"
-        ):
-
-            st.code(
-                str(error)
-            )
+        with st.expander("Technical details"):
+            st.code(str(error))
 
         return ""
 
@@ -736,7 +455,7 @@ Extract structured information from the document.
 
 Return ONLY valid JSON.
 
-Use:
+Use exactly this structure:
 
 {
   "document_information": [
@@ -756,11 +475,13 @@ Use:
 }
 
 Rules:
-- Extract only information present.
+
+- Extract only information present in the document.
 - Never invent information.
-- Use empty strings if unavailable.
-- Preserve dates.
-- Preserve numbers.
+- Use empty strings when information is unavailable.
+- Preserve dates accurately.
+- Preserve numbers accurately.
+- Return valid JSON only.
 """
 
     try:
@@ -781,9 +502,7 @@ Rules:
                 },
             )
 
-        st.session_state.interaction_id = (
-            response.id
-        )
+        st.session_state.interaction_id = response.id
 
         text = getattr(
             response,
@@ -835,13 +554,8 @@ Rules:
             "Data extraction failed."
         )
 
-        with st.expander(
-            "Technical details"
-        ):
-
-            st.code(
-                str(error)
-            )
+        with st.expander("Technical details"):
+            st.code(str(error))
 
 
 # ============================================================
@@ -889,19 +603,17 @@ Use clear headings and bullet points.
                 },
             )
 
-        st.session_state.interaction_id = (
-            response.id
+        st.session_state.interaction_id = response.id
+
+        st.session_state.analysis_result = (
+            getattr(
+                response,
+                "output_text",
+                ""
+            )
         )
 
-        st.session_state.analysis_result = getattr(
-            response,
-            "output_text",
-            ""
-        )
-
-        st.session_state.active_view = (
-            "Analyze"
-        )
+        st.session_state.active_view = "Analyze"
 
         st.rerun()
 
@@ -911,24 +623,25 @@ Use clear headings and bullet points.
             "Deep analysis failed."
         )
 
-        with st.expander(
-            "Technical details"
-        ):
-
-            st.code(
-                str(error)
-            )
+        with st.expander("Technical details"):
+            st.code(str(error))
 
 
 # ============================================================
-# DOWNLOAD EXCEL
+# EXCEL CREATION
 # ============================================================
 
 def create_excel():
 
-    info = st.session_state.extracted_information or []
+    info = (
+        st.session_state.extracted_information
+        or []
+    )
 
-    items = st.session_state.extracted_line_items or []
+    items = (
+        st.session_state.extracted_line_items
+        or []
+    )
 
     info_df = pd.DataFrame(info)
 
@@ -964,176 +677,166 @@ def create_excel():
 # TOP BRAND
 # ============================================================
 
-st.markdown(
-    """
-<div class="nx-top">
-
-    <div class="nx-brand">
-
-        <div class="nx-logo">
-            N
-        </div>
-
-        <div>
-
-            <div class="nx-name">
-                NEXORA
-            </div>
-
-            <div class="nx-tag">
-                AI Document Workspace
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-""",
-    unsafe_allow_html=True
+brand_left, brand_right = st.columns(
+    [5, 1],
+    vertical_alignment="center"
 )
+
+with brand_left:
+
+    st.title("✦ NEXORA")
+
+    st.caption(
+        "AI Document Workspace · Talk to your documents"
+    )
+
+with brand_right:
+
+    if st.session_state.document_ready:
+
+        if st.button(
+            "＋ New document",
+            use_container_width=True
+        ):
+
+            reset_workspace()
+
+            st.rerun()
+
+
+st.divider()
 
 
 # ============================================================
-# HOME
+# HOME PAGE
 # ============================================================
 
 if not st.session_state.document_ready:
 
-    st.markdown(
-        """
-<div class="nx-hero">
-
-    <div class="nx-hero-title">
-        Talk to your
-        <span class="nx-hero-gradient">
-            documents.
-        </span>
-    </div>
-
-    <div class="nx-hero-sub">
-        Upload a document and let Nexora summarize,
-        analyze, extract data and answer your questions.
-    </div>
-
-</div>
-""",
-        unsafe_allow_html=True
+    st.title(
+        "Talk to your documents."
     )
 
-    with st.container(
-        border=True
-    ):
+    st.subheader(
+        "Understand. Analyze. Extract. Ask."
+    )
 
-        st.subheader(
-            "Upload your document"
-        )
-
-        st.caption(
-            "PDF, PNG, JPG or JPEG · Up to 50 MB"
-        )
-
-        uploaded_file = st.file_uploader(
-            "Choose a document",
-            type=[
-                "pdf",
-                "png",
-                "jpg",
-                "jpeg"
-            ],
-            label_visibility="collapsed"
-        )
-
-        if uploaded_file:
-
-            valid, message = validate_file(
-                uploaded_file
-            )
-
-            if not valid:
-
-                st.error(message)
-
-            else:
-
-                st.success(
-                    f"Ready: {uploaded_file.name}"
-                )
-
-                if st.button(
-                    "✨ Analyze Document",
-                    type="primary",
-                    use_container_width=True
-                ):
-
-                    if process_document(
-                        uploaded_file
-                    ):
-
-                        st.rerun()
+    st.write(
+        "Upload a document and Nexora will summarize it, "
+        "extract useful information, analyze important details "
+        "and answer your questions."
+    )
 
     st.write("")
 
-    col1, col2, col3, col4 = st.columns(
-        4,
-        gap="small"
+    upload_column, info_column = st.columns(
+        [2.2, 1],
+        gap="small",
+        vertical_alignment="top"
     )
 
-    with col1:
+    with upload_column:
 
-        with st.container(border=True):
+        with st.container(
+            border=True
+        ):
 
-            st.write("🧠")
-
-            st.markdown(
-                "**Chat with documents**"
+            st.subheader(
+                "Upload your document"
             )
 
             st.caption(
-                "Ask questions and get answers."
+                "PDF, PNG, JPG or JPEG · Maximum 50 MB"
             )
 
-    with col2:
+            uploaded_file = st.file_uploader(
+                "Choose a document",
+                type=[
+                    "pdf",
+                    "png",
+                    "jpg",
+                    "jpeg"
+                ],
+                label_visibility="collapsed"
+            )
 
-        with st.container(border=True):
+            if uploaded_file:
 
-            st.write("⚡")
+                valid, message = validate_file(
+                    uploaded_file
+                )
 
-            st.markdown(
-                "**AI Summarizer**"
+                if not valid:
+
+                    st.error(message)
+
+                else:
+
+                    st.success(
+                        f"Ready to analyze: {uploaded_file.name}"
+                    )
+
+                    st.write("")
+
+                    if st.button(
+                        "✨ Analyze Document",
+                        type="primary",
+                        use_container_width=True
+                    ):
+
+                        if process_document(
+                            uploaded_file
+                        ):
+
+                            st.rerun()
+
+    with info_column:
+
+        with st.container(
+            border=True
+        ):
+
+            st.subheader(
+                "What Nexora can do"
+            )
+
+            st.write(
+                "🧠 **AI Summary**"
             )
 
             st.caption(
                 "Understand long documents quickly."
             )
 
-    with col3:
-
-        with st.container(border=True):
-
-            st.write("📊")
-
-            st.markdown(
-                "**Data extraction**"
+            st.write(
+                "💬 **Document Chat**"
             )
 
             st.caption(
-                "Turn documents into structured data."
+                "Ask questions about your document."
             )
 
-    with col4:
-
-        with st.container(border=True):
-
-            st.write("🔍")
-
-            st.markdown(
-                "**Document analysis**"
+            st.write(
+                "📊 **Data Extraction**"
             )
 
             st.caption(
-                "Find risks and important details."
+                "Convert document information into structured data."
             )
+
+            st.write(
+                "🔍 **Deep Analysis**"
+            )
+
+            st.caption(
+                "Find risks, missing information and important details."
+            )
+
+    st.write("")
+
+    st.info(
+        "Your document stays in this workspace while you work with it."
+    )
 
 
 # ============================================================
@@ -1141,10 +844,6 @@ if not st.session_state.document_ready:
 # ============================================================
 
 else:
-
-    # --------------------------------------------------------
-    # COMPACT DOCUMENT HEADER
-    # --------------------------------------------------------
 
     header_left, header_right = st.columns(
         [5, 1],
@@ -1154,8 +853,8 @@ else:
 
     with header_left:
 
-        st.markdown(
-            f"### 📄 {st.session_state.document_name}"
+        st.subheader(
+            f"📄 {st.session_state.document_name}"
         )
 
         st.caption(
@@ -1165,16 +864,18 @@ else:
     with header_right:
 
         if st.button(
-            "＋ New document",
+            "New document",
             use_container_width=True
         ):
 
             reset_workspace()
+
             st.rerun()
 
+    st.write("")
 
     # --------------------------------------------------------
-    # NAVIGATION
+    # TOOL NAVIGATION
     # --------------------------------------------------------
 
     selected = st.radio(
@@ -1198,14 +899,13 @@ else:
     if selected != st.session_state.active_view:
 
         st.session_state.active_view = selected
-        st.rerun()
 
+        st.rerun()
 
     st.divider()
 
-
     # --------------------------------------------------------
-    # MAIN TWO-PANEL WORKSPACE
+    # MAIN TWO-COLUMN WORKSPACE
     # --------------------------------------------------------
 
     document_column, chat_column = st.columns(
@@ -1214,9 +914,8 @@ else:
         vertical_alignment="top"
     )
 
-
     # ========================================================
-    # LEFT — DOCUMENT
+    # DOCUMENT SIDE
     # ========================================================
 
     with document_column:
@@ -1226,16 +925,18 @@ else:
             height=760
         ):
 
-            st.markdown(
-                "**📄 DOCUMENT**"
+            st.subheader(
+                "📄 Document"
             )
 
             st.caption(
                 st.session_state.document_name
             )
 
+            st.divider()
+
             # ------------------------------------------------
-            # PDF / IMAGE VIEWER
+            # PDF PREVIEW
             # ------------------------------------------------
 
             if (
@@ -1247,18 +948,24 @@ else:
 
                     st.pdf(
                         st.session_state.document_bytes,
-                        height=480
+                        height=430
                     )
 
                 except Exception:
 
                     st.info(
-                        "PDF preview requires the PDF viewer package."
+                        "PDF preview is unavailable. "
+                        "The document is still available to Nexora."
                     )
+
+            # ------------------------------------------------
+            # IMAGE PREVIEW
+            # ------------------------------------------------
 
             elif (
                 st.session_state.document_type
-                and st.session_state.document_type.startswith(
+                and
+                st.session_state.document_type.startswith(
                     "image/"
                 )
             ):
@@ -1268,17 +975,19 @@ else:
                     use_container_width=True
                 )
 
+            st.divider()
 
-            # ------------------------------------------------
+            # =================================================
             # SUMMARY
-            # ------------------------------------------------
+            # =================================================
 
-            if st.session_state.active_view == "Summary":
+            if (
+                st.session_state.active_view
+                == "Summary"
+            ):
 
-                st.divider()
-
-                st.markdown(
-                    "#### ✨ AI Summary"
+                st.subheader(
+                    "✨ AI Summary"
                 )
 
                 if st.session_state.summary:
@@ -1287,29 +996,30 @@ else:
                         st.session_state.summary
                     )
 
+            # =================================================
+            # EXTRACT DATA
+            # =================================================
 
-            # ------------------------------------------------
-            # EXTRACTED DATA
-            # ------------------------------------------------
+            elif (
+                st.session_state.active_view
+                == "Extract Data"
+            ):
 
-            elif st.session_state.active_view == "Extract Data":
-
-                st.divider()
-
-                st.markdown(
-                    "#### 📊 Extracted Data"
+                st.subheader(
+                    "📊 Extracted Data"
                 )
 
                 if (
                     st.session_state.extracted_information
                     is None
-                    and st.session_state.extracted_line_items
+                    and
+                    st.session_state.extracted_line_items
                     is None
                 ):
 
                     st.info(
-                        "Click **Extract Data** below to extract "
-                        "structured information from this document."
+                        "Extract structured information "
+                        "from this document."
                     )
 
                     if st.button(
@@ -1323,18 +1033,20 @@ else:
                 else:
 
                     info = (
-                        st.session_state.extracted_information
+                        st.session_state
+                        .extracted_information
                         or []
                     )
 
                     items = (
-                        st.session_state.extracted_line_items
+                        st.session_state
+                        .extracted_line_items
                         or []
                     )
 
                     if info:
 
-                        st.markdown(
+                        st.write(
                             "**Document Information**"
                         )
 
@@ -1350,7 +1062,7 @@ else:
 
                     if items:
 
-                        st.markdown(
+                        st.write(
                             "**Line Items**"
                         )
 
@@ -1364,37 +1076,47 @@ else:
                             hide_index=True
                         )
 
-                    st.download_button(
-                        "⬇️ Download Excel",
-                        data=create_excel(),
-                        file_name="nexora_extracted_data.xlsx",
-                        mime=(
-                            "application/vnd.openxmlformats-officedocument."
-                            "spreadsheetml.sheet"
-                        ),
-                        use_container_width=True
-                    )
+                    if info or items:
 
+                        st.download_button(
+                            "⬇️ Download Excel",
+                            data=create_excel(),
+                            file_name=(
+                                "nexora_extracted_data.xlsx"
+                            ),
+                            mime=(
+                                "application/"
+                                "vnd.openxmlformats-officedocument"
+                                ".spreadsheetml.sheet"
+                            ),
+                            use_container_width=True
+                        )
 
-            # ------------------------------------------------
-            # ANALYSIS
-            # ------------------------------------------------
+                    else:
 
-            elif st.session_state.active_view == "Analyze":
+                        st.warning(
+                            "No structured information was found."
+                        )
 
-                st.divider()
+            # =================================================
+            # DEEP ANALYSIS
+            # =================================================
 
-                st.markdown(
-                    "#### 🔍 Deep Analysis"
+            elif (
+                st.session_state.active_view
+                == "Analyze"
+            ):
+
+                st.subheader(
+                    "🔍 Deep Analysis"
                 )
 
-                if (
-                    not st.session_state.analysis_result
-                ):
+                if not st.session_state.analysis_result:
 
                     st.info(
-                        "Run a deeper analysis to identify "
-                        "risks, missing information and inconsistencies."
+                        "Run deeper analysis to identify "
+                        "risks, missing information, "
+                        "inconsistencies and next steps."
                     )
 
                     if st.button(
@@ -1413,7 +1135,7 @@ else:
 
 
     # ========================================================
-    # RIGHT — CHAT
+    # CHAT SIDE
     # ========================================================
 
     with chat_column:
@@ -1422,23 +1144,20 @@ else:
             border=True
         ):
 
-            st.markdown(
-                "### ✦ Nexora AI"
+            st.subheader(
+                "✦ Nexora AI"
             )
 
             st.caption(
                 "Ask questions about this document."
             )
 
-        # ----------------------------------------------------
-        # CHAT HISTORY
-        # ----------------------------------------------------
+        st.write("")
 
-        chat_history = st.container(
-            height=570
-        )
-
-        with chat_history:
+        with st.container(
+            height=570,
+            border=True
+        ):
 
             if not st.session_state.messages:
 
@@ -1446,8 +1165,8 @@ else:
                     "Ask Nexora anything about this document."
                 )
 
-                st.caption(
-                    "Try:"
+                st.write(
+                    "**Try asking:**"
                 )
 
                 st.caption(
@@ -1466,9 +1185,15 @@ else:
                     "• What are the important dates and amounts?"
                 )
 
+                st.caption(
+                    "• Summarize this in simple language."
+                )
+
             else:
 
-                for message in st.session_state.messages:
+                for message in (
+                    st.session_state.messages
+                ):
 
                     with st.chat_message(
                         message["role"]
@@ -1477,11 +1202,6 @@ else:
                         st.markdown(
                             message["content"]
                         )
-
-
-        # ----------------------------------------------------
-        # CHAT INPUT
-        # ----------------------------------------------------
 
         question = st.chat_input(
             "Ask anything about this document...",
@@ -1497,19 +1217,13 @@ else:
                 }
             )
 
-            with chat_history:
+            with st.container():
 
-                with st.chat_message(
-                    "user"
-                ):
+                with st.chat_message("user"):
 
-                    st.markdown(
-                        question
-                    )
+                    st.markdown(question)
 
-                with st.chat_message(
-                    "assistant"
-                ):
+                with st.chat_message("assistant"):
 
                     placeholder = st.empty()
 
@@ -1533,6 +1247,8 @@ else:
 # ============================================================
 # FOOTER
 # ============================================================
+
+st.divider()
 
 st.caption(
     "NEXORA · AI Document Workspace"
