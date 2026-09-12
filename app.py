@@ -10,11 +10,7 @@ from google import genai
 
 # ============================================================
 # NEXORA — TALK TO YOUR DOCUMENTS
-# FINAL PROFESSIONAL UI POLISH
-#
-# IMPORTANT:
-# The processing logic is preserved.
-# This version focuses on compactness, spacing and visual polish.
+# PHASE 4 — PROFESSIONAL VISUAL EXPERIENCE
 # ============================================================
 
 APP_NAME = "NEXORA"
@@ -25,7 +21,7 @@ MAX_IMAGE_SIZE = 20 * 1024 * 1024
 
 
 # ============================================================
-# PAGE CONFIGURATION
+# PAGE
 # ============================================================
 
 st.set_page_config(
@@ -37,186 +33,434 @@ st.set_page_config(
 
 
 # ============================================================
-# PROFESSIONAL VISUAL THEME
-#
-# This is CSS styling only.
-# No HTML interface elements are used.
+# PROFESSIONAL VISUAL SYSTEM
 # ============================================================
 
 st.markdown(
     """
 <style>
 
+/* ==========================================================
+   NEXORA COLOR SYSTEM
+   ========================================================== */
+
 :root {
     --nx-blue: #2563eb;
-    --nx-blue-dark: #1d4ed8;
+    --nx-blue2: #3b82f6;
     --nx-indigo: #4f46e5;
     --nx-purple: #7c3aed;
+    --nx-cyan: #0891b2;
+
+    --nx-dark: #111827;
     --nx-text: #172033;
-    --nx-muted: #667085;
-    --nx-border: #dfe4ec;
-    --nx-background: #f6f8fc;
-    --nx-card: #ffffff;
-    --nx-soft-blue: #eff6ff;
-    --nx-soft-purple: #f5f3ff;
-    --nx-success: #15803d;
+    --nx-muted: #64748b;
+
+    --nx-bg1: #f7faff;
+    --nx-bg2: #f3f1ff;
+    --nx-bg3: #eef7ff;
+
+    --nx-border: #dce4f0;
+    --nx-white: #ffffff;
+
+    --nx-shadow:
+        0 8px 30px rgba(37, 99, 235, 0.07);
+
+    --nx-shadow-hover:
+        0 12px 35px rgba(79, 70, 229, 0.14);
 }
 
-/* Overall page */
+
+/* ==========================================================
+   GLOBAL BACKGROUND
+   ========================================================== */
 
 .stApp {
-    background: var(--nx-background);
+    background:
+        radial-gradient(
+            circle at 8% 8%,
+            rgba(59, 130, 246, 0.13),
+            transparent 28%
+        ),
+        radial-gradient(
+            circle at 92% 12%,
+            rgba(124, 58, 237, 0.11),
+            transparent 30%
+        ),
+        radial-gradient(
+            circle at 50% 100%,
+            rgba(14, 165, 233, 0.08),
+            transparent 32%
+        ),
+        linear-gradient(
+            135deg,
+            var(--nx-bg1),
+            var(--nx-bg2),
+            var(--nx-bg3)
+        );
+
+    color: var(--nx-text);
 }
 
-/* Pull entire application upward */
+
+/* ==========================================================
+   MAIN CONTENT — PULL EVERYTHING UP
+   ========================================================== */
 
 .block-container {
-    max-width: 1440px;
-    padding-top: 0.35rem !important;
-    padding-bottom: 1rem !important;
-    padding-left: 2rem !important;
-    padding-right: 2rem !important;
+    max-width: 1460px !important;
+
+    padding-top: 0.15rem !important;
+    padding-bottom: 0.8rem !important;
+
+    padding-left: 1.6rem !important;
+    padding-right: 1.6rem !important;
 }
 
-/* Reduce default vertical spacing */
+
+/* ==========================================================
+   REMOVE EXCESSIVE STREAMLIT SPACING
+   ========================================================== */
 
 [data-testid="stVerticalBlock"] {
-    gap: 0.28rem;
+    gap: 0.22rem;
 }
 
 .element-container {
-    margin-bottom: 0.05rem;
+    margin-bottom: 0.04rem !important;
 }
 
-/* Remove unnecessary top header space */
+
+/* ==========================================================
+   HEADER
+   ========================================================== */
 
 [data-testid="stHeader"] {
-    background: transparent;
-    height: 0;
+    background: transparent !important;
+    height: 0 !important;
 }
 
-/* Divider */
 
-hr {
-    margin-top: 0.45rem !important;
-    margin-bottom: 0.65rem !important;
-    border-color: var(--nx-border) !important;
-}
-
-/* Titles */
+/* ==========================================================
+   HEADINGS
+   ========================================================== */
 
 h1 {
-    color: var(--nx-text) !important;
-    letter-spacing: -1.5px !important;
+    font-weight: 850 !important;
+    letter-spacing: -2px !important;
+    color: #111827 !important;
+}
+
+h2 {
     font-weight: 800 !important;
+    letter-spacing: -1px !important;
+    color: #111827 !important;
 }
 
-h2,
 h3 {
-    color: var(--nx-text) !important;
-    letter-spacing: -0.5px !important;
+    font-weight: 750 !important;
+    color: #172033 !important;
 }
 
-/* Compact text */
-
-.stCaption,
-[data-testid="stCaptionContainer"] {
-    color: var(--nx-muted);
+h4 {
+    font-weight: 700 !important;
 }
 
-/* Containers */
+
+/* ==========================================================
+   DIVIDERS
+   ========================================================== */
+
+hr {
+    border-color: rgba(148, 163, 184, 0.25) !important;
+
+    margin-top: 0.35rem !important;
+    margin-bottom: 0.45rem !important;
+}
+
+
+/* ==========================================================
+   PREMIUM CONTAINERS
+   ========================================================== */
 
 [data-testid="stVerticalBlockBorderWrapper"] {
-    background: var(--nx-card);
-    border: 1px solid var(--nx-border);
-    border-radius: 14px;
-    box-shadow: 0 2px 8px rgba(16, 24, 40, 0.035);
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,0.97),
+            rgba(248,250,255,0.96)
+        ) !important;
+
+    border: 1px solid rgba(148,163,184,0.22) !important;
+
+    border-radius: 17px !important;
+
+    box-shadow:
+        0 7px 28px rgba(30,64,175,0.055),
+        inset 0 1px 0 rgba(255,255,255,0.85);
+
+    transition:
+        transform 0.18s ease,
+        box-shadow 0.18s ease,
+        border-color 0.18s ease;
 }
 
-/* File uploader */
+
+/* ==========================================================
+   CONTAINER HOVER EFFECT
+   ========================================================== */
+
+[data-testid="stVerticalBlockBorderWrapper"]:hover {
+
+    border-color:
+        rgba(79,70,229,0.25) !important;
+
+    box-shadow:
+        0 12px 36px rgba(79,70,229,0.10),
+        inset 0 1px 0 rgba(255,255,255,0.95);
+}
+
+
+/* ==========================================================
+   FILE UPLOADER — PREMIUM GLOW
+   ========================================================== */
 
 [data-testid="stFileUploader"] {
-    background: var(--nx-soft-blue);
-    border: 1px dashed #93b4f7;
-    border-radius: 12px;
-    padding: 0.3rem;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(239,246,255,0.95),
+            rgba(245,243,255,0.95)
+        ) !important;
+
+    border:
+        1.5px dashed rgba(79,70,229,0.38) !important;
+
+    border-radius: 15px !important;
+
+    padding: 0.45rem !important;
+
+    box-shadow:
+        0 0 0 1px rgba(59,130,246,0.04),
+        0 8px 25px rgba(79,70,229,0.06);
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
 }
 
-/* Buttons */
 
-.stButton > button,
-.stDownloadButton > button {
-    border-radius: 9px;
-    min-height: 38px;
-    font-weight: 650;
-    border: 1px solid #d0d5dd;
-    transition: all 0.15s ease;
-}
+/* uploader hover */
 
-.stButton > button:hover,
-.stDownloadButton > button:hover {
-    border-color: var(--nx-blue);
+[data-testid="stFileUploader"]:hover {
+
+    border-color:
+        rgba(79,70,229,0.72) !important;
+
+    box-shadow:
+        0 0 25px rgba(79,70,229,0.12),
+        0 10px 30px rgba(37,99,235,0.08);
+
     transform: translateY(-1px);
 }
 
-/* Primary button */
+
+/* ==========================================================
+   BUTTONS
+   ========================================================== */
+
+.stButton > button,
+.stDownloadButton > button {
+
+    border-radius: 10px !important;
+
+    min-height: 39px !important;
+
+    font-weight: 700 !important;
+
+    border:
+        1px solid rgba(148,163,184,0.35) !important;
+
+    background:
+        rgba(255,255,255,0.88) !important;
+
+    box-shadow:
+        0 3px 12px rgba(30,64,175,0.04);
+
+    transition:
+        transform 0.15s ease,
+        box-shadow 0.15s ease,
+        border-color 0.15s ease;
+}
+
+
+.stButton > button:hover,
+.stDownloadButton > button:hover {
+
+    transform: translateY(-1px);
+
+    border-color:
+        rgba(79,70,229,0.45) !important;
+
+    box-shadow:
+        0 7px 20px rgba(79,70,229,0.10);
+}
+
+
+/* ==========================================================
+   PRIMARY BUTTON — BLUE / INDIGO GRADIENT
+   ========================================================== */
 
 .stButton > button[kind="primary"] {
-    background: linear-gradient(
-        90deg,
-        var(--nx-blue),
-        var(--nx-indigo)
-    );
-    border-color: var(--nx-blue);
-    color: white;
+
+    background:
+        linear-gradient(
+            100deg,
+            #2563eb,
+            #4f46e5,
+            #7c3aed
+        ) !important;
+
+    color: white !important;
+
+    border: none !important;
+
+    box-shadow:
+        0 8px 22px rgba(79,70,229,0.24);
 }
+
 
 .stButton > button[kind="primary"]:hover {
-    background: linear-gradient(
-        90deg,
-        var(--nx-blue-dark),
-        var(--nx-purple)
-    );
-    color: white;
+
+    background:
+        linear-gradient(
+            100deg,
+            #1d4ed8,
+            #4338ca,
+            #6d28d9
+        ) !important;
+
+    box-shadow:
+        0 11px 28px rgba(79,70,229,0.30);
+
+    transform: translateY(-2px);
 }
 
-/* Radio navigation */
+
+/* ==========================================================
+   RADIO NAVIGATION
+   ========================================================== */
 
 div[role="radiogroup"] {
-    gap: 0.35rem;
+
+    gap: 0.35rem !important;
+
+    padding: 0.18rem !important;
+
+    background:
+        rgba(255,255,255,0.70);
+
+    border:
+        1px solid rgba(148,163,184,0.18);
+
+    border-radius: 12px;
+
+    width: fit-content;
 }
+
 
 div[role="radiogroup"] label {
-    border-radius: 9px;
-    padding: 0.35rem 0.8rem;
+
+    border-radius: 9px !important;
+
+    padding:
+        0.30rem
+        0.85rem !important;
+
+    font-weight: 650 !important;
 }
 
-/* Chat messages */
+
+/* ==========================================================
+   CHAT
+   ========================================================== */
 
 [data-testid="stChatMessage"] {
-    border-radius: 12px;
+
+    border-radius: 13px !important;
+
+    margin-bottom: 0.45rem !important;
 }
 
-/* Info / success boxes */
+
+/* ==========================================================
+   CHAT INPUT
+   ========================================================== */
+
+[data-testid="stChatInput"] {
+
+    border-radius: 13px !important;
+
+    box-shadow:
+        0 7px 25px rgba(79,70,229,0.10) !important;
+}
+
+
+/* ==========================================================
+   INFO / SUCCESS / WARNING
+   ========================================================== */
 
 [data-testid="stAlert"] {
-    border-radius: 10px;
+
+    border-radius: 11px !important;
+
+    border-width: 1px !important;
 }
 
-/* Dataframe */
+
+/* ==========================================================
+   DATAFRAME
+   ========================================================== */
 
 [data-testid="stDataFrame"] {
-    border-radius: 10px;
+
+    border-radius: 11px !important;
+
+    overflow: hidden !important;
+
+    box-shadow:
+        0 5px 18px rgba(30,64,175,0.05);
 }
 
-/* Mobile */
+
+/* ==========================================================
+   CAPTIONS
+   ========================================================== */
+
+[data-testid="stCaptionContainer"] {
+
+    color: var(--nx-muted) !important;
+}
+
+
+/* ==========================================================
+   MOBILE
+   ========================================================== */
 
 @media (max-width: 900px) {
 
     .block-container {
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
-        padding-top: 0.25rem !important;
+
+        padding-left: 0.8rem !important;
+        padding-right: 0.8rem !important;
+
+        padding-top: 0.1rem !important;
+    }
+
+    h1 {
+        letter-spacing: -1px !important;
     }
 
 }
@@ -264,6 +508,7 @@ for key, value in DEFAULTS.items():
 def get_client():
 
     try:
+
         api_key = st.secrets["GEMINI_API_KEY"]
 
     except Exception:
@@ -274,7 +519,9 @@ def get_client():
 
         st.stop()
 
-    return genai.Client(api_key=api_key)
+    return genai.Client(
+        api_key=api_key
+    )
 
 
 client = get_client()
@@ -364,7 +611,7 @@ def make_document_part(file):
 
 
 # ============================================================
-# RESET WORKSPACE
+# RESET
 # ============================================================
 
 def reset_workspace():
@@ -381,7 +628,7 @@ def reset_workspace():
 
 
 # ============================================================
-# DOCUMENT ANALYSIS
+# ANALYZE DOCUMENT
 # ============================================================
 
 def analyze_document(file):
@@ -395,7 +642,7 @@ Read and understand the uploaded document carefully.
 
 Create a useful, accurate and easy-to-read document overview.
 
-Return the following sections:
+Return:
 
 ## Executive Summary
 
@@ -444,11 +691,12 @@ Rules:
 - Preserve numbers accurately.
 - If something is unclear, say so.
 - Keep the result professional.
-- Make the response easy to scan.
+- Make the result easy to scan.
 """
 
     return client.interactions.create(
         model=MODEL,
+
         input=[
             {
                 "type": "text",
@@ -456,7 +704,9 @@ Rules:
             },
             document_part,
         ],
+
         store=True,
+
         generation_config={
             "thinking_level": "minimal"
         },
@@ -475,7 +725,9 @@ def process_document(file):
             "Nexora is understanding your document..."
         ):
 
-            interaction = analyze_document(file)
+            interaction = analyze_document(
+                file
+            )
 
         interaction_id = getattr(
             interaction,
@@ -565,7 +817,9 @@ def process_document(file):
                 "Please try the Analyze Document button again."
             )
 
-        with st.expander("Technical details"):
+        with st.expander(
+            "Technical details"
+        ):
 
             st.code(text)
 
@@ -573,21 +827,30 @@ def process_document(file):
 
 
 # ============================================================
-# DOCUMENT CHAT
+# CHAT
 # ============================================================
 
-def ask_document(question, placeholder):
+def ask_document(
+    question,
+    placeholder
+):
 
     try:
 
         stream = client.interactions.create(
+
             model=MODEL,
+
             previous_interaction_id=(
                 st.session_state.interaction_id
             ),
+
             input=question,
+
             store=True,
+
             stream=True,
+
             generation_config={
                 "thinking_level": "minimal"
             },
@@ -659,7 +922,9 @@ def ask_document(question, placeholder):
             "Nexora could not answer the question."
         )
 
-        with st.expander("Technical details"):
+        with st.expander(
+            "Technical details"
+        ):
 
             st.code(str(error))
 
@@ -667,7 +932,7 @@ def ask_document(question, placeholder):
 
 
 # ============================================================
-# EXTRACT STRUCTURED DATA
+# EXTRACT DATA
 # ============================================================
 
 def extract_data():
@@ -677,7 +942,7 @@ Extract structured information from the document.
 
 Return ONLY valid JSON.
 
-Use exactly this structure:
+Use exactly:
 
 {
   "document_information": [
@@ -713,18 +978,25 @@ Rules:
         ):
 
             response = client.interactions.create(
+
                 model=MODEL,
+
                 previous_interaction_id=(
                     st.session_state.interaction_id
                 ),
+
                 input=prompt,
+
                 store=True,
+
                 generation_config={
                     "thinking_level": "minimal"
                 },
             )
 
-        st.session_state.interaction_id = response.id
+        st.session_state.interaction_id = (
+            response.id
+        )
 
         text = getattr(
             response,
@@ -776,7 +1048,9 @@ Rules:
             "Data extraction failed."
         )
 
-        with st.expander("Technical details"):
+        with st.expander(
+            "Technical details"
+        ):
 
             st.code(str(error))
 
@@ -815,12 +1089,17 @@ Use clear headings and bullet points.
         ):
 
             response = client.interactions.create(
+
                 model=MODEL,
+
                 previous_interaction_id=(
                     st.session_state.interaction_id
                 ),
+
                 input=prompt,
+
                 store=True,
+
                 generation_config={
                     "thinking_level": "minimal"
                 },
@@ -838,7 +1117,9 @@ Use clear headings and bullet points.
             )
         )
 
-        st.session_state.active_view = "Analyze"
+        st.session_state.active_view = (
+            "Analyze"
+        )
 
         st.rerun()
 
@@ -848,13 +1129,15 @@ Use clear headings and bullet points.
             "Deep analysis failed."
         )
 
-        with st.expander("Technical details"):
+        with st.expander(
+            "Technical details"
+        ):
 
             st.code(str(error))
 
 
 # ============================================================
-# EXCEL CREATION
+# EXCEL
 # ============================================================
 
 def create_excel():
@@ -872,6 +1155,15 @@ def create_excel():
     info_df = pd.DataFrame(info)
 
     items_df = pd.DataFrame(items)
+
+    output = io.BytesIO()
+
+    with pd.ExcelWriter(
+        output,
+        engine="openpyxl"
+    ):
+
+        pass
 
     output = io.BytesIO()
 
@@ -900,36 +1192,39 @@ def create_excel():
 
 
 # ============================================================
-# COMPACT TOP HEADER
+# NEXORA HEADER
 # ============================================================
 
-brand_column, status_column = st.columns(
+brand_col, status_col = st.columns(
     [5, 1],
     gap="small",
     vertical_alignment="center"
 )
 
-with brand_column:
+with brand_col:
 
-    st.title("✦ NEXORA")
+    st.title(
+        "✦ NEXORA"
+    )
 
     st.caption(
         "AI Document Workspace  ·  "
         "Understand  ·  Analyze  ·  Extract  ·  Ask"
     )
 
-with status_column:
+
+with status_col:
 
     if st.session_state.document_ready:
 
         st.success(
-            "Document Ready"
+            "● Ready"
         )
 
     else:
 
         st.info(
-            "AI Workspace"
+            "✦ AI Workspace"
         )
 
 
@@ -937,26 +1232,23 @@ st.divider()
 
 
 # ============================================================
-# HOME PAGE
+# HOME
 # ============================================================
 
 if not st.session_state.document_ready:
 
-    # --------------------------------------------------------
-    # COMPACT TOP AREA
-    # --------------------------------------------------------
-
-    hero_column, capability_column = st.columns(
-        [1.7, 1],
+    hero_col, capability_col = st.columns(
+        [1.65, 1],
         gap="small",
         vertical_alignment="top"
     )
 
+
     # ========================================================
-    # LEFT — HERO + UPLOAD
+    # HERO / UPLOAD
     # ========================================================
 
-    with hero_column:
+    with hero_col:
 
         st.header(
             "Talk to your documents."
@@ -967,9 +1259,8 @@ if not st.session_state.document_ready:
         )
 
         st.caption(
-            "Upload a document and let Nexora turn it "
-            "into useful information you can understand, "
-            "search and question."
+            "Upload a document and let Nexora turn "
+            "complex information into clear, useful answers."
         )
 
         st.write("")
@@ -979,21 +1270,23 @@ if not st.session_state.document_ready:
         ):
 
             st.subheader(
-                "📤 Upload your document"
+                "☁️  Upload your document"
             )
 
             st.caption(
-                "PDF, PNG, JPG or JPEG  ·  Maximum 50 MB"
+                "Start your Nexora workspace"
             )
 
             uploaded_file = st.file_uploader(
                 "Choose a document",
+
                 type=[
                     "pdf",
                     "png",
                     "jpg",
                     "jpeg"
                 ],
+
                 label_visibility="collapsed"
             )
 
@@ -1005,16 +1298,18 @@ if not st.session_state.document_ready:
 
                 if not valid:
 
-                    st.error(message)
+                    st.error(
+                        message
+                    )
 
                 else:
 
                     st.success(
-                        f"✓ Ready: {uploaded_file.name}"
+                        f"✓ {uploaded_file.name} is ready"
                     )
 
                     if st.button(
-                        "✨ Analyze Document",
+                        "✨  Analyze Document",
                         type="primary",
                         use_container_width=True
                     ):
@@ -1028,22 +1323,23 @@ if not st.session_state.document_ready:
             else:
 
                 st.caption(
-                    "Drag and drop your document here "
-                    "or choose a file to begin."
+                    "PDF, PNG, JPG or JPEG  ·  "
+                    "Maximum 50 MB"
                 )
 
+
     # ========================================================
-    # RIGHT — CAPABILITIES
+    # CAPABILITIES
     # ========================================================
 
-    with capability_column:
+    with capability_col:
 
         with st.container(
             border=True
         ):
 
             st.subheader(
-                "✨ Nexora capabilities"
+                "✦ What Nexora can do"
             )
 
             st.write(
@@ -1059,7 +1355,7 @@ if not st.session_state.document_ready:
             )
 
             st.caption(
-                "Ask questions and get document-based answers."
+                "Ask questions directly about your document."
             )
 
             st.write(
@@ -1067,7 +1363,7 @@ if not st.session_state.document_ready:
             )
 
             st.caption(
-                "Convert document information into structured data."
+                "Turn document information into structured data."
             )
 
             st.write(
@@ -1078,8 +1374,9 @@ if not st.session_state.document_ready:
                 "Find risks, missing information and inconsistencies."
             )
 
+
     # ========================================================
-    # COMPACT VALUE STRIP
+    # FEATURE STRIP
     # ========================================================
 
     st.write("")
@@ -1089,9 +1386,12 @@ if not st.session_state.document_ready:
         gap="small"
     )
 
+
     with feature_1:
 
-        with st.container(border=True):
+        with st.container(
+            border=True
+        ):
 
             st.write("⚡")
 
@@ -1103,9 +1403,12 @@ if not st.session_state.document_ready:
                 "Get the important points quickly."
             )
 
+
     with feature_2:
 
-        with st.container(border=True):
+        with st.container(
+            border=True
+        ):
 
             st.write("🎯")
 
@@ -1117,9 +1420,12 @@ if not st.session_state.document_ready:
                 "Ask instead of searching."
             )
 
+
     with feature_3:
 
-        with st.container(border=True):
+        with st.container(
+            border=True
+        ):
 
             st.write("📋")
 
@@ -1128,12 +1434,15 @@ if not st.session_state.document_ready:
             )
 
             st.caption(
-                "Extract fields and line items."
+                "Extract useful fields and information."
             )
+
 
     with feature_4:
 
-        with st.container(border=True):
+        with st.container(
+            border=True
+        ):
 
             st.write("🔎")
 
@@ -1142,19 +1451,19 @@ if not st.session_state.document_ready:
             )
 
             st.caption(
-                "Find important details and risks."
+                "Find details that need attention."
             )
 
 
 # ============================================================
-# DOCUMENT WORKSPACE
+# WORKSPACE
 # ============================================================
 
 else:
 
-    # --------------------------------------------------------
+    # ========================================================
     # DOCUMENT HEADER
-    # --------------------------------------------------------
+    # ========================================================
 
     document_header, new_document = st.columns(
         [5, 1],
@@ -1172,6 +1481,7 @@ else:
             "● Document analyzed and ready"
         )
 
+
     with new_document:
 
         if st.button(
@@ -1183,17 +1493,21 @@ else:
 
             st.rerun()
 
-    # --------------------------------------------------------
+
+    # ========================================================
     # TOOL NAVIGATION
-    # --------------------------------------------------------
+    # ========================================================
 
     selected = st.radio(
+
         "Document tools",
+
         [
             "Summary",
             "Extract Data",
             "Analyze"
         ],
+
         index=[
             "Summary",
             "Extract Data",
@@ -1201,9 +1515,12 @@ else:
         ].index(
             st.session_state.active_view
         ),
+
         horizontal=True,
+
         label_visibility="collapsed"
     )
+
 
     if selected != st.session_state.active_view:
 
@@ -1211,11 +1528,13 @@ else:
 
         st.rerun()
 
+
     st.divider()
 
-    # --------------------------------------------------------
-    # MAIN WORKSPACE
-    # --------------------------------------------------------
+
+    # ========================================================
+    # MAIN TWO-COLUMN WORKSPACE
+    # ========================================================
 
     document_column, chat_column = st.columns(
         [1.65, 1],
@@ -1223,8 +1542,9 @@ else:
         vertical_alignment="top"
     )
 
+
     # ========================================================
-    # DOCUMENT PANEL
+    # DOCUMENT COLUMN
     # ========================================================
 
     with document_column:
@@ -1244,6 +1564,11 @@ else:
 
             st.divider()
 
+
+            # ------------------------------------------------
+            # PDF
+            # ------------------------------------------------
+
             if (
                 st.session_state.document_type
                 == "application/pdf"
@@ -1253,7 +1578,7 @@ else:
 
                     st.pdf(
                         st.session_state.document_bytes,
-                        height=430
+                        height=415
                     )
 
                 except Exception:
@@ -1263,12 +1588,21 @@ else:
                         "The document is still available to Nexora."
                     )
 
+
+            # ------------------------------------------------
+            # IMAGE
+            # ------------------------------------------------
+
             elif (
+
                 st.session_state.document_type
+
                 and
+
                 st.session_state.document_type.startswith(
                     "image/"
                 )
+
             ):
 
                 st.image(
@@ -1276,11 +1610,13 @@ else:
                     use_container_width=True
                 )
 
+
             st.divider()
 
-            # ------------------------------------------------
+
+            # =================================================
             # SUMMARY
-            # ------------------------------------------------
+            # =================================================
 
             if (
                 st.session_state.active_view
@@ -1297,9 +1633,10 @@ else:
                         st.session_state.summary
                     )
 
-            # ------------------------------------------------
-            # EXTRACTION
-            # ------------------------------------------------
+
+            # =================================================
+            # EXTRACT DATA
+            # =================================================
 
             elif (
                 st.session_state.active_view
@@ -1311,11 +1648,15 @@ else:
                 )
 
                 if (
+
                     st.session_state.extracted_information
                     is None
+
                     and
+
                     st.session_state.extracted_line_items
                     is None
+
                 ):
 
                     st.info(
@@ -1324,12 +1665,13 @@ else:
                     )
 
                     if st.button(
-                        "📊 Extract Data",
+                        "📊  Extract Data",
                         type="primary",
                         use_container_width=True
                     ):
 
                         extract_data()
+
 
                 else:
 
@@ -1344,6 +1686,7 @@ else:
                         .extracted_line_items
                         or []
                     )
+
 
                     if info:
 
@@ -1361,6 +1704,7 @@ else:
                             hide_index=True
                         )
 
+
                     if items:
 
                         st.write(
@@ -1377,19 +1721,24 @@ else:
                             hide_index=True
                         )
 
+
                     if info or items:
 
                         st.download_button(
-                            "⬇️ Download Excel",
+                            "⬇️  Download Excel",
+
                             data=create_excel(),
+
                             file_name=(
                                 "nexora_extracted_data.xlsx"
                             ),
+
                             mime=(
                                 "application/"
                                 "vnd.openxmlformats-officedocument"
                                 ".spreadsheetml.sheet"
                             ),
+
                             use_container_width=True
                         )
 
@@ -1399,9 +1748,10 @@ else:
                             "No structured information was found."
                         )
 
-            # ------------------------------------------------
-            # ANALYSIS
-            # ------------------------------------------------
+
+            # =================================================
+            # DEEP ANALYSIS
+            # =================================================
 
             elif (
                 st.session_state.active_view
@@ -1421,12 +1771,13 @@ else:
                     )
 
                     if st.button(
-                        "🔍 Run Deep Analysis",
+                        "🔍  Run Deep Analysis",
                         type="primary",
                         use_container_width=True
                     ):
 
                         run_deep_analysis()
+
 
                 else:
 
@@ -1434,8 +1785,9 @@ else:
                         st.session_state.analysis_result
                     )
 
+
     # ========================================================
-    # AI CHAT PANEL
+    # CHAT COLUMN
     # ========================================================
 
     with chat_column:
@@ -1449,8 +1801,9 @@ else:
             )
 
             st.caption(
-                "Ask questions about this document."
+                "Your intelligent assistant for this document."
             )
+
 
         with st.container(
             height=570,
@@ -1487,6 +1840,7 @@ else:
                     "• Summarize this in simple language."
                 )
 
+
             else:
 
                 for message in (
@@ -1501,10 +1855,16 @@ else:
                             message["content"]
                         )
 
+
+        # ====================================================
+        # CHAT INPUT
+        # ====================================================
+
         question = st.chat_input(
             "Ask anything about this document...",
             key="nexora_chat_input"
         )
+
 
         if question:
 
@@ -1515,11 +1875,19 @@ else:
                 }
             )
 
-            with st.chat_message("user"):
 
-                st.markdown(question)
+            with st.chat_message(
+                "user"
+            ):
 
-            with st.chat_message("assistant"):
+                st.markdown(
+                    question
+                )
+
+
+            with st.chat_message(
+                "assistant"
+            ):
 
                 placeholder = st.empty()
 
@@ -1527,6 +1895,7 @@ else:
                     question,
                     placeholder
                 )
+
 
             if answer:
 
@@ -1537,11 +1906,12 @@ else:
                     }
                 )
 
+
             st.rerun()
 
 
 # ============================================================
-# COMPACT FOOTER
+# FOOTER
 # ============================================================
 
 st.caption(
