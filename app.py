@@ -20,7 +20,7 @@ st.set_page_config(page_title="Nexora — AI Document Workspace", page_icon="✦
 st.markdown(r"""
 <style>
 :root{--blue:#2563eb;--indigo:#4f46e5;--violet:#7c3aed;--cyan:#0891b2;--green:#16a34a;--orange:#f97316;--pink:#ec4899;--ink:#252637;--muted:#687083}
-.stApp{background:radial-gradient(circle at 4% 0%,rgba(59,130,246,.23),transparent 24%),radial-gradient(circle at 96% 1%,rgba(236,72,153,.18),transparent 24%),radial-gradient(circle at 82% 42%,rgba(124,58,237,.13),transparent 27%),radial-gradient(circle at 15% 88%,rgba(6,182,212,.14),transparent 28%),linear-gradient(135deg,#f7fbff 0%,#f8f5ff 48%,#f3fbff 100%);min-height:100vh}
+.stApp{background:radial-gradient(circle at 4% 0%,rgba(59,130,246,.23),transparent 24%),radial-gradient(circle at 96% 1%,rgba(236,72,153,.18),transparent 24%),radial-gradient(circle at 82% 42%,rgba(124,58,237,.13),transparent 27%),radial-gradient(circle at 15% 88%,rgba(6,182,212,.14),transparent 28%),linear-gradient(135deg,#f1f8ff 0%,#fbf4ff 46%,#eefbff 100%);min-height:100vh}
 .block-container{max-width:1500px!important;padding-top:.15rem!important;padding-bottom:.6rem!important;padding-left:1.1rem!important;padding-right:1.1rem!important}
 [data-testid="stHeader"]{background:transparent!important;height:0!important}[data-testid="stToolbar"]{visibility:hidden;height:0}
 [data-testid="stVerticalBlock"]{gap:.22rem}.element-container{margin-bottom:.03rem!important}
@@ -61,7 +61,6 @@ def get_client():
         st.stop()
     return genai.Client(api_key=api_key)
 
-client = get_client()
 
 def auth_configured():
     try:
@@ -82,6 +81,89 @@ def display_name():
         return str(name or (str(email).split("@")[0] if email else "User"))
     except Exception:
         return "User"
+
+def show_login_screen():
+    st.write("")
+    st.write("")
+
+    left, center, right = st.columns([1, 1.15, 1], gap="small")
+
+    with center:
+        with st.container(border=True):
+            st.markdown(
+                '<div style="font-size:2.35rem;font-weight:950;'
+                'letter-spacing:-2px;">'
+                '<span style="color:#4f46e5;">✦</span> NEXORA'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+
+            st.caption("AI DOCUMENT INTELLIGENCE")
+            st.write("")
+
+            st.markdown("## Welcome to **Nexora**")
+            st.caption(
+                "Sign in to access your personal AI document workspace."
+            )
+
+            st.write("")
+
+            if auth_configured():
+                st.button(
+                    "G  Continue with Google",
+                    type="primary",
+                    use_container_width=True,
+                    on_click=st.login,
+                )
+            else:
+                st.error("Google Login is not configured yet.")
+                st.caption(
+                    "The Nexora app is now login-protected. "
+                    "Complete the one-time Google setup below."
+                )
+
+                st.code(
+                    '[auth]\n'
+                    'redirect_uri = "https://nexora-new-program.streamlit.app/oauth2callback"\n'
+                    'cookie_secret = "REPLACE_WITH_A_LONG_RANDOM_SECRET"\n'
+                    'client_id = "YOUR_GOOGLE_CLIENT_ID"\n'
+                    'client_secret = "YOUR_GOOGLE_CLIENT_SECRET"\n'
+                    'server_metadata_url = "https://accounts.google.com/.well-known/openid-configuration"',
+                    language="toml",
+                )
+
+                st.caption(
+                    "Never put these credentials in app.py or GitHub."
+                )
+
+            st.write("")
+
+            c1, c2, c3 = st.columns(3, gap="small")
+
+            with c1:
+                st.markdown("**🧠 AI**")
+                st.caption("Smart summaries")
+
+            with c2:
+                st.markdown("**💬 Chat**")
+                st.caption("Ask your document")
+
+            with c3:
+                st.markdown("**📊 Extract**")
+                st.caption("Structured data")
+
+    st.stop()
+
+
+# Mandatory authentication gate.
+# Anonymous visitors cannot reach the Nexora workspace.
+if not auth_configured() or not logged_in():
+    show_login_screen()
+
+
+# Gemini is initialized only after successful authentication.
+client = get_client()
+
 
 def get_mime_type(file):
     if file.type:
@@ -240,17 +322,12 @@ with tools: st.caption("AI Tools")
 with docs: st.caption("My Documents")
 with pricing: st.caption("Pricing")
 with account:
-    if logged_in():
-        a, b = st.columns([2.4, 1], gap="small")
-        with a: st.caption(f"● {display_name()}")
-        with b:
-            if st.button("↪", help="Log out"): st.logout()
-    else:
-        if st.button("Login", use_container_width=True):
-            if auth_configured():
-                st.login()
-            else:
-                st.info("Login UI is ready. Add the OIDC settings shown below to enable real login.")
+    a, b = st.columns([2.4, 1], gap="small")
+    with a:
+        st.caption(f"● {display_name()}")
+    with b:
+        if st.button("↪", help="Log out"):
+            st.logout()
 st.divider()
 
 # ============================================================
