@@ -56,6 +56,9 @@ DEFAULTS = {
     "messages": [], "active_view": "Summary", "extracted_information": None,
     "extracted_line_items": None, "analysis_result": None,
     "pricing_open": False,
+    "resume_analysis": None, "resume_file_bytes": None, "resume_file_name": None, "resume_file_type": None,
+    "resume_target_role": "", "improved_resume_bytes": None, "improved_resume_name": None,
+    "resume_fix_paid_demo": False,
 }
 for key, value in DEFAULTS.items():
     if key not in st.session_state:
@@ -375,6 +378,219 @@ def docx_bytes(title, subtitle, sections, metadata=None, form=False):
     output = io.BytesIO()
     doc.save(output)
     return output.getvalue()
+
+
+def _resume_clean_text(value):
+    if value is None:
+        return ""
+    text = str(value).strip()
+    text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.I)
+    text = re.sub(r"\s*```$", "", text)
+    return text.strip()
+
+
+def _resume_json_from_ai(text):
+    """Extract JSON from the model while tolerating a fenced JSON response."""
+    cleaned = _resume_clean_text(text)
+    try:
+        return json.loads(cleaned)
+    except Exception:
+        match = re.search(r"\{.*\}", cleaned, flags=re.S)
+        if match:
+            try:
+                return json.loads(match.group(0))
+            except Exception:
+                return None
+    return None
+
+
+def _docx_add_resume_heading(doc, text):
+    p = doc.add_paragraph()
+    p.paragraph_format.space_before = Pt(9)
+    p.paragraph_format.space_after = Pt(3)
+    r = p.add_run(str(text).upper())
+    r.bold = True
+    r.font.name = "Aptos Display"
+    r.font.size = Pt(11)
+    r.font.color.rgb = RGBColor(37, 99, 235)
+    line = doc.add_paragraph()
+    line.paragraph_format.space_after = Pt(4)
+    rr = line.add_run("────────────────────────────────────────────────────────")
+    rr.font.size = Pt(4.5)
+    rr.font.color.rgb = RGBColor(191, 219, 254)
+
+
+def _docx_add_resume_bullets(doc, values):
+    if not isinstance(values, list):
+        return
+    for value in values:
+        if not str(value).strip():
+            continue
+        p = doc.add_paragraph(style="List Bullet")
+        p.paragraph_format.space_after = Pt(2.5)
+        p.paragraph_format.left_indent = Inches(0.2)
+        p.paragraph_format.first_line_indent = Inches(-0.12)
+        r = p.add_run(str(value).strip())
+        r.font.name = "Aptos"
+        r.font.size = Pt(9.5)
+        r.font.color.rgb = RGBColor(45, 55, 72)
+
+
+def _docx_add_resume_entries(doc, entries):
+    if not isinstance(entries, list):
+        return
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        title = str(entry.get("title", "")).strip()
+        organization = str(entry.get("organization", "")).strip()
+        dates = str(entry.get("dates", "")).strip()
+        location = str(entry.get("location", "")).strip()
+        if title:
+            p = doc.add_paragraph()
+            p.paragraph_format.space_before = Pt(4)
+            p.paragraph_format.space_after = Pt(1)
+            r = p.add_run(title)
+            r.bold = True; r.font.name = "Aptos Display"; r.font.size = Pt(10.5); r.font.color.rgb = RGBColor(37, 45, 63)
+            meta = " • ".join([x for x in [organization, location, dates] if x])
+            if meta:
+                r2 = p.add_run("  " + meta)
+                r2.italic = True; r2.font.name = "Aptos"; r2.font.size = Pt(8.8); r2.font.color.rgb = RGBColor(91, 105, 125)
+        _docx_add_resume_bullets(doc, entry.get("bullets", []))
+
+
+def professional_resume_docx(data):
+    """Build a clean ATS-friendly resume without Nexora branding in the file."""
+    doc = Document()
+    section = doc.sections[0]
+    section.top_margin = Inches(0.55)
+    section.bottom_margin = Inches(0.55)
+    section.left_margin = Inches(0.65)
+    section.right_margin = Inches(0.65)
+    _style_document(doc)
+
+    name = str(data.get("name", "PROFESSIONAL RESUME")).strip() or "PROFESSIONAL RESUME"
+    role = str(data.get("target_title", "")).strip()
+    contact = [str(data.get(k, "")).strip() for k in ["phone", "email", "location", "linkedin"]]
+    contact = [x for x in contact if x]
+
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.paragraph_format.space_after = Pt(1)
+    r = p.add_run(name)
+    r.bold = True; r.font.name = "Aptos Display"; r.font.size = Pt(21); r.font.color.rgb = RGBColor(23, 59, 108)
+    if role:
+        p = doc.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.CENTER; p.paragraph_format.space_after = Pt(2)
+        r = p.add_run(role); r.bold=True; r.font.name="Aptos"; r.font.size=Pt(11); r.font.color.rgb=RGBColor(37,99,235)
+    if contact:
+        p = doc.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.CENTER; p.paragraph_format.space_after = Pt(6)
+        r = p.add_run("  |  ".join(contact)); r.font.name="Aptos"; r.font.size=Pt(8.5); r.font.color.rgb=RGBColor(91,105,125)
+
+    summary = str(data.get("summary", "")).strip()
+    if summary:
+        _docx_add_resume_heading(doc, "Professional Summary")
+        p = doc.add_paragraph(summary); p.paragraph_format.space_after = Pt(3)
+        for r in p.runs: r.font.name="Aptos"; r.font.size=Pt(9.5); r.font.color.rgb=RGBColor(45,55,72)
+
+    skills = data.get("skills", [])
+    if isinstance(skills, list) and skills:
+        _docx_add_resume_heading(doc, "Core Skills")
+        p = doc.add_paragraph(); p.paragraph_format.space_after = Pt(3)
+        r = p.add_run("  •  ".join([str(x).strip() for x in skills if str(x).strip()]))
+        r.font.name="Aptos"; r.font.size=Pt(9.2); r.font.color.rgb=RGBColor(45,55,72)
+
+    if data.get("experience"):
+        _docx_add_resume_heading(doc, "Professional Experience")
+        _docx_add_resume_entries(doc, data.get("experience"))
+    if data.get("projects"):
+        _docx_add_resume_heading(doc, "Selected Projects")
+        _docx_add_resume_entries(doc, data.get("projects"))
+    if data.get("education"):
+        _docx_add_resume_heading(doc, "Education")
+        _docx_add_resume_entries(doc, data.get("education"))
+    if data.get("certifications"):
+        _docx_add_resume_heading(doc, "Certifications")
+        _docx_add_resume_bullets(doc, data.get("certifications"))
+    if data.get("achievements"):
+        _docx_add_resume_heading(doc, "Achievements")
+        _docx_add_resume_bullets(doc, data.get("achievements"))
+    if data.get("additional"):
+        _docx_add_resume_heading(doc, "Additional Information")
+        _docx_add_resume_bullets(doc, data.get("additional"))
+
+    # Neutral resume footer; deliberately no Nexora promotional text.
+    footer = section.footer
+    fp = footer.paragraphs[0]
+    fp.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    fr = fp.add_run("Professional Resume  •  Candidate-provided information only")
+    fr.font.name="Aptos"; fr.font.size=Pt(7.5); fr.font.color.rgb=RGBColor(120,130,145)
+
+    output = io.BytesIO(); doc.save(output); return output.getvalue()
+
+
+def improve_resume(resume_file, target_role, analysis, resume_file_type="application/pdf", resume_file_name="resume.pdf"):
+    prompt = f"""
+You are Nexora's senior executive resume writer and ATS optimization specialist.
+Create a highly professional, ATS-friendly resume from the uploaded candidate resume.
+Target role: {target_role or 'Not specified'}
+
+Existing resume analysis:
+{analysis or 'Not available'}
+
+Your task is to FIX the weaknesses identified in the analysis while preserving factual accuracy.
+You may rewrite weak wording, improve structure, remove repetition, strengthen action language,
+make achievements clearer, improve keyword alignment, and create a concise professional summary.
+You MUST NOT invent employers, job titles, dates, degrees, certifications, technologies, metrics,
+responsibilities, awards or achievements. Never create a number that was not present in the source.
+If a useful field is absent, leave it empty rather than guessing.
+Keep the candidate's actual career history intact.
+
+Return ONLY valid JSON in this exact shape:
+{{
+  "name":"",
+  "target_title":"",
+  "phone":"",
+  "email":"",
+  "location":"",
+  "linkedin":"",
+  "summary":"",
+  "skills":[""],
+  "experience":[{{"title":"","organization":"","dates":"","location":"","bullets":[""]}}],
+  "projects":[{{"title":"","organization":"","dates":"","location":"","bullets":[""]}}],
+  "education":[{{"title":"","organization":"","dates":"","location":"","bullets":[""]}}],
+  "certifications":[""],
+  "achievements":[""],
+  "additional":[""]
+}}
+
+Use only information found in the uploaded resume. Make the finished resume concise, modern,
+professional and ATS-readable. Rewrite bullet points into strong action-oriented language when
+supported by the source. Remove decorative symbols, tables, columns, photos and unnecessary
+personal details. Do not include a cover letter. Do not mention Nexora in the resume content.
+"""
+    # Rebuild a lightweight upload object from session-persisted bytes so the
+    # improvement step still works after Streamlit reruns.
+    if isinstance(resume_file, (bytes, bytearray)):
+        upload = io.BytesIO(bytes(resume_file))
+        upload.name = resume_file_name or "resume.pdf"
+        upload.type = resume_file_type or "application/pdf"
+        resume_file = upload
+    raw = ai_text(prompt, resume_file)
+    if not raw:
+        return None, None
+    data = _resume_json_from_ai(raw)
+    if not isinstance(data, dict):
+        st.error("Nexora received an unexpected resume format. Please try again.")
+        return None, None
+    try:
+        output = professional_resume_docx(data)
+    except Exception as error:
+        st.error("The improved resume could not be formatted.")
+        with st.expander("Technical details"): st.code(str(error))
+        return None, None
+    safe_name = re.sub(r"[^A-Za-z0-9]+", "_", str(data.get("name") or "professional_resume")).strip("_") or "professional_resume"
+    return output, f"{safe_name}_professional_resume.docx"
+
 
 def reset_workspace():
     for key, value in DEFAULTS.items():
@@ -765,12 +981,12 @@ def render_hr_hub():
             st.subheader("📄 Resume Analyzer")
             st.write("Upload a resume and get an ATS-style review, strengths, gaps and targeted improvement suggestions.")
             resume = st.file_uploader("Upload resume", type=["pdf", "png", "jpg", "jpeg"], key="resume_upload")
-            target_role = st.text_input("Target role (optional)", placeholder="e.g. HR Manager, Talent Acquisition Specialist")
+            target_role = st.text_input("Target role (optional)", placeholder="e.g. HR Manager, Talent Acquisition Specialist", key="resume_target_role_input")
             if resume:
                 valid, msg = validate_ai_file(resume)
                 if not valid:
                     st.error(msg)
-                elif st.button("✦ Analyze Resume", type="primary", use_container_width=True):
+                elif st.button("✦ Analyze Resume", type="primary", use_container_width=True, key="analyze_resume_btn"):
                     prompt = f"""
     You are Nexora HR, an expert Indian recruitment and career assistant.
     Analyze the uploaded resume carefully. Target role: {target_role or 'Not specified'}.
@@ -792,7 +1008,56 @@ def render_hr_hub():
                     with st.spinner("Nexora is analyzing the resume..."):
                         result = ai_text(prompt, resume)
                     if result:
-                        st.markdown(result)
+                        st.session_state.resume_analysis = result
+                        st.session_state.resume_file_bytes = resume.getvalue()
+                        st.session_state.resume_file_name = resume.name
+                        st.session_state.resume_file_type = get_mime_type(resume)
+                        st.session_state.resume_target_role = target_role
+                        st.session_state.improved_resume_bytes = None
+                        st.session_state.improved_resume_name = None
+                        st.session_state.resume_fix_paid_demo = False
+
+            if st.session_state.resume_analysis:
+                st.divider()
+                st.subheader("📊 Resume Assessment")
+                st.markdown(st.session_state.resume_analysis)
+                st.divider()
+                st.subheader("🚀 Fix My Resume")
+                st.caption("Temporary payment simulation for visual testing. No real payment is processed.")
+                st.info("Nexora will rewrite the weak areas, improve ATS readability and create a polished, editable professional resume — without inventing candidate information.")
+                pay_col, status_col = st.columns([1, 1.6], vertical_alignment="center")
+                with pay_col:
+                    if st.button("💳 Pay ₹99 (Temporary)", type="primary", use_container_width=True, key="resume_pay_demo"):
+                        with st.spinner("Payment confirmed (demo). Nexora is rebuilding your resume..."):
+                            improved_bytes, improved_name = improve_resume(
+                                st.session_state.resume_file_bytes,
+                                st.session_state.resume_target_role,
+                                st.session_state.resume_analysis,
+                                st.session_state.resume_file_type,
+                                st.session_state.resume_file_name,
+                            )
+                        if improved_bytes:
+                            st.session_state.improved_resume_bytes = improved_bytes
+                            st.session_state.improved_resume_name = improved_name
+                            st.session_state.resume_fix_paid_demo = True
+                with status_col:
+                    if st.session_state.resume_fix_paid_demo:
+                        st.success("Demo payment successful — your improved resume is ready.")
+                    else:
+                        st.caption("One-time demo price only. The real payment gateway will be connected later.")
+
+                if st.session_state.improved_resume_bytes:
+                    st.markdown("### ✨ Your Professional Resume")
+                    st.success("The identified weaknesses have been addressed where the source resume provided enough factual information.")
+                    st.download_button(
+                        "⬇️ Download Professional Resume (Word)",
+                        data=st.session_state.improved_resume_bytes,
+                        file_name=st.session_state.improved_resume_name or "professional_resume.docx",
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        use_container_width=True,
+                        key="download_improved_resume",
+                    )
+                    st.caption("The downloaded resume contains no Nexora promotional branding.")
 
         elif tool == "Job Description Analyzer":
             st.subheader("🎯 Job Description Analyzer")
