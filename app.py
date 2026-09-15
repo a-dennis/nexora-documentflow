@@ -1,6 +1,7 @@
 import base64
 import io
 import json
+import logging
 import re
 
 import pandas as pd
@@ -15,6 +16,7 @@ from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 
 APP_NAME = "NEXORA"
+logger = logging.getLogger("nexora")
 MODEL = "gemini-3.5-flash-lite"
 MAX_PDF_SIZE = 50 * 1024 * 1024
 MAX_IMAGE_SIZE = 20 * 1024 * 1024
@@ -45,8 +47,8 @@ p,li{color:#51596a}hr{border-color:rgba(148,163,184,.22)!important;margin:.22rem
 div[role="radiogroup"]{gap:.3rem!important;padding:.18rem!important;background:rgba(255,255,255,.72);border:1px solid rgba(148,163,184,.2);border-radius:14px;box-shadow:0 5px 20px rgba(37,52,90,.035)}
 div[role="radiogroup"] label{border-radius:10px!important;padding:.3rem .78rem!important;font-weight:700!important}
 [data-testid="stChatMessage"]{border-radius:14px!important;margin-bottom:.42rem!important}[data-testid="stChatInput"]{border-radius:14px!important;box-shadow:0 8px 28px rgba(79,70,229,.12)!important}
-[data-testid="stDataFrame"]{border-radius:12px!important;overflow:hidden!important;box-shadow:0 6px 20px rgba(37,52,90,.055)}[data-testid="stAlert"]{border-radius:12px!important}
-.hr-hero{padding:.2rem 0 .35rem}.hr-badge{display:inline-block;padding:.28rem .7rem;border-radius:999px;background:rgba(255,255,255,.8);border:1px solid rgba(79,70,229,.16);font-weight:800;color:#4f46e5}.hr-card-title{font-weight:850}.hr-note{font-size:.86rem;color:#687083}.stButton>button[kind="secondary"]{font-weight:700!important}@media(max-width:900px){.block-container{padding-left:.7rem!important;padding-right:.7rem!important}h1{letter-spacing:-1.8px!important}}
+[data-testid="stDataFrame"]{border-radius:12px!important;overflow:hidden!important;box-shadow:0 6px 20px rgba(37,52,90,.055)}[data-testid="stAlert"]{border-radius:12px!important}.payment-cta{border:1px solid rgba(37,99,235,.22);background:linear-gradient(135deg,rgba(239,246,255,.98),rgba(250,245,255,.98));border-radius:16px;padding:.55rem .7rem;box-shadow:0 10px 28px rgba(79,70,229,.10)}.privacy-note{font-size:.76rem;color:#697386}.success-card{border:1px solid rgba(22,163,74,.20);background:rgba(240,253,244,.88);border-radius:14px;padding:.45rem .65rem}
+.hr-hero{padding:.2rem 0 .35rem}.hr-badge{display:inline-block;padding:.28rem .7rem;border-radius:999px;background:rgba(255,255,255,.8);border:1px solid rgba(79,70,229,.16);font-weight:800;color:#4f46e5}.hr-card-title{font-weight:850}.hr-note{font-size:.86rem;color:#687083}.stButton>button[kind="secondary"]{font-weight:700!important}@media(max-width:900px){.block-container{padding-left:.55rem!important;padding-right:.55rem!important}h1{letter-spacing:-1.8px!important;font-size:2rem!important}h2{font-size:1.45rem!important}h3{font-size:1.15rem!important}.stButton>button,.stDownloadButton>button{min-height:44px!important}.stTextInput input,.stTextArea textarea{font-size:16px!important}.payment-cta{padding:.45rem}.privacy-note{font-size:.72rem}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -182,8 +184,7 @@ def ai_text(prompt, file=None):
             st.warning("The uploaded file or AI request could not be processed. Please try a different PDF/image.")
         else:
             st.warning("Please try the analysis again.")
-        with st.expander("Technical details"):
-            st.code(text)
+        logger.exception("Nexora AI request failed: %s", text)
         return ""
 
 
@@ -590,7 +591,7 @@ personal details. Do not include a cover letter. Do not mention Nexora in the re
         output = professional_resume_docx(data)
     except Exception as error:
         st.error("The improved resume could not be formatted.")
-        with st.expander("Technical details"): st.code(str(error))
+        logger.exception("Nexora operation failed: %s", error)
         return None, None
     safe_name = re.sub(r"[^A-Za-z0-9]+", "_", str(data.get("name") or "professional_resume")).strip("_") or "professional_resume"
     return output, f"{safe_name}_professional_resume.docx"
@@ -682,7 +683,7 @@ Rules:
 - Keep it concise, confident and natural, approximately 350-500 words.
 - Use placeholders such as [Hiring Manager Name] only where information is genuinely unavailable.
 - Do not mention Nexora or AI.
-- Return ONLY valid JSON: {{"subject":"","salutation":"","body_paragraphs":[""],"closing":""}}
+- Return ONLY valid JSON: {{"candidate_name":"","subject":"","salutation":"","body_paragraphs":[""],"closing":""}}
 
 CANDIDATE RESUME:
 ---
@@ -707,7 +708,8 @@ JOB DESCRIPTION:
         if str(para).strip():
             p=doc.add_paragraph(str(para).strip()); p.paragraph_format.space_after=Pt(9)
     p=doc.add_paragraph(str(data.get("closing") or "Sincerely,")); p.paragraph_format.space_before=Pt(4); p.paragraph_format.space_after=Pt(22)
-    p.add_run("Candidate Name").bold=True
+    candidate_name = str(data.get("candidate_name") or "Candidate Name").strip()
+    p.add_run(candidate_name).bold=True
     fp=section.footer.paragraphs[0]; fp.alignment=WD_ALIGN_PARAGRAPH.CENTER; fr=fp.add_run("Professional cover letter  •  Prepared from user-provided information"); fr.font.name="Aptos"; fr.font.size=Pt(7.5); fr.font.color.rgb=RGBColor(120,130,145)
     out=io.BytesIO(); doc.save(out); return out.getvalue(), "tailored_cover_letter.docx"
 
@@ -783,7 +785,7 @@ def process_document(file):
         if "429" in text: st.warning("The Gemini request limit was reached. Please wait and try again.")
         elif "500" in text or "503" in text: st.warning("Gemini is temporarily busy. Please try again.")
         else: st.warning("Please try the Analyze Document button again.")
-        with st.expander("Technical details"): st.code(text)
+        logger.exception("Nexora operation failed: %s", text)
         return False
 
 def ask_document(question, placeholder):
@@ -805,7 +807,7 @@ def ask_document(question, placeholder):
         return answer
     except Exception as error:
         st.error("Nexora could not answer the question.")
-        with st.expander("Technical details"): st.code(str(error))
+        logger.exception("Nexora operation failed: %s", error)
         return ""
 
 def extract_data():
@@ -830,7 +832,7 @@ Rules: extract only information present; never invent; use empty strings when un
         st.rerun()
     except Exception as error:
         st.error("Data extraction failed.")
-        with st.expander("Technical details"): st.code(str(error))
+        logger.exception("Nexora operation failed: %s", error)
 
 def run_deep_analysis():
     prompt = """
@@ -845,7 +847,7 @@ Perform a detailed analysis of this document. Focus on important risks, missing 
         st.rerun()
     except Exception as error:
         st.error("Deep analysis failed.")
-        with st.expander("Technical details"): st.code(str(error))
+        logger.exception("Nexora operation failed: %s", error)
 
 def create_excel():
     info_df = pd.DataFrame(st.session_state.extracted_information or [])
@@ -1037,6 +1039,7 @@ def render_hr_hub():
     elif section == "AI Career Tools":
         st.markdown("## 🤖 AI Career Tools")
         st.caption("Free analysis gives the user value first. Paid-demo actions turn the identified work into a finished professional document.")
+        st.caption("🔒 Career files may contain personal or employment information. Upload only documents you are authorized to process.")
         tool=st.selectbox("Choose an AI career tool",["Resume Analyzer","Job Description Analyzer","Offer Letter Analyzer","Cover Letter Generator"])
 
         if tool == "Resume Analyzer":
@@ -1069,21 +1072,26 @@ Do not invent experience, qualifications or achievements. If information is miss
                     if result:
                         st.session_state.resume_analysis=result; st.session_state.resume_file_bytes=resume.getvalue(); st.session_state.resume_file_name=resume.name; st.session_state.resume_file_type=get_mime_type(resume); st.session_state.resume_target_role=target_role; st.session_state.improved_resume_bytes=None; st.session_state.improved_resume_name=None; st.session_state.resume_fix_paid_demo=False
             if st.session_state.resume_analysis:
+                # HIGH-VISIBILITY PAID ACTION: placed before the long report so the user sees the next step immediately.
+                with st.container(border=True):
+                    st.markdown("### 🚀 Fix my resume — one-time ₹99")
+                    pcol,scol=st.columns([1.0,2.0],vertical_alignment="center")
+                    with pcol:
+                        if st.button("💳 Pay ₹99 (Temporary)",type="primary",use_container_width=True,key="resume_pay_demo_top"):
+                            with st.spinner("Demo payment confirmed. Nexora is rebuilding your resume..."):
+                                b,n=improve_resume(st.session_state.resume_file_bytes,st.session_state.resume_target_role,st.session_state.resume_analysis,st.session_state.resume_file_type,st.session_state.resume_file_name)
+                            if b: st.session_state.improved_resume_bytes=b; st.session_state.improved_resume_name=n; st.session_state.resume_fix_paid_demo=True
+                    with scol:
+                        st.write("AI fixes the weaknesses identified in your analysis, improves ATS readability and creates a professional editable resume.")
+                        st.caption("Temporary demo checkout • No real payment is processed")
                 st.divider(); st.subheader("📊 Resume Assessment"); st.markdown(st.session_state.resume_analysis)
-                # PROMINENT paid action directly below the score/report.
-                st.markdown("### 🚀 Ready to improve your resume?")
-                pcol,scol=st.columns([1.05,1.65],vertical_alignment="center")
-                with pcol:
-                    if st.button("💳 Pay ₹99 (Temporary)",type="primary",use_container_width=True,key="resume_pay_demo_top"):
-                        with st.spinner("Demo payment confirmed. Nexora is rebuilding your resume..."):
-                            b,n=improve_resume(st.session_state.resume_file_bytes,st.session_state.resume_target_role,st.session_state.resume_analysis,st.session_state.resume_file_type,st.session_state.resume_file_name)
-                        if b: st.session_state.improved_resume_bytes=b; st.session_state.improved_resume_name=n; st.session_state.resume_fix_paid_demo=True
-                with scol:
-                    st.info("One-time demo checkout • AI rewrites supported weak areas • ATS-friendly Word resume • No real payment yet")
                 if st.session_state.improved_resume_bytes:
                     st.success("Demo payment successful — your improved professional resume is ready.")
-                    st.download_button("⬇️ Download Professional Resume (Word)",data=st.session_state.improved_resume_bytes,file_name=st.session_state.improved_resume_name or "professional_resume.docx",mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",use_container_width=True,key="download_improved_resume")
-                    st.caption("No Nexora promotional branding is inserted into the downloaded resume.")
+                    d1,d2=st.columns([1,1],gap="small")
+                    with d1:
+                        st.download_button("⬇️ Download Professional Resume (Word)",data=st.session_state.improved_resume_bytes,file_name=st.session_state.improved_resume_name or "professional_resume.docx",mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",use_container_width=True,key="download_improved_resume")
+                    with d2:
+                        st.caption("No Nexora promotional branding is inserted into the downloaded resume.")
 
         elif tool == "Job Description Analyzer":
             st.subheader("🎯 Job Description Analyzer")
@@ -1120,15 +1128,19 @@ Do not invent information.
                     with st.spinner("Nexora is reading the job description..."): result=ai_text(prompt)
                     if result: st.session_state.jd_text=jd; st.session_state.jd_analysis=result; st.session_state.improved_jd_bytes=None; st.session_state.improved_jd_name=None; st.session_state.jd_fix_paid_demo=False
             if st.session_state.jd_analysis:
+                with st.container(border=True):
+                    st.markdown("### ✨ Make this JD recruitment-ready — one-time ₹149")
+                    c1,c2=st.columns([1.0,2.0],vertical_alignment="center")
+                    with c1:
+                        if st.button("💳 Pay ₹149 (Temporary)",type="primary",use_container_width=True,key="jd_pay_demo"):
+                            with st.spinner("Demo payment confirmed. Nexora is professionally rewriting the JD..."):
+                                b,n=improve_job_description(st.session_state.jd_text,st.session_state.jd_analysis)
+                            if b:
+                                st.session_state.improved_jd_bytes=b; st.session_state.improved_jd_name=n; st.session_state.jd_fix_paid_demo=True
+                    with c2:
+                        st.write("AI improves structure, clarity, ATS readability and recruitment-ready wording without inventing facts.")
+                        st.caption("Temporary demo checkout • No real payment is processed")
                 st.divider(); st.subheader("📊 Job Description Assessment"); st.markdown(st.session_state.jd_analysis)
-                st.markdown("### ✨ Make this JD recruitment-ready")
-                c1,c2=st.columns([1.05,1.65],vertical_alignment="center")
-                with c1:
-                    if st.button("💳 Pay ₹149 (Temporary)",type="primary",use_container_width=True,key="jd_pay_demo"):
-                        with st.spinner("Demo payment confirmed. Nexora is professionally rewriting the JD..."):
-                            b,n=improve_job_description(st.session_state.jd_text,st.session_state.jd_analysis)
-                        if b: st.session_state.improved_jd_bytes=b; st.session_state.improved_jd_name=n; st.session_state.jd_fix_paid_demo=True
-                with c2: st.info("One-time demo checkout • clearer structure • ATS-friendly language • employer-ready Word document")
                 if st.session_state.improved_jd_bytes:
                     st.success("Professional job description is ready.")
                     st.download_button("⬇️ Download Professional JD (Word)",data=st.session_state.improved_jd_bytes,file_name=st.session_state.improved_jd_name or "professional_job_description.docx",mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",use_container_width=True,key="download_improved_jd")
@@ -1167,15 +1179,22 @@ Do not give legal advice or make unsupported legal conclusions. Do not invent in
                     if result:
                         st.session_state.offer_analysis=result; st.session_state.offer_file_bytes=offer.getvalue(); st.session_state.offer_file_name=offer.name; st.session_state.offer_file_type=get_mime_type(offer); st.session_state.improved_offer_bytes=None; st.session_state.improved_offer_name=None; st.session_state.offer_fix_paid_demo=False
             if st.session_state.offer_analysis:
+                with st.container(border=True):
+                    st.markdown("### 📘 Create my Offer Review Pack — one-time ₹99")
+                    c1,c2=st.columns([1.0,2.0],vertical_alignment="center")
+                    with c1:
+                        if st.button("💳 Pay ₹99 (Temporary)",type="primary",use_container_width=True,key="offer_pay_demo"):
+                            upload=io.BytesIO(st.session_state.offer_file_bytes)
+                            upload.name=st.session_state.offer_file_name or "offer.pdf"
+                            upload.type=st.session_state.offer_file_type or "application/pdf"
+                            with st.spinner("Demo payment confirmed. Nexora is preparing your review pack..."):
+                                b,n=create_offer_review_pack(upload,st.session_state.offer_analysis)
+                            if b:
+                                st.session_state.improved_offer_bytes=b; st.session_state.improved_offer_name=n; st.session_state.offer_fix_paid_demo=True
+                    with c2:
+                        st.write("A professional decision-support pack with key terms, attention items, questions for HR and before-accepting checks.")
+                        st.caption("Temporary demo checkout • No real payment is processed")
                 st.divider(); st.subheader("📊 Offer Letter Assessment"); st.markdown(st.session_state.offer_analysis)
-                st.markdown("### 📘 Create my Offer Review Pack")
-                c1,c2=st.columns([1.05,1.65],vertical_alignment="center")
-                with c1:
-                    if st.button("💳 Pay ₹99 (Temporary)",type="primary",use_container_width=True,key="offer_pay_demo"):
-                        upload=io.BytesIO(st.session_state.offer_file_bytes); upload.name=st.session_state.offer_file_name or "offer.pdf"; upload.type=st.session_state.offer_file_type or "application/pdf"
-                        with st.spinner("Demo payment confirmed. Nexora is preparing your review pack..."): b,n=create_offer_review_pack(upload,st.session_state.offer_analysis)
-                        if b: st.session_state.improved_offer_bytes=b; st.session_state.improved_offer_name=n; st.session_state.offer_fix_paid_demo=True
-                with c2: st.info("One-time demo checkout • key terms • attention items • questions for HR • professional Word pack")
                 if st.session_state.improved_offer_bytes:
                     st.success("Offer Review Pack is ready.")
                     st.download_button("⬇️ Download Offer Review Pack (Word)",data=st.session_state.improved_offer_bytes,file_name=st.session_state.improved_offer_name or "offer_letter_review_pack.docx",mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",use_container_width=True,key="download_offer_pack")
@@ -1197,15 +1216,19 @@ RESUME:\n{resume_text}\nJOB DESCRIPTION:\n{jd_text}
                     with st.spinner("Nexora is preparing your cover letter preview..."): result=ai_text(prompt)
                     if result: st.session_state.cover_letter=result; st.session_state.cover_letter_bytes=None; st.session_state.cover_letter_paid_demo=False
             if st.session_state.cover_letter:
+                with st.container(border=True):
+                    st.markdown("### 🚀 Create the polished final letter — one-time ₹79")
+                    c1,c2=st.columns([1.0,2.0],vertical_alignment="center")
+                    with c1:
+                        if st.button("💳 Pay ₹79 (Temporary)",type="primary",use_container_width=True,key="cover_pay_demo"):
+                            with st.spinner("Demo payment confirmed. Nexora is creating the final cover letter..."):
+                                b,n=generate_cover_letter(resume_text,jd_text,cover_role)
+                            if b:
+                                st.session_state.cover_letter_bytes=b; st.session_state.cover_letter_name=n; st.session_state.cover_letter_paid_demo=True
+                    with c2:
+                        st.write("AI tailors the final letter to the JD, improves wording and produces a polished editable Word document.")
+                        st.caption("Temporary demo checkout • No real payment is processed")
                 st.divider(); st.subheader("📝 Cover Letter Preview"); st.markdown(st.session_state.cover_letter)
-                st.markdown("### 🚀 Create the polished final letter")
-                c1,c2=st.columns([1.05,1.65],vertical_alignment="center")
-                with c1:
-                    if st.button("💳 Pay ₹79 (Temporary)",type="primary",use_container_width=True,key="cover_pay_demo"):
-                        with st.spinner("Demo payment confirmed. Nexora is creating the final cover letter..."):
-                            b,n=generate_cover_letter(resume_text,jd_text,cover_role)
-                        if b: st.session_state.cover_letter_bytes=b; st.session_state.cover_letter_name=n; st.session_state.cover_letter_paid_demo=True
-                with c2: st.info("One-time demo checkout • tailored wording • professional formatting • editable Word document")
                 if st.session_state.cover_letter_bytes:
                     st.success("Your polished cover letter is ready.")
                     st.download_button("⬇️ Download Cover Letter (Word)",data=st.session_state.cover_letter_bytes,file_name=st.session_state.cover_letter_name or "tailored_cover_letter.docx",mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",use_container_width=True,key="download_cover_letter")
@@ -1362,6 +1385,7 @@ if st.session_state.main_section == "HR":
 elif not st.session_state.document_ready:
     st.markdown("# Your documents. ✦ **Smarter with Nexora.**")
     st.write("Turn complex documents into clear summaries, structured data, intelligent analysis and instant answers.")
+    st.caption("🔒 Documents are processed by Nexora using Google Gemini AI. Avoid uploading information you are not authorized to share.")
 
     category = st.radio(
         "Nexora tools",
@@ -1480,13 +1504,13 @@ else:
 
     document_column, chat_column = st.columns([1.65, 1], gap="small", vertical_alignment="top")
     with document_column:
-        with st.container(border=True, height=760):
+        with st.container(border=True, height=640):
             st.subheader("📄 Document")
             st.caption(st.session_state.document_name)
             st.divider()
             if st.session_state.document_type == "application/pdf":
                 try:
-                    st.pdf(st.session_state.document_bytes, height=400)
+                    st.pdf(st.session_state.document_bytes, height=340)
                 except Exception:
                     st.info("PDF preview is unavailable. The document is still available to Nexora.")
             elif st.session_state.document_type and st.session_state.document_type.startswith("image/"):
@@ -1543,14 +1567,22 @@ else:
             if not st.session_state.messages:
                 st.info("Ask Nexora anything about this document.")
                 st.write("**Try asking:**")
-                for suggestion in [
+                suggestions = [
                     "What is this document about?",
                     "What are the most important points?",
                     "Are there any risks I should know about?",
                     "What are the important dates and amounts?",
                     "Summarize this in simple language.",
-                ]:
-                    st.caption(f"• {suggestion}")
+                ]
+                for idx, suggestion in enumerate(suggestions):
+                    if st.button(f"{suggestion}", use_container_width=True, key=f"chat_suggestion_{idx}"):
+                        st.session_state.messages.append({"role": "user", "content": suggestion})
+                        with st.chat_message("assistant"):
+                            placeholder = st.empty()
+                            answer = ask_document(suggestion, placeholder)
+                        if answer:
+                            st.session_state.messages.append({"role": "assistant", "content": answer})
+                        st.rerun()
             else:
                 for message in st.session_state.messages:
                     with st.chat_message(message["role"]):
