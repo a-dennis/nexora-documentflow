@@ -6,6 +6,7 @@ import re
 import pandas as pd
 import streamlit as st
 from google import genai
+from docx import Document
 
 APP_NAME = "NEXORA"
 MODEL = "gemini-3.5-flash-lite"
@@ -32,13 +33,13 @@ p,li{color:#51596a}hr{border-color:rgba(148,163,184,.22)!important;margin:.22rem
 [data-testid="stFileUploader"]:hover{border-color:rgba(79,70,229,.72)!important;transform:translateY(-2px);box-shadow:0 0 0 6px rgba(79,70,229,.045),0 18px 42px rgba(79,70,229,.12)}
 .stButton>button,.stDownloadButton>button{min-height:40px!important;border-radius:11px!important;font-weight:750!important;border:1px solid rgba(148,163,184,.28)!important;background:rgba(255,255,255,.93)!important;box-shadow:0 4px 14px rgba(37,52,90,.045);transition:all .16s ease}
 .stButton>button:hover,.stDownloadButton>button:hover{transform:translateY(-1px);border-color:rgba(79,70,229,.42)!important;box-shadow:0 8px 22px rgba(79,70,229,.10)}
-.stButton>button[kind="primary"]{color:white!important;border:none!important;background:linear-gradient(100deg,#2563eb,#4f46e5 48%,#8b5cf6)!important;box-shadow:0 9px 25px rgba(79,70,229,.24)}
+.stButton>button[kind="primary"],.stButton>button[kind="primary"] p,.stButton>button[kind="primary"] span,.stButton>button[kind="primary"] div{color:#fff!important}.stButton>button[kind="primary"]{color:#fff!important;border:none!important;background:linear-gradient(100deg,#2563eb,#4f46e5 48%,#8b5cf6)!important;box-shadow:0 9px 25px rgba(79,70,229,.24)}
 .stButton>button[kind="primary"]:hover{background:linear-gradient(100deg,#1d4ed8,#4338ca 48%,#7c3aed)!important;box-shadow:0 12px 30px rgba(79,70,229,.30)}
 div[role="radiogroup"]{gap:.3rem!important;padding:.18rem!important;background:rgba(255,255,255,.72);border:1px solid rgba(148,163,184,.2);border-radius:14px;box-shadow:0 5px 20px rgba(37,52,90,.035)}
 div[role="radiogroup"] label{border-radius:10px!important;padding:.3rem .78rem!important;font-weight:700!important}
 [data-testid="stChatMessage"]{border-radius:14px!important;margin-bottom:.42rem!important}[data-testid="stChatInput"]{border-radius:14px!important;box-shadow:0 8px 28px rgba(79,70,229,.12)!important}
 [data-testid="stDataFrame"]{border-radius:12px!important;overflow:hidden!important;box-shadow:0 6px 20px rgba(37,52,90,.055)}[data-testid="stAlert"]{border-radius:12px!important}
-@media(max-width:900px){.block-container{padding-left:.7rem!important;padding-right:.7rem!important}h1{letter-spacing:-1.8px!important}}
+.hr-hero{padding:.2rem 0 .35rem}.hr-badge{display:inline-block;padding:.28rem .7rem;border-radius:999px;background:rgba(255,255,255,.8);border:1px solid rgba(79,70,229,.16);font-weight:800;color:#4f46e5}.hr-card-title{font-weight:850}.hr-note{font-size:.86rem;color:#687083}.stButton>button[kind="secondary"]{font-weight:700!important}@media(max-width:900px){.block-container{padding-left:.7rem!important;padding-right:.7rem!important}h1{letter-spacing:-1.8px!important}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -110,6 +111,45 @@ def validate_file(file):
 
 def make_document_part(file):
     return {"type": "document" if get_mime_type(file) == "application/pdf" else "image", "data": base64.b64encode(file.getvalue()).decode("utf-8"), "mime_type": get_mime_type(file)}
+
+def money(value):
+    return f"₹{value:,.0f}"
+
+
+def safe_float(value):
+    try:
+        return float(value)
+    except Exception:
+        return 0.0
+
+
+def validate_ai_file(file):
+    if file is None:
+        return False, "Please upload a file."
+    if file.size > MAX_FILE_SIZE:
+        return False, "Please keep the file below 20 MB for this first version."
+    mime = file.type or ""
+    if mime != "application/pdf" and not mime.startswith("image/"):
+        return False, "Please upload a PDF, PNG, JPG or JPEG."
+    return True, ""
+
+
+def add_docx_title(doc, title, subtitle):
+    doc.add_heading(title, level=0)
+    doc.add_paragraph(subtitle)
+    doc.add_paragraph("Generated with Nexora HR Tools. Edit the placeholders and have the final document reviewed before official use.")
+
+
+def docx_bytes(title, subtitle, sections):
+    doc = Document()
+    add_docx_title(doc, title, subtitle)
+    for heading, body in sections:
+        doc.add_heading(heading, level=1)
+        for line in body:
+            doc.add_paragraph(line)
+    output = io.BytesIO()
+    doc.save(output)
+    return output.getvalue()
 
 def reset_workspace():
     for key, value in DEFAULTS.items():
@@ -234,33 +274,55 @@ def create_excel():
         if not items_df.empty: items_df.to_excel(writer, sheet_name="Line Items", index=False)
     return output.getvalue()
 
+
 # ============================================================
-# PRODUCT HEADER
+# NEXORA PRODUCT NAVIGATION
 # ============================================================
-logo, home, tools, docs, pricing, account = st.columns([2.3, .8, 1.0, 1.15, .9, 1.35], gap="small", vertical_alignment="center")
+if "main_section" not in st.session_state:
+    st.session_state.main_section = "Documents"
+
+logo, home_nav, hr_nav, docs_nav, pricing_nav, account = st.columns(
+    [2.25, .75, 1.25, 1.05, .9, 1.35], gap="small", vertical_alignment="center"
+)
+
 with logo:
     st.markdown("# ✦ NEXORA")
-    st.caption("AI DOCUMENT INTELLIGENCE")
-with home:
-    st.caption("Home")
-with tools:
-    st.caption("AI Tools")
-with docs:
-    st.caption("My Documents")
-with pricing:
-    if st.button("Pricing", use_container_width=True):
+    st.caption("AI WORK • DOCUMENTS • CAREER")
+
+with home_nav:
+    if st.button("Home", use_container_width=True, key="nav_home"):
+        st.session_state.main_section = "Documents"
+        st.session_state.pricing_open = False
+        st.rerun()
+
+with hr_nav:
+    if st.button("HR & Career", use_container_width=True, key="nav_hr"):
+        st.session_state.main_section = "HR"
+        st.session_state.pricing_open = False
+        st.rerun()
+
+with docs_nav:
+    if st.button("Documents", use_container_width=True, key="nav_documents"):
+        st.session_state.main_section = "Documents"
+        st.session_state.pricing_open = False
+        st.rerun()
+
+with pricing_nav:
+    if st.button("Pricing", use_container_width=True, key="nav_pricing"):
         st.session_state.pricing_open = not st.session_state.pricing_open
         st.rerun()
+
 with account:
     if logged_in():
         a, b = st.columns([2.4, 1], gap="small")
         with a:
             st.caption(f"● {display_name()}")
         with b:
-            if st.button("↪", help="Log out"):
+            if st.button("↪", help="Log out", key="nav_logout"):
                 st.logout()
     else:
         st.caption("Free access")
+
 st.divider()
 
 # ============================================================
@@ -276,15 +338,17 @@ if st.session_state.pricing_open:
         with st.container(border=True):
             st.markdown("## 🆓 Free")
             st.markdown("### Explore Nexora")
-            st.caption("No account required for the current free document workflow.")
+            st.caption("No account required for the current free workflows.")
             for item in [
                 "AI document summary",
                 "Document Q&A",
                 "Structured data extraction",
-                "Document analysis",
+                "HR salary calculators",
+                "Resume / JD / offer analysis",
+                "Starter HR templates",
             ]:
                 st.write(f"✓ {item}")
-            st.button("Current plan", disabled=True, use_container_width=True)
+            st.button("Current plan", disabled=True, use_container_width=True, key="free_plan")
 
     with pro_col:
         with st.container(border=True):
@@ -294,8 +358,9 @@ if st.session_state.pricing_open:
             for item in [
                 "Higher usage limits",
                 "Premium document workflows",
+                "Detailed HR & career reports",
                 "Account-linked purchase",
-                "Future saved-document features",
+                "Saved-document and calculation history",
             ]:
                 st.write(f"✓ {item}")
 
@@ -307,7 +372,10 @@ if st.session_state.pricing_open:
                     use_container_width=True,
                     key="pricing_login",
                 ):
-                    st.login()
+                    if auth_configured():
+                        st.login()
+                    else:
+                        st.warning("Google login is not configured yet.")
             else:
                 st.success(f"Signed in as {display_name()}.")
                 st.button(
@@ -324,30 +392,453 @@ if st.session_state.pricing_open:
     st.divider()
 
 # ============================================================
-# HOME
+# HR & CAREER HUB
 # ============================================================
-if not st.session_state.document_ready:
+def render_hr_hub():
+    st.caption("✦ NEXORA HR & CAREER • SALARY • CAREER • HR TOOLS")
+    st.markdown("# HR work, career decisions. ✦ **Made simpler.**")
+    st.write("Salary calculators, career analysis and practical HR templates — built into Nexora.")
+
+    section = st.radio(
+        "HR toolkit",
+        ["Salary & HR Calculators", "AI Career Tools", "HR Templates"],
+        horizontal=True,
+        label_visibility="collapsed",
+        key="hr_section",
+    )
+
+    # ============================================================
+    # SALARY & HR CALCULATORS
+    # ============================================================
+    if section == "Salary & HR Calculators":
+        st.markdown("## 💰 Salary & HR Calculators")
+        st.caption("Free calculators first. Later, detailed reports and saved calculations can become Nexora Pro features.")
+
+        calculator = st.selectbox(
+            "Choose a calculator",
+            [
+                "CTC → Take-Home Salary",
+                "Salary Increment Calculator",
+                "Gratuity Estimator",
+                "Notice Period Salary Calculator",
+            ],
+        )
+
+        if calculator == "CTC → Take-Home Salary":
+            left, right = st.columns([1.1, 1], gap="small", vertical_alignment="top")
+            with left:
+                with st.container(border=True):
+                    st.subheader("🧾 Enter your salary structure")
+                    annual_ctc = st.number_input("Annual CTC (₹)", min_value=0.0, value=600000.0, step=10000.0)
+                    basic_pct = st.number_input("Basic salary as % of CTC", min_value=0.0, max_value=100.0, value=40.0, step=1.0)
+                    variable_pct = st.number_input("Variable / bonus as % of CTC", min_value=0.0, max_value=100.0, value=0.0, step=1.0)
+                    employee_pf_rate = st.number_input("Employee PF rate on Basic (%)", min_value=0.0, max_value=20.0, value=12.0, step=0.5)
+                    monthly_pt = st.number_input("Professional tax / other fixed monthly deduction (₹)", min_value=0.0, value=200.0, step=50.0)
+                    other_monthly = st.number_input("Other monthly deductions (₹)", min_value=0.0, value=0.0, step=100.0)
+                    pf_cap = st.number_input("PF wage base cap (₹/month, 0 = no cap)", min_value=0.0, value=15000.0, step=1000.0)
+
+            basic_annual = annual_ctc * basic_pct / 100
+            variable_annual = annual_ctc * variable_pct / 100
+            fixed_annual = max(annual_ctc - variable_annual, 0)
+            gross_annual = fixed_annual
+            basic_monthly = basic_annual / 12
+            pf_base = min(basic_monthly, pf_cap) if pf_cap > 0 else basic_monthly
+            employee_pf = pf_base * employee_pf_rate / 100
+            monthly_gross = gross_annual / 12
+            take_home = max(monthly_gross - employee_pf - monthly_pt - other_monthly, 0)
+
+            with right:
+                with st.container(border=True):
+                    st.subheader("📊 Estimated result")
+                    m1, m2 = st.columns(2)
+                    with m1:
+                        st.metric("Monthly gross", money(monthly_gross))
+                        st.metric("Employee PF", money(employee_pf))
+                    with m2:
+                        st.metric("Estimated take-home", money(take_home))
+                        st.metric("Annual fixed pay", money(fixed_annual))
+                    st.divider()
+                    st.write(f"**Basic:** {money(basic_monthly)}/month")
+                    st.write(f"**Variable / bonus:** {money(variable_annual)}/year")
+                    st.write(f"**Other fixed deductions:** {money(monthly_pt + other_monthly)}/month")
+                    st.info("This is an estimate, not a payroll statement. Actual take-home can differ because of tax regime, employer policy, PF treatment, insurance, professional tax and other deductions.")
+                    st.caption("PF defaults are configurable. EPFO's published contribution information describes 12% as the standard employee rate in covered establishments, with exceptions and wage-ceiling rules. Treat the inputs above as configurable payroll assumptions.")
+
+        elif calculator == "Salary Increment Calculator":
+            c1, c2 = st.columns(2, gap="small")
+            with c1:
+                with st.container(border=True):
+                    st.subheader("📈 Current salary")
+                    current = st.number_input("Current annual CTC (₹)", min_value=0.0, value=600000.0, step=10000.0)
+                    increment = st.number_input("Increment (%)", min_value=-100.0, max_value=500.0, value=10.0, step=0.5)
+                    current_monthly = current / 12
+            with c2:
+                with st.container(border=True):
+                    new_ctc = current * (1 + increment / 100)
+                    increase = new_ctc - current
+                    st.subheader("🚀 New salary")
+                    st.metric("New annual CTC", money(new_ctc))
+                    st.metric("Annual increase", money(increase))
+                    st.metric("New monthly CTC", money(new_ctc / 12))
+                    st.caption(f"Current monthly CTC: {money(current_monthly)}")
+
+            st.divider()
+            st.write("### Quick comparison")
+            rows = []
+            for pct in [5, 8, 10, 12, 15, 20, 25, 30]:
+                new_value = current * (1 + pct / 100)
+                rows.append({"Increment": f"{pct}%", "New CTC": money(new_value), "Monthly CTC": money(new_value / 12), "Annual increase": money(new_value - current)})
+            st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+        elif calculator == "Gratuity Estimator":
+            c1, c2 = st.columns([1.05, 1], gap="small")
+            with c1:
+                with st.container(border=True):
+                    st.subheader("🏆 Gratuity inputs")
+                    last_wage = st.number_input("Last drawn monthly wages used for calculation (₹)", min_value=0.0, value=30000.0, step=1000.0)
+                    years = st.number_input("Completed years of service", min_value=0, max_value=60, value=5, step=1)
+                    extra_months = st.number_input("Extra months", min_value=0, max_value=11, value=0, step=1)
+                    apply_rounding = st.checkbox("Treat 6+ extra months as one additional year", value=True)
+                    cap = st.number_input("Optional gratuity cap (₹, 0 = no cap)", min_value=0.0, value=0.0, step=10000.0)
+            effective_years = years + (1 if apply_rounding and extra_months >= 6 else 0)
+            raw_gratuity = last_wage * 15 / 26 * effective_years
+            final_gratuity = min(raw_gratuity, cap) if cap > 0 else raw_gratuity
+            with c2:
+                with st.container(border=True):
+                    st.subheader("💡 Estimated gratuity")
+                    st.metric("Estimated amount", money(final_gratuity))
+                    st.write(f"**Formula:** {money(last_wage)} × 15 ÷ 26 × {effective_years} year(s)")
+                    st.info("This is an estimate. Gratuity eligibility and calculation can depend on the applicable law, employee category, continuity of service and the reason for separation. Current government labour-code material describes gratuity at 15 days' wages for each completed year, subject to the notified maximum, and includes special rules for fixed-term employees. Verify the applicable rule before relying on the result.")
+
+        else:
+            c1, c2 = st.columns(2, gap="small")
+            with c1:
+                with st.container(border=True):
+                    st.subheader("📅 Notice period")
+                    monthly_salary = st.number_input("Monthly salary (₹)", min_value=0.0, value=50000.0, step=1000.0)
+                    notice_days = st.number_input("Notice period (days)", min_value=0, max_value=365, value=30, step=1)
+                    working_days = st.number_input("Working days used for daily-rate estimate", min_value=1, max_value=31, value=30, step=1)
+            with c2:
+                with st.container(border=True):
+                    daily_rate = monthly_salary / working_days if working_days else 0
+                    estimated = daily_rate * notice_days
+                    st.subheader("💼 Estimate")
+                    st.metric("Daily salary basis", money(daily_rate))
+                    st.metric("Notice-period salary", money(estimated))
+                    st.info("Notice pay depends on the employment contract, applicable law and company policy. This calculator is only a simple estimate.")
+
+    # ============================================================
+    # AI CAREER TOOLS
+    # ============================================================
+    elif section == "AI Career Tools":
+        st.markdown("## 🤖 AI Career Tools")
+        st.caption("These are the first three AI products in the Nexora HR roadmap: Resume Analyzer, Job Description Analyzer and Offer Letter Analyzer.")
+
+        tool = st.selectbox("Choose an AI career tool", ["Resume Analyzer", "Job Description Analyzer", "Offer Letter Analyzer"])
+
+        if tool == "Resume Analyzer":
+            st.subheader("📄 Resume Analyzer")
+            st.write("Upload a resume and get an ATS-style review, strengths, gaps and targeted improvement suggestions.")
+            resume = st.file_uploader("Upload resume", type=["pdf", "png", "jpg", "jpeg"], key="resume_upload")
+            target_role = st.text_input("Target role (optional)", placeholder="e.g. HR Manager, Talent Acquisition Specialist")
+            if resume:
+                valid, msg = validate_ai_file(resume)
+                if not valid:
+                    st.error(msg)
+                elif st.button("✦ Analyze Resume", type="primary", use_container_width=True):
+                    prompt = f"""
+    You are Nexora HR, an expert Indian recruitment and career assistant.
+    Analyze the uploaded resume carefully. Target role: {target_role or 'Not specified'}.
+    Return a practical report with these sections:
+    1. Overall Resume Score / 100
+    2. Executive Assessment
+    3. ATS Readiness
+    4. Strongest Skills and Evidence
+    5. Missing or Weak Areas
+    6. Experience & Achievement Quality
+    7. Keywords to Add
+    8. Formatting / Clarity Issues
+    9. Role Match Assessment
+    10. Top 10 Changes to Improve Interview Chances
+    11. Improved Professional Summary
+    12. 5 Suggested Interview Questions
+    Do not invent experience, qualifications or achievements. If information is missing, say so.
+    """
+                    with st.spinner("Nexora is analyzing the resume..."):
+                        result = ai_text(prompt, resume)
+                    if result:
+                        st.markdown(result)
+
+        elif tool == "Job Description Analyzer":
+            st.subheader("🎯 Job Description Analyzer")
+            st.write("Paste a job description and Nexora will identify requirements, hidden expectations and the keywords a candidate should address.")
+            jd = st.text_area("Paste the job description", height=300, placeholder="Paste the complete job description here...")
+            resume_context = st.text_area("Optional: paste your resume summary", height=160, placeholder="Paste your profile/resume summary for a match analysis...")
+            if st.button("✦ Analyze Job Description", type="primary", use_container_width=True):
+                if len(jd.strip()) < 40:
+                    st.warning("Please paste a fuller job description so the analysis is useful.")
+                else:
+                    prompt = f"""
+    You are Nexora HR, an expert recruitment analyst.
+    Analyze this job description:
+    ---
+    {jd}
+    ---
+    Candidate resume/profile context (optional):
+    ---
+    {resume_context or 'Not provided'}
+    ---
+    Return:
+    1. Role summary
+    2. Must-have requirements
+    3. Nice-to-have requirements
+    4. Technical / functional skills
+    5. Soft skills
+    6. Experience and education expectations
+    7. Important ATS keywords
+    8. Hidden or implied expectations
+    9. Candidate match assessment if profile was provided
+    10. Missing information / questions to ask the employer
+    11. Resume keywords and bullet themes the candidate should emphasize
+    Do not invent information.
+    """
+                    with st.spinner("Nexora is reading the job description..."):
+                        result = ai_text(prompt)
+                    if result:
+                        st.markdown(result)
+
+        else:
+            st.subheader("📑 Offer Letter Analyzer")
+            st.write("Upload an offer letter and Nexora will highlight salary structure, notice period, probation, variable pay and clauses worth reviewing.")
+            offer = st.file_uploader("Upload offer letter", type=["pdf", "png", "jpg", "jpeg"], key="offer_upload")
+            if offer:
+                valid, msg = validate_ai_file(offer)
+                if not valid:
+                    st.error(msg)
+                elif st.button("✦ Analyze Offer Letter", type="primary", use_container_width=True):
+                    prompt = """
+    You are Nexora HR, an employment-document review assistant for India.
+    Read the uploaded offer letter carefully and produce a plain-English decision-support report.
+    Return:
+    1. Executive summary
+    2. Employer / role / location / joining date
+    3. Fixed compensation
+    4. Variable compensation and performance-linked amounts
+    5. Deductions / benefits mentioned
+    6. Probation period
+    7. Notice period
+    8. Working hours / shifts / location conditions
+    9. Leave / benefits mentioned
+    10. Important restrictive or unusual clauses
+    11. Termination / separation clauses
+    12. Bond / service agreement / repayment clauses, if any
+    13. Confidentiality / IP / non-compete language, if any
+    14. Missing or unclear information
+    15. Questions the candidate should ask HR before accepting
+    16. Overall review: Favorable / Needs clarification / High attention, with reasons
+    Do not give legal advice or make unsupported legal conclusions. Quote only short phrases when necessary and otherwise explain in your own words. Do not invent information.
+    """
+                    with st.spinner("Nexora is reviewing the offer letter..."):
+                        result = ai_text(prompt, offer)
+                    if result:
+                        st.markdown(result)
+
+    # ============================================================
+    # HR TEMPLATES
+    # ============================================================
+    else:
+        st.markdown("## 📚 HR Templates")
+        st.caption("Free starter templates are designed as practical editable drafts. They are not legal advice and should be reviewed before official use.")
+
+        template = st.selectbox(
+            "Choose a template",
+            [
+                "Offer Letter",
+                "Appointment Letter",
+                "Salary Increment Letter",
+                "Promotion Letter",
+                "Experience Certificate",
+                "Relieving Letter",
+                "Employee Warning Letter",
+                "Exit Interview Form",
+            ],
+        )
+
+        templates = {
+            "Offer Letter": (
+                "Offer Letter",
+                "Employment offer draft",
+                [
+                    ("Employee Details", ["Employee Name: [NAME]", "Address: [ADDRESS]", "Designation: [DESIGNATION]", "Department: [DEPARTMENT]"]),
+                    ("Offer", ["We are pleased to offer you employment with [COMPANY NAME] as [DESIGNATION], subject to the terms and conditions communicated by the company.", "Date of joining: [JOINING DATE]", "Reporting location: [LOCATION]"]),
+                    ("Compensation", ["Annual CTC: [CTC]", "The detailed compensation structure will be provided separately / attached."]),
+                    ("Conditions", ["The employment will be subject to company policies, applicable law and satisfactory completion of any required verification."]),
+                    ("Acceptance", ["Please sign and return a copy of this letter as confirmation of acceptance.", "Authorized Signatory: [NAME / TITLE]"]),
+                ],
+            ),
+            "Appointment Letter": (
+                "Appointment Letter",
+                "Employment appointment draft",
+                [
+                    ("Appointment", ["You are appointed as [DESIGNATION] in [DEPARTMENT] effective [DATE]."]),
+                    ("Place of Work", ["Primary work location: [LOCATION]. The company may require reasonable changes according to business needs and applicable policy."]),
+                    ("Compensation", ["Your annual CTC will be [CTC], with the detailed structure provided separately."]),
+                    ("Probation", ["Probation period: [PERIOD]. Confirmation will be subject to company policy and performance."]),
+                    ("Notice and Separation", ["Notice period: [DAYS] days, subject to the employment contract and applicable law."]),
+                ],
+            ),
+            "Salary Increment Letter": (
+                "Salary Increment Letter",
+                "Compensation revision draft",
+                [
+                    ("Revision", ["We are pleased to inform you that your compensation is being revised effective [DATE]."]),
+                    ("Previous Compensation", ["Previous annual CTC: [OLD CTC]"]),
+                    ("Revised Compensation", ["Revised annual CTC: [NEW CTC]", "Increment: [PERCENTAGE]%"]),
+                    ("Appreciation", ["This revision recognizes your contribution and performance. We look forward to your continued success."]),
+                ],
+            ),
+            "Promotion Letter": (
+                "Promotion Letter",
+                "Promotion communication draft",
+                [
+                    ("Promotion", ["We are pleased to inform you that you have been promoted to [NEW DESIGNATION] effective [DATE]."]),
+                    ("Department / Reporting", ["Department: [DEPARTMENT]", "Reporting manager: [MANAGER]"]),
+                    ("Compensation", ["Revised compensation / CTC: [CTC]", "The detailed structure will be communicated separately."]),
+                    ("Closing", ["Congratulations on your achievement. We wish you continued success in your new role."]),
+                ],
+            ),
+            "Experience Certificate": (
+                "Experience Certificate",
+                "Employment experience draft",
+                [
+                    ("To Whom It May Concern", ["This is to certify that [EMPLOYEE NAME] was employed with [COMPANY NAME] as [DESIGNATION] from [START DATE] to [END DATE]."]),
+                    ("Role", ["During the period of employment, the employee was associated with [DEPARTMENT / FUNCTION]."]),
+                    ("Closing", ["We wish [EMPLOYEE NAME] all the best in future endeavors."]),
+                ],
+            ),
+            "Relieving Letter": (
+                "Relieving Letter",
+                "Employment separation draft",
+                [
+                    ("Relieving", ["This is to confirm that [EMPLOYEE NAME], Employee ID [ID], has been relieved from services with [COMPANY NAME] effective [DATE], following completion of the required separation formalities."]),
+                    ("Handover", ["The employee has completed the required handover / clearance process to the extent applicable."]),
+                    ("Closing", ["We thank the employee for the services rendered and wish them success in future endeavors."]),
+                ],
+            ),
+            "Employee Warning Letter": (
+                "Employee Warning Letter",
+                "Workplace conduct / performance warning draft",
+                [
+                    ("Subject", ["Subject: Formal Warning — [SUBJECT]"]),
+                    ("Concern", ["This letter is being issued regarding [FACTUAL DESCRIPTION OF ISSUE], observed / reported on [DATE(S)]."]),
+                    ("Expected Improvement", ["You are required to [CLEAR EXPECTATION] with immediate effect and maintain the expected standard consistently."]),
+                    ("Support and Review", ["The company will review progress on [DATE / PERIOD]. Please contact [MANAGER / HR] if you require clarification or support."]),
+                    ("Important", ["This template should be adapted to company policy, evidence and applicable law before issue."]),
+                ],
+            ),
+            "Exit Interview Form": (
+                "Exit Interview Form",
+                "Employee exit feedback form",
+                [
+                    ("Employee", ["Name: [NAME]", "Department: [DEPARTMENT]", "Designation: [DESIGNATION]", "Last working day: [DATE]"]),
+                    ("Reason for Leaving", ["Primary reason: [REASON]", "Was another offer accepted? [YES / NO]"]),
+                    ("Experience", ["What did you enjoy most? [RESPONSE]", "What could the company improve? [RESPONSE]", "How would you rate manager support? [1–5]"]),
+                    ("Retention", ["What could have influenced you to stay? [RESPONSE]"]),
+                    ("Closing", ["Additional comments: [RESPONSE]"]),
+                ],
+            ),
+        }
+
+        title, subtitle, sections = templates[template]
+        c1, c2 = st.columns([1.35, 1], gap="small", vertical_alignment="top")
+        with c1:
+            with st.container(border=True):
+                st.subheader(f"📝 {title}")
+                st.caption(subtitle)
+                for heading, lines in sections:
+                    st.markdown(f"**{heading}**")
+                    for line in lines:
+                        st.write(line)
+        with c2:
+            with st.container(border=True):
+                st.subheader("⬇️ Download editable draft")
+                st.write("The generated Word file is intentionally simple so you can edit company-specific details.")
+                content = docx_bytes(title, subtitle, sections)
+                filename = title.lower().replace(" ", "_") + ".docx"
+                st.download_button(
+                    "⬇️ Download Word Template",
+                    data=content,
+                    file_name=filename,
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    type="primary",
+                    use_container_width=True,
+                )
+                st.warning("Review the template before using it for an actual employee. Employment law and company policy vary.")
+
+    # ============================================================
+    st.divider()
+    with st.container(border=True):
+        st.subheader("🚀 Nexora HR roadmap")
+        r1, r2, r3, r4 = st.columns(4, gap="small")
+        for col, title, text in [
+            (r1, "NOW", "Free salary calculators + HR templates + AI career analysis"),
+            (r2, "NEXT", "SEO landing pages and shareable result pages"),
+            (r3, "PRO", "Detailed reports, saved history and higher AI limits"),
+            (r4, "SCALE", "HR teams, recruiter tools and business subscriptions"),
+        ]:
+            with col:
+                st.markdown(f"**{title}**")
+                st.caption(text)
+
+    st.caption("✦ NEXORA HR  ·  Practical tools for work and career")
+
+# ============================================================
+# MAIN EXPERIENCE
+# ============================================================
+if st.session_state.main_section == "HR":
+    render_hr_hub()
+
+elif not st.session_state.document_ready:
     st.markdown("# Your documents. ✦ **Smarter with Nexora.**")
     st.write("Turn complex documents into clear summaries, structured data, intelligent analysis and instant answers.")
 
-    category = st.radio("Nexora tools", ["All", "Understand", "Chat", "Extract", "Analyze"], horizontal=True, label_visibility="collapsed")
+    category = st.radio(
+        "Nexora tools",
+        ["All", "Understand", "Chat", "Extract", "Analyze", "HR & Career"],
+        horizontal=True,
+        label_visibility="collapsed",
+        key="document_home_category",
+    )
+
+    if category == "HR & Career":
+        st.info("Nexora HR & Career brings salary calculators, career analysis and HR templates into the same workspace.")
+        if st.button("✦ Open HR & Career Tools", type="primary", use_container_width=True, key="open_hr_home"):
+            st.session_state.main_section = "HR"
+            st.rerun()
 
     upload_col, feature_col = st.columns([1.55, 1], gap="small", vertical_alignment="top")
     with upload_col:
         with st.container(border=True):
             st.subheader("☁️ Start with a document")
             st.caption("Upload a PDF or image and build your AI workspace.")
-            uploaded_file = st.file_uploader("Choose a document", type=["pdf","png","jpg","jpeg"], label_visibility="collapsed", max_upload_size=50)
+            uploaded_file = st.file_uploader(
+                "Choose a document",
+                type=["pdf", "png", "jpg", "jpeg"],
+                label_visibility="collapsed",
+                max_upload_size=50,
+            )
             if uploaded_file:
                 valid, message = validate_file(uploaded_file)
                 if not valid:
                     st.error(message)
                 else:
                     st.success(f"✓ {uploaded_file.name} is ready")
-                    if st.button("✦  Analyze Document", type="primary", use_container_width=True):
-                        if process_document(uploaded_file): st.rerun()
+                    if st.button("✦  Analyze Document", type="primary", use_container_width=True, key="home_analyze"):
+                        if process_document(uploaded_file):
+                            st.rerun()
             else:
                 st.caption("PDF • PNG • JPG • JPEG   ·   Up to 50 MB")
+
     with feature_col:
         with st.container(border=True):
             st.subheader("✦ Nexora AI tools")
@@ -356,6 +847,7 @@ if not st.session_state.document_ready:
                 ("💬", "Document Chat", "Ask questions directly about your file."),
                 ("📊", "Data Extraction", "Turn content into structured data."),
                 ("🔍", "Deep Analysis", "Find risks, gaps and important details."),
+                ("💼", "HR & Career", "Salary tools, career analysis and HR templates."),
             ]:
                 st.markdown(f"### {icon}  {title}")
                 st.caption(text)
@@ -366,27 +858,33 @@ if not st.session_state.document_ready:
         ("💬", "Document Chat", "Ask natural-language questions about your document."),
         ("📊", "Extract Data", "Pull names, dates, amounts and line items into tables."),
         ("🔍", "Deep Analysis", "Spot risks, missing information and inconsistencies."),
+        ("💼", "HR & Career", "Salary calculators, career analysis and practical HR tools."),
         ("📄", "Document View", "Keep the original document visible while working."),
-        ("⚡", "Quick Insights", "Move from upload to useful information faster."),
     ]
-    if category == "Understand": cards = [cards[0], cards[4], cards[5]]
-    elif category == "Chat": cards = [cards[1]]
-    elif category == "Extract": cards = [cards[2]]
-    elif category == "Analyze": cards = [cards[3]]
+    if category == "Understand":
+        cards = [cards[0], cards[5]]
+    elif category == "Chat":
+        cards = [cards[1]]
+    elif category == "Extract":
+        cards = [cards[2]]
+    elif category == "Analyze":
+        cards = [cards[3]]
+    elif category == "HR & Career":
+        cards = [cards[4]]
+
     for start in range(0, len(cards), 3):
         cols = st.columns(3, gap="small")
-        for col, (icon, title, text) in zip(cols, cards[start:start+3]):
+        for col, (icon, title, text) in zip(cols, cards[start:start + 3]):
             with col:
                 with st.container(border=True):
                     st.markdown(f"## {icon}")
                     st.markdown(f"**{title}**")
                     st.caption(text)
 
-    st.write("")
     f1, f2, f3 = st.columns(3, gap="small")
     for col, title, text in [
-        (f1, "⚡ Fast", "Optimized AI document workflows."),
-        (f2, "🎯 Focused", "Answers based on your uploaded document."),
+        (f1, "⚡ Fast", "Optimized AI document and career workflows."),
+        (f2, "🎯 Focused", "Useful results based on the information you provide."),
         (f3, "🔐 Private by design", "Your files stay inside your Nexora workflow."),
     ]:
         with col:
@@ -394,80 +892,119 @@ if not st.session_state.document_ready:
                 st.markdown(f"**{title}**")
                 st.caption(text)
 
-# ============================================================
-# WORKSPACE
-# ============================================================
 else:
-    header, new_doc = st.columns([5,1], gap="small", vertical_alignment="center")
+    header, new_doc = st.columns([5, 1], gap="small", vertical_alignment="center")
     with header:
         st.subheader(f"📄 {st.session_state.document_name}")
         st.caption("● Document analyzed and ready")
     with new_doc:
-        if st.button("＋ New document", use_container_width=True):
-            reset_workspace(); st.rerun()
+        if st.button("＋ New document", use_container_width=True, key="new_document"):
+            reset_workspace()
+            st.session_state.main_section = "Documents"
+            st.rerun()
 
-    selected = st.radio("Document tools", ["Summary","Extract Data","Analyze"], index=["Summary","Extract Data","Analyze"].index(st.session_state.active_view), horizontal=True, label_visibility="collapsed")
+    selected = st.radio(
+        "Document tools",
+        ["Summary", "Extract Data", "Analyze"],
+        index=["Summary", "Extract Data", "Analyze"].index(st.session_state.active_view),
+        horizontal=True,
+        label_visibility="collapsed",
+        key="document_tools",
+    )
     if selected != st.session_state.active_view:
-        st.session_state.active_view = selected; st.rerun()
+        st.session_state.active_view = selected
+        st.rerun()
+
     st.divider()
 
-    document_column, chat_column = st.columns([1.65,1], gap="small", vertical_alignment="top")
+    document_column, chat_column = st.columns([1.65, 1], gap="small", vertical_alignment="top")
     with document_column:
         with st.container(border=True, height=760):
             st.subheader("📄 Document")
             st.caption(st.session_state.document_name)
             st.divider()
             if st.session_state.document_type == "application/pdf":
-                try: st.pdf(st.session_state.document_bytes, height=400)
-                except Exception: st.info("PDF preview is unavailable. The document is still available to Nexora.")
+                try:
+                    st.pdf(st.session_state.document_bytes, height=400)
+                except Exception:
+                    st.info("PDF preview is unavailable. The document is still available to Nexora.")
             elif st.session_state.document_type and st.session_state.document_type.startswith("image/"):
                 st.image(st.session_state.document_bytes, use_container_width=True)
+
             st.divider()
+
             if st.session_state.active_view == "Summary":
                 st.subheader("✨ AI Summary")
-                if st.session_state.summary: st.markdown(st.session_state.summary)
+                if st.session_state.summary:
+                    st.markdown(st.session_state.summary)
+
             elif st.session_state.active_view == "Extract Data":
                 st.subheader("📊 Extracted Data")
                 if st.session_state.extracted_information is None and st.session_state.extracted_line_items is None:
                     st.info("Extract structured information from this document.")
-                    if st.button("📊  Extract Data", type="primary", use_container_width=True): extract_data()
+                    if st.button("📊  Extract Data", type="primary", use_container_width=True, key="extract_data_btn"):
+                        extract_data()
                 else:
                     info = st.session_state.extracted_information or []
                     items = st.session_state.extracted_line_items or []
                     if info:
-                        st.write("**Document Information**"); st.dataframe(pd.DataFrame(info), use_container_width=True, hide_index=True)
+                        st.write("**Document Information**")
+                        st.dataframe(pd.DataFrame(info), use_container_width=True, hide_index=True)
                     if items:
-                        st.write("**Line Items**"); st.dataframe(pd.DataFrame(items), use_container_width=True, hide_index=True)
+                        st.write("**Line Items**")
+                        st.dataframe(pd.DataFrame(items), use_container_width=True, hide_index=True)
                     if info or items:
-                        st.download_button("⬇️  Download Excel", data=create_excel(), file_name="nexora_extracted_data.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
-                    else: st.warning("No structured information was found.")
+                        st.download_button(
+                            "⬇️  Download Excel",
+                            data=create_excel(),
+                            file_name="nexora_extracted_data.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            use_container_width=True,
+                        )
+                    else:
+                        st.warning("No structured information was found.")
+
             else:
                 st.subheader("🔍 Deep Analysis")
                 if not st.session_state.analysis_result:
                     st.info("Run deeper analysis to identify risks, missing information, inconsistencies and next steps.")
-                    if st.button("🔍  Run Deep Analysis", type="primary", use_container_width=True): run_deep_analysis()
-                else: st.markdown(st.session_state.analysis_result)
+                    if st.button("🔍  Run Deep Analysis", type="primary", use_container_width=True, key="deep_analysis_btn"):
+                        run_deep_analysis()
+                else:
+                    st.markdown(st.session_state.analysis_result)
 
     with chat_column:
         with st.container(border=True):
             st.subheader("✦ Nexora AI")
             st.caption("Ask questions and work with your document in real time.")
+
         with st.container(height=575, border=True):
             if not st.session_state.messages:
                 st.info("Ask Nexora anything about this document.")
                 st.write("**Try asking:**")
-                for suggestion in ["What is this document about?", "What are the most important points?", "Are there any risks I should know about?", "What are the important dates and amounts?", "Summarize this in simple language."]:
+                for suggestion in [
+                    "What is this document about?",
+                    "What are the most important points?",
+                    "Are there any risks I should know about?",
+                    "What are the important dates and amounts?",
+                    "Summarize this in simple language.",
+                ]:
                     st.caption(f"• {suggestion}")
             else:
                 for message in st.session_state.messages:
-                    with st.chat_message(message["role"]): st.markdown(message["content"])
+                    with st.chat_message(message["role"]):
+                        st.markdown(message["content"])
+
         question = st.chat_input("Ask anything about this document...", key="nexora_chat_input")
         if question:
-            st.session_state.messages.append({"role":"user","content":question})
-            with st.chat_message("user"): st.markdown(question)
+            st.session_state.messages.append({"role": "user", "content": question})
+            with st.chat_message("user"):
+                st.markdown(question)
             with st.chat_message("assistant"):
-                placeholder = st.empty(); answer = ask_document(question, placeholder)
-            if answer: st.session_state.messages.append({"role":"assistant","content":answer})
+                placeholder = st.empty()
+                answer = ask_document(question, placeholder)
+            if answer:
+                st.session_state.messages.append({"role": "assistant", "content": answer})
             st.rerun()
 
-st.caption("✦ NEXORA  ·  AI Document Intelligence")
+st.caption("✦ NEXORA  ·  AI Document Intelligence • HR & Career Intelligence")
