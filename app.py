@@ -47,6 +47,7 @@ DEFAULTS = {
     "document_type": None, "document_bytes": None, "summary": None,
     "messages": [], "active_view": "Summary", "extracted_information": None,
     "extracted_line_items": None, "analysis_result": None,
+    "pricing_open": False,
 }
 for key, value in DEFAULTS.items():
     if key not in st.session_state:
@@ -82,86 +83,9 @@ def display_name():
     except Exception:
         return "User"
 
-def show_login_screen():
-    st.write("")
-    st.write("")
-
-    left, center, right = st.columns([1, 1.15, 1], gap="small")
-
-    with center:
-        with st.container(border=True):
-            st.markdown(
-                '<div style="font-size:2.35rem;font-weight:950;'
-                'letter-spacing:-2px;">'
-                '<span style="color:#4f46e5;">✦</span> NEXORA'
-                '</div>',
-                unsafe_allow_html=True,
-            )
-
-            st.caption("AI DOCUMENT INTELLIGENCE")
-            st.write("")
-
-            st.markdown("## Welcome to **Nexora**")
-            st.caption(
-                "Sign in to access your personal AI document workspace."
-            )
-
-            st.write("")
-
-            if auth_configured():
-                st.button(
-                    "G  Continue with Google",
-                    type="primary",
-                    use_container_width=True,
-                    on_click=st.login,
-                )
-            else:
-                st.error("Google Login is not configured yet.")
-                st.caption(
-                    "The Nexora app is now login-protected. "
-                    "Complete the one-time Google setup below."
-                )
-
-                st.code(
-                    '[auth]\n'
-                    'redirect_uri = "https://nexora-new-program.streamlit.app/oauth2callback"\n'
-                    'cookie_secret = "REPLACE_WITH_A_LONG_RANDOM_SECRET"\n'
-                    'client_id = "YOUR_GOOGLE_CLIENT_ID"\n'
-                    'client_secret = "YOUR_GOOGLE_CLIENT_SECRET"\n'
-                    'server_metadata_url = "https://accounts.google.com/.well-known/openid-configuration"',
-                    language="toml",
-                )
-
-                st.caption(
-                    "Never put these credentials in app.py or GitHub."
-                )
-
-            st.write("")
-
-            c1, c2, c3 = st.columns(3, gap="small")
-
-            with c1:
-                st.markdown("**🧠 AI**")
-                st.caption("Smart summaries")
-
-            with c2:
-                st.markdown("**💬 Chat**")
-                st.caption("Ask your document")
-
-            with c3:
-                st.markdown("**📊 Extract**")
-                st.caption("Structured data")
-
-    st.stop()
-
-
-# Mandatory authentication gate.
-# Anonymous visitors cannot reach the Nexora workspace.
-if not auth_configured() or not logged_in():
-    show_login_screen()
-
-
-# Gemini is initialized only after successful authentication.
+# PUBLIC-FIRST EXPERIENCE:
+# Login is NOT required for the free Nexora workflow.
+# Google authentication remains available for the paid checkout flow.
 client = get_client()
 
 
@@ -313,22 +237,91 @@ def create_excel():
 # ============================================================
 # PRODUCT HEADER
 # ============================================================
-logo, home, tools, docs, pricing, account = st.columns([2.3, .8, 1.0, 1.15, .8, 1.25], gap="small", vertical_alignment="center")
+logo, home, tools, docs, pricing, account = st.columns([2.3, .8, 1.0, 1.15, .9, 1.35], gap="small", vertical_alignment="center")
 with logo:
     st.markdown("# ✦ NEXORA")
     st.caption("AI DOCUMENT INTELLIGENCE")
-with home: st.caption("Home")
-with tools: st.caption("AI Tools")
-with docs: st.caption("My Documents")
-with pricing: st.caption("Pricing")
+with home:
+    st.caption("Home")
+with tools:
+    st.caption("AI Tools")
+with docs:
+    st.caption("My Documents")
+with pricing:
+    if st.button("Pricing", use_container_width=True):
+        st.session_state.pricing_open = not st.session_state.pricing_open
+        st.rerun()
 with account:
-    a, b = st.columns([2.4, 1], gap="small")
-    with a:
-        st.caption(f"● {display_name()}")
-    with b:
-        if st.button("↪", help="Log out"):
-            st.logout()
+    if logged_in():
+        a, b = st.columns([2.4, 1], gap="small")
+        with a:
+            st.caption(f"● {display_name()}")
+        with b:
+            if st.button("↪", help="Log out"):
+                st.logout()
+    else:
+        st.caption("Free access")
 st.divider()
+
+# ============================================================
+# PRICING / PAYMENT LOGIN GATE
+# ============================================================
+if st.session_state.pricing_open:
+    st.markdown("# ✦ Nexora Plans")
+    st.caption("Explore Nexora freely. Login is requested only when you choose a paid plan.")
+
+    free_col, pro_col = st.columns(2, gap="small", vertical_alignment="top")
+
+    with free_col:
+        with st.container(border=True):
+            st.markdown("## 🆓 Free")
+            st.markdown("### Explore Nexora")
+            st.caption("No account required for the current free document workflow.")
+            for item in [
+                "AI document summary",
+                "Document Q&A",
+                "Structured data extraction",
+                "Document analysis",
+            ]:
+                st.write(f"✓ {item}")
+            st.button("Current plan", disabled=True, use_container_width=True)
+
+    with pro_col:
+        with st.container(border=True):
+            st.markdown("## ✦ Nexora Pro")
+            st.markdown("### Paid plan")
+            st.caption("Premium usage and future account-based features.")
+            for item in [
+                "Higher usage limits",
+                "Premium document workflows",
+                "Account-linked purchase",
+                "Future saved-document features",
+            ]:
+                st.write(f"✓ {item}")
+
+            if not logged_in():
+                st.info("Sign in is required only when you start checkout.")
+                if st.button(
+                    "G  Login & Continue to Checkout",
+                    type="primary",
+                    use_container_width=True,
+                    key="pricing_login",
+                ):
+                    st.login()
+            else:
+                st.success(f"Signed in as {display_name()}.")
+                st.button(
+                    "Continue to Payment",
+                    type="primary",
+                    use_container_width=True,
+                    key="continue_payment",
+                )
+                st.caption(
+                    "Google Login is ready. The payment gateway can be connected "
+                    "to this button in the next phase."
+                )
+
+    st.divider()
 
 # ============================================================
 # HOME
