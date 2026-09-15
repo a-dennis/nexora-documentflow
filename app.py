@@ -141,6 +141,45 @@ def validate_ai_file(file):
     return True, ""
 
 
+def ai_text(prompt, file=None):
+    """Run a short Gemini AI task, optionally with an uploaded PDF/image.
+
+    The HR AI tools use the same Interactions API pattern as the main
+    document workflow. This keeps PDF/image inputs inline and avoids the
+    undefined ai_text() error that occurred in the Phase 2 build.
+    """
+    try:
+        inputs = [{"type": "text", "text": prompt}]
+        if file is not None:
+            inputs.append(make_document_part(file))
+
+        response = client.interactions.create(
+            model=MODEL,
+            input=inputs,
+            store=False,
+            generation_config={"thinking_level": "minimal"},
+        )
+        result = getattr(response, "output_text", "") or ""
+        if not result:
+            st.error("Nexora did not receive a usable AI response.")
+            return ""
+        return result
+    except Exception as error:
+        text = str(error)
+        st.error("Nexora could not complete the AI analysis.")
+        if "429" in text:
+            st.warning("The Gemini request limit was reached. Please wait a moment and try again.")
+        elif "500" in text or "503" in text:
+            st.warning("Gemini is temporarily busy. Please try again.")
+        elif "400" in text:
+            st.warning("The uploaded file or AI request could not be processed. Please try a different PDF/image.")
+        else:
+            st.warning("Please try the analysis again.")
+        with st.expander("Technical details"):
+            st.code(text)
+        return ""
+
+
 def _set_cell_shading(cell, fill):
     tc_pr = cell._tc.get_or_add_tcPr()
     shd = tc_pr.find(qn("w:shd"))
