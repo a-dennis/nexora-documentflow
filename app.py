@@ -41,7 +41,9 @@ p,li{color:#51596a}hr{border-color:rgba(148,163,184,.22)!important;margin:.22rem
 [data-testid="stFileUploader"]{background:linear-gradient(135deg,rgba(239,246,255,.98),rgba(250,245,255,.98))!important;border:2px dashed rgba(79,70,229,.36)!important;border-radius:18px!important;padding:.5rem!important;box-shadow:0 0 0 5px rgba(79,70,229,.035),0 14px 35px rgba(79,70,229,.075);transition:all .2s ease}
 [data-testid="stFileUploader"]:hover{border-color:rgba(79,70,229,.72)!important;transform:translateY(-2px);box-shadow:0 0 0 6px rgba(79,70,229,.045),0 18px 42px rgba(79,70,229,.12)}
 .stButton>button,.stDownloadButton>button{min-height:40px!important;border-radius:11px!important;font-weight:750!important;border:1px solid rgba(148,163,184,.28)!important;background:rgba(255,255,255,.93)!important;box-shadow:0 4px 14px rgba(37,52,90,.045);transition:all .16s ease}
-.stButton>button:hover,.stDownloadButton>button:hover{transform:translateY(-1px);border-color:rgba(79,70,229,.42)!important;box-shadow:0 8px 22px rgba(79,70,229,.10)}
+.stButton>button:hover,.stDownloadButton>button:hover{border-color:rgba(79,70,229,.42)!important;box-shadow:0 8px 22px rgba(79,70,229,.10)}
+.stButton>button{position:relative!important;z-index:20!important;pointer-events:auto!important;line-height:1.2!important}
+.workspace-choice{min-height:180px!important}.workspace-choice button{min-height:150px!important;font-size:1.08rem!important;border-radius:20px!important}
 .stButton>button[kind="primary"],.stButton>button[kind="primary"] p,.stButton>button[kind="primary"] span,.stButton>button[kind="primary"] div{color:#fff!important}.stButton>button[kind="primary"]{color:#fff!important;border:none!important;background:linear-gradient(100deg,#2563eb,#4f46e5 48%,#8b5cf6)!important;box-shadow:0 9px 25px rgba(79,70,229,.24)}
 .stButton>button[kind="primary"]:hover{background:linear-gradient(100deg,#1d4ed8,#4338ca 48%,#7c3aed)!important;box-shadow:0 12px 30px rgba(79,70,229,.30)}
 div[role="radiogroup"]{gap:.3rem!important;padding:.18rem!important;background:rgba(255,255,255,.72);border:1px solid rgba(148,163,184,.2);border-radius:14px;box-shadow:0 5px 20px rgba(37,52,90,.035)}
@@ -57,7 +59,7 @@ DEFAULTS = {
     "document_type": None, "document_bytes": None, "summary": None,
     "messages": [], "active_view": "Summary", "extracted_information": None,
     "extracted_line_items": None, "analysis_result": None,
-    "pricing_open": False,
+    "pricing_open": False, "home_choice": None, "document_tool_choice": "Summary", "hr_section": "Salary & HR Calculators",
     "resume_analysis": None, "resume_file_bytes": None, "resume_file_name": None, "resume_file_type": None,
     "resume_target_role": "", "improved_resume_bytes": None, "improved_resume_name": None,
     "resume_fix_paid_demo": False,
@@ -863,31 +865,17 @@ def create_excel():
 # NEXORA PRODUCT NAVIGATION
 # ============================================================
 if "main_section" not in st.session_state:
-    st.session_state.main_section = "Documents"
+    st.session_state.main_section = "Home"
 
-logo, home_nav, hr_nav, docs_nav, pricing_nav, account = st.columns(
-    [2.25, .75, 1.25, 1.05, .9, 1.35], gap="small", vertical_alignment="center"
-)
+logo, home_nav, pricing_nav, account = st.columns([2.7, 1.0, 1.0, 1.35], gap="small", vertical_alignment="center")
 
 with logo:
     st.markdown("# ✦ NEXORA")
     st.caption("AI WORK • DOCUMENTS • CAREER")
 
 with home_nav:
-    if st.button("Home", use_container_width=True, key="nav_home"):
-        st.session_state.main_section = "Documents"
-        st.session_state.pricing_open = False
-        st.rerun()
-
-with hr_nav:
-    if st.button("HR & Career", use_container_width=True, key="nav_hr"):
-        st.session_state.main_section = "HR"
-        st.session_state.pricing_open = False
-        st.rerun()
-
-with docs_nav:
-    if st.button("Documents", use_container_width=True, key="nav_documents"):
-        st.session_state.main_section = "Documents"
+    if st.button("⌂ Home", use_container_width=True, key="nav_home"):
+        st.session_state.main_section = "Home"
         st.session_state.pricing_open = False
         st.rerun()
 
@@ -983,7 +971,22 @@ def render_hr_hub():
     st.markdown("# HR work, career decisions. ✦ **Made simpler.**")
     st.write("Salary calculators, AI career tools and practical HR templates — built into Nexora.")
 
-    section = st.radio("HR toolkit", ["Salary & HR Calculators", "AI Career Tools", "HR Templates"], horizontal=True, label_visibility="collapsed", key="hr_section")
+    if "hr_section" not in st.session_state:
+        st.session_state.hr_section = "Salary & HR Calculators"
+    st.markdown("### Choose a Career Workspace")
+    hr_a, hr_b, hr_c = st.columns(3, gap="small")
+    hr_options = [
+        (hr_a, "💰  Salary & HR Calculators", "Salary, increment, gratuity and notice-period tools.", "Salary & HR Calculators"),
+        (hr_b, "🤖  AI Career Tools", "Resume, JD, offer-letter and cover-letter tools.", "AI Career Tools"),
+        (hr_c, "📄  HR Templates", "Professional editable workplace documents.", "HR Templates"),
+    ]
+    for col, label, desc, value in hr_options:
+        with col:
+            if st.button(label, use_container_width=True, key=f"hr_tab_{value}"):
+                st.session_state.hr_section = value
+                st.rerun()
+            st.caption(desc)
+    section = st.session_state.hr_section
 
     if section == "Salary & HR Calculators":
         st.markdown("## 💰 Salary & HR Calculators")
@@ -1380,37 +1383,66 @@ RESUME:\n{resume_text}\nJOB DESCRIPTION:\n{jd_text}
 # MAIN EXPERIENCE
 # ============================================================
 if st.session_state.main_section == "HR":
+    # A clear return path prevents HR from feeling like a duplicate home page.
+    back_col, title_col = st.columns([1.0, 5.5], gap="small", vertical_alignment="center")
+    with back_col:
+        if st.button("← Home", use_container_width=True, key="hr_back_home"):
+            st.session_state.main_section = "Home"
+            st.session_state.home_choice = None
+            st.rerun()
+    with title_col:
+        st.caption("NEXORA WORKSPACE")
     render_hr_hub()
 
-elif not st.session_state.document_ready:
-    st.markdown("# Your documents. ✦ **Smarter with Nexora.**")
-    st.write("Turn complex documents into clear summaries, structured data, intelligent analysis and instant answers.")
+elif st.session_state.main_section == "Documents" and not st.session_state.document_ready:
+    # ------------------------------------------------------------
+    # DOCUMENT AI LANDING / WORKSPACE
+    # ------------------------------------------------------------
+    back_col, title_col = st.columns([1.0, 5.5], gap="small", vertical_alignment="center")
+    with back_col:
+        if st.button("← Home", use_container_width=True, key="docs_back_home"):
+            st.session_state.main_section = "Home"
+            st.session_state.home_choice = None
+            st.rerun()
+    with title_col:
+        st.caption("NEXORA DOCUMENT AI INTELLIGENCE")
+
+    st.markdown("# Your Documents — **Smarter With Nexora**")
+    st.write("Choose the document capability you need, then upload your file and let Nexora do the work.")
     st.caption("🔒 Documents are processed by Nexora using Google Gemini AI. Avoid uploading information you are not authorized to share.")
 
-    category = st.radio(
-        "Nexora tools",
-        ["All", "Understand", "Chat", "Extract", "Analyze", "HR & Career"],
-        horizontal=True,
-        label_visibility="collapsed",
-        key="document_home_category",
-    )
+    # Clickable document capabilities — no radio pills.
+    st.markdown("### Choose What You Want To Do")
+    tool_cards = [
+        ("🧠", "AI Summary", "Understand the key points quickly.", "Summary"),
+        ("💬", "Document Chat", "Ask questions directly about your file.", "Chat"),
+        ("📊", "Data Extraction", "Turn document content into structured data.", "Extract Data"),
+        ("🔍", "Deep Analysis", "Find risks, gaps and important details.", "Analyze"),
+    ]
+    for row in range(0, len(tool_cards), 4):
+        cols = st.columns(4, gap="small")
+        for col, (icon, title, text, value) in zip(cols, tool_cards[row:row+4]):
+            with col:
+                with st.container(border=True):
+                    if st.button(f"{icon}  {title}", use_container_width=True, key=f"doc_choice_{value}"):
+                        st.session_state.document_tool_choice = value
+                        st.rerun()
+                    st.caption(text)
 
-    if category == "HR & Career":
-        st.info("Nexora HR & Career brings salary calculators, career analysis and HR templates into the same workspace.")
-        if st.button("✦ Open HR & Career Tools", type="primary", use_container_width=True, key="open_hr_home"):
-            st.session_state.main_section = "HR"
-            st.rerun()
+    selected_tool = st.session_state.document_tool_choice
+    st.markdown(f"### Upload For: {selected_tool}")
 
-    upload_col, feature_col = st.columns([1.55, 1], gap="small", vertical_alignment="top")
+    upload_col, info_col = st.columns([1.55, 1], gap="small", vertical_alignment="top")
     with upload_col:
         with st.container(border=True):
-            st.subheader("☁️ Start with a document")
-            st.caption("Upload a PDF or image and build your AI workspace.")
+            st.subheader("☁️ Start With A Document")
+            st.caption("PDF, PNG, JPG or JPEG · Up to 50 MB")
             uploaded_file = st.file_uploader(
                 "Choose a document",
                 type=["pdf", "png", "jpg", "jpeg"],
                 label_visibility="collapsed",
                 max_upload_size=50,
+                key="home_document_upload",
             )
             if uploaded_file:
                 valid, message = validate_file(uploaded_file)
@@ -1420,85 +1452,57 @@ elif not st.session_state.document_ready:
                     st.success(f"✓ {uploaded_file.name} is ready")
                     if st.button("✦  Analyze Document", type="primary", use_container_width=True, key="home_analyze"):
                         if process_document(uploaded_file):
+                            # Open the result the user selected from the home page.
+                            choice = st.session_state.document_tool_choice
+                            st.session_state.active_view = "Summary" if choice == "Summary" else choice
                             st.rerun()
             else:
-                st.caption("PDF • PNG • JPG • JPEG   ·   Up to 50 MB")
+                st.caption("Upload once. Nexora will keep the document visible while you work.")
 
-    with feature_col:
+    with info_col:
         with st.container(border=True):
-            st.subheader("✦ Nexora AI tools")
+            st.subheader("✦ Included In Document AI")
             for icon, title, text in [
-                ("🧠", "AI Summary", "Understand long documents quickly."),
-                ("💬", "Document Chat", "Ask questions directly about your file."),
-                ("📊", "Data Extraction", "Turn content into structured data."),
-                ("🔍", "Deep Analysis", "Find risks, gaps and important details."),
-                ("💼", "HR & Career", "Salary tools, career analysis and HR templates."),
+                ("🧠", "AI Summary", "Executive summary and key takeaways."),
+                ("💬", "Document Chat", "Natural-language Q&A about the file."),
+                ("📊", "Data Extraction", "Names, dates, amounts and line items."),
+                ("🔍", "Deep Analysis", "Risks, missing information and inconsistencies."),
+                ("📄", "Document View", "Keep the source visible while working."),
             ]:
-                st.markdown(f"### {icon}  {title}")
+                st.markdown(f"**{icon} {title}**")
                 st.caption(text)
 
-    st.subheader("Explore Nexora")
-    cards = [
-        ("🧠", "AI Summary", "Get the important points without reading every page."),
-        ("💬", "Document Chat", "Ask natural-language questions about your document."),
-        ("📊", "Extract Data", "Pull names, dates, amounts and line items into tables."),
-        ("🔍", "Deep Analysis", "Spot risks, missing information and inconsistencies."),
-        ("💼", "HR & Career", "Salary calculators, career analysis and practical HR tools."),
-        ("📄", "Document View", "Keep the original document visible while working."),
-    ]
-    if category == "Understand":
-        cards = [cards[0], cards[5]]
-    elif category == "Chat":
-        cards = [cards[1]]
-    elif category == "Extract":
-        cards = [cards[2]]
-    elif category == "Analyze":
-        cards = [cards[3]]
-    elif category == "HR & Career":
-        cards = [cards[4]]
-
-    for start in range(0, len(cards), 3):
-        cols = st.columns(3, gap="small")
-        for col, (icon, title, text) in zip(cols, cards[start:start + 3]):
-            with col:
-                with st.container(border=True):
-                    st.markdown(f"## {icon}")
-                    st.markdown(f"**{title}**")
-                    st.caption(text)
-
-    f1, f2, f3 = st.columns(3, gap="small")
-    for col, title, text in [
-        (f1, "⚡ Fast", "Optimized AI document and career workflows."),
-        (f2, "🎯 Focused", "Useful results based on the information you provide."),
-        (f3, "🛡️ Thoughtful", "Clear workflows designed for practical document work."),
-    ]:
-        with col:
-            with st.container(border=True):
-                st.markdown(f"**{title}**")
-                st.caption(text)
-
-else:
-    header, new_doc = st.columns([5, 1], gap="small", vertical_alignment="center")
+elif st.session_state.main_section == "Documents" and st.session_state.document_ready:
+    header, home_col, new_doc = st.columns([4.7, 1.0, 1.15], gap="small", vertical_alignment="center")
     with header:
         st.subheader(f"📄 {st.session_state.document_name}")
         st.caption("● Document analyzed and ready")
+    with home_col:
+        if st.button("← Home", use_container_width=True, key="ready_home"):
+            st.session_state.main_section = "Home"
+            st.session_state.home_choice = None
+            st.rerun()
     with new_doc:
-        if st.button("＋ New document", use_container_width=True, key="new_document"):
+        if st.button("＋ New", use_container_width=True, key="new_document"):
             reset_workspace()
             st.session_state.main_section = "Documents"
             st.rerun()
 
-    selected = st.radio(
-        "Document tools",
-        ["Summary", "Extract Data", "Analyze"],
-        index=["Summary", "Extract Data", "Analyze"].index(st.session_state.active_view),
-        horizontal=True,
-        label_visibility="collapsed",
-        key="document_tools",
-    )
-    if selected != st.session_state.active_view:
-        st.session_state.active_view = selected
-        st.rerun()
+    # Clickable tool navigation instead of round radio selections.
+    st.markdown("### Document Workspace")
+    tool_nav = [
+        ("✨ Summary", "Summary"),
+        ("💬 Chat", "Chat"),
+        ("📊 Extract Data", "Extract Data"),
+        ("🔍 Analyze", "Analyze"),
+    ]
+    nav_cols = st.columns(4, gap="small")
+    for col, (label, value) in zip(nav_cols, tool_nav):
+        with col:
+            if st.button(label, use_container_width=True, key=f"ready_tool_{value}"):
+                st.session_state.document_tool_choice = value
+                st.session_state.active_view = value
+                st.rerun()
 
     st.divider()
 
@@ -1549,7 +1553,7 @@ else:
                     else:
                         st.warning("No structured information was found.")
 
-            else:
+            elif st.session_state.active_view == "Analyze":
                 st.subheader("🔍 Deep Analysis")
                 if not st.session_state.analysis_result:
                     st.info("Run deeper analysis to identify risks, missing information, inconsistencies and next steps.")
@@ -1566,7 +1570,7 @@ else:
         with st.container(height=575, border=True):
             if not st.session_state.messages:
                 st.info("Ask Nexora anything about this document.")
-                st.write("**Try asking:**")
+                st.write("**Try Asking:**")
                 suggestions = [
                     "What is this document about?",
                     "What are the most important points?",
@@ -1575,7 +1579,7 @@ else:
                     "Summarize this in simple language.",
                 ]
                 for idx, suggestion in enumerate(suggestions):
-                    if st.button(f"{suggestion}", use_container_width=True, key=f"chat_suggestion_{idx}"):
+                    if st.button(suggestion, use_container_width=True, key=f"chat_suggestion_{idx}"):
                         st.session_state.messages.append({"role": "user", "content": suggestion})
                         with st.chat_message("assistant"):
                             placeholder = st.empty()
@@ -1599,5 +1603,63 @@ else:
             if answer:
                 st.session_state.messages.append({"role": "assistant", "content": answer})
             st.rerun()
+
+else:
+    # ------------------------------------------------------------
+    # HOME — USER CHOOSES THE PRODUCT AREA
+    # ------------------------------------------------------------
+    st.markdown("# Welcome To Nexora ✦")
+    st.write("Choose the workspace you want. Nexora will take you directly to the tools for that job.")
+
+    st.markdown("## Choose Your Nexora Workspace")
+    choice_left, choice_right = st.columns(2, gap="small", vertical_alignment="top")
+
+    with choice_left:
+        with st.container(border=True):
+            st.markdown("# 🧠")
+            st.markdown("## Document AI Intelligence")
+            st.write("Understand, chat with, extract data from and deeply analyze your documents.")
+            if st.button("Open Document AI →", type="primary", use_container_width=True, key="home_document_choice"):
+                st.session_state.home_choice = "Documents"
+                st.session_state.main_section = "Documents"
+                st.session_state.document_tool_choice = "Summary"
+                st.rerun()
+            st.caption("AI Summary · Document Chat · Data Extraction · Deep Analysis · Document View")
+
+    with choice_right:
+        with st.container(border=True):
+            st.markdown("# 💼")
+            st.markdown("## HR & Career Intelligence")
+            st.write("Work with salary tools, career analysis, recruitment documents and professional HR templates.")
+            if st.button("Open HR & Career →", type="primary", use_container_width=True, key="home_hr_choice"):
+                st.session_state.home_choice = "HR"
+                st.session_state.main_section = "HR"
+                st.session_state.hr_section = "Salary & HR Calculators"
+                st.rerun()
+            st.caption("Salary Tools · Resume · Job Description · Offer Letter · Cover Letter · HR Templates")
+
+    st.divider()
+    st.markdown("## Explore All Nexora Capabilities")
+    all_tools = [
+        ("🧠", "AI Summary", "Turn long documents into clear key points."),
+        ("💬", "Document Chat", "Ask natural-language questions about a file."),
+        ("📊", "Data Extraction", "Convert important content into structured tables."),
+        ("🔍", "Deep Analysis", "Surface risks, gaps, dates and important details."),
+        ("💰", "Salary Calculators", "Estimate take-home, increments, gratuity and notice pay."),
+        ("📄", "Resume Analyzer", "Identify resume strengths, gaps and ATS issues."),
+        ("🎯", "JD Analyzer", "Review job descriptions and improve clarity."),
+        ("📝", "Cover Letter", "Create a polished role-specific application letter."),
+        ("📋", "Offer Review", "Review an offer letter and create a structured pack."),
+        ("🗂️", "HR Templates", "Download professional editable HR documents."),
+    ]
+    for start_row in range(0, len(all_tools), 5):
+        cols = st.columns(5, gap="small")
+        for col, (icon, title, text) in zip(cols, all_tools[start_row:start_row+5]):
+            with col:
+                with st.container(border=True):
+                    st.markdown(f"### {icon} {title}")
+                    st.caption(text)
+
+    st.caption("✦ One home. Two focused workspaces. No duplicated navigation.")
 
 st.caption("✦ NEXORA  ·  AI Document Intelligence • HR & Career Intelligence")
