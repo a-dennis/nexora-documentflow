@@ -40,18 +40,14 @@ p,li{color:#51596a}hr{border-color:rgba(148,163,184,.22)!important;margin:.22rem
 [data-testid="stVerticalBlockBorderWrapper"]:hover{border-color:rgba(79,70,229,.28)!important;box-shadow:0 14px 36px rgba(79,70,229,.12),inset 0 1px 0 rgba(255,255,255,.98)}
 [data-testid="stFileUploader"]{background:linear-gradient(135deg,rgba(239,246,255,.98),rgba(250,245,255,.98))!important;border:2px dashed rgba(79,70,229,.36)!important;border-radius:18px!important;padding:.5rem!important;box-shadow:0 0 0 5px rgba(79,70,229,.035),0 14px 35px rgba(79,70,229,.075);transition:all .2s ease}
 [data-testid="stFileUploader"]:hover{border-color:rgba(79,70,229,.72)!important;transform:translateY(-2px);box-shadow:0 0 0 6px rgba(79,70,229,.045),0 18px 42px rgba(79,70,229,.12)}
-.stButton>button,.stDownloadButton>button{min-height:42px!important;border-radius:13px!important;font-weight:800!important;border:1px solid rgba(236,72,153,.20)!important;background:#fce7f3!important;color:#9d174d!important;box-shadow:0 7px 18px rgba(236,72,153,.10),0 2px 6px rgba(79,70,229,.05)!important;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease,background .16s ease!important}
-.stButton>button:hover,.stDownloadButton>button:hover{border-color:rgba(236,72,153,.48)!important;background:#f9a8d4!important;color:#831843!important;box-shadow:0 11px 26px rgba(236,72,153,.18),0 4px 12px rgba(79,70,229,.09)!important;transform:translateY(-1px)!important}
-.stButton>button:active,.stDownloadButton>button:active{transform:translateY(0)!important;box-shadow:0 5px 12px rgba(236,72,153,.12)!important}
+.stButton>button,.stDownloadButton>button{min-height:42px!important;border-radius:13px!important;font-weight:800!important;border:1px solid #e11d48!important;background:#e11d48!important;color:#fff!important;box-shadow:0 5px 14px rgba(225,29,72,.14)!important;transition:background .16s ease,box-shadow .16s ease,border-color .16s ease!important}
+.stButton>button:hover,.stDownloadButton>button:hover{border-color:#be123c!important;background:#be123c!important;color:#fff!important;box-shadow:0 8px 20px rgba(225,29,72,.20)!important}
+.stButton>button:active,.stDownloadButton>button:active{background:#9f1239!important;transform:none!important}
 .stButton>button{position:relative!important;z-index:20!important;pointer-events:auto!important;line-height:1.2!important}
-.workspace-choice{min-height:180px!important}.workspace-choice button{min-height:150px!important;font-size:1.08rem!important;border-radius:20px!important;background:#fce7f3!important;border:2px solid #ec4899!important;color:#9d174d!important;box-shadow:0 12px 30px rgba(236,72,153,.12),0 4px 14px rgba(79,70,229,.06)!important}.workspace-choice button:hover{background:#f472b6!important;border-color:#db2777!important;box-shadow:0 18px 38px rgba(236,72,153,.20),0 7px 18px rgba(79,70,229,.10)!important}
-.stButton>button[kind="primary"],.stButton>button[kind="primary"] p,.stButton>button[kind="primary"] span,.stButton>button[kind="primary"] div{color:#fff!important}.stButton>button[kind="primary"]{color:#fff!important;border:none!important;background:#e11d48!important;box-shadow:0 9px 25px rgba(79,70,229,.24)}
-.stButton>button[kind="primary"]:hover{background:#be123c!important;box-shadow:0 12px 30px rgba(79,70,229,.30)}
-div[role="radiogroup"]{gap:.3rem!important;padding:.18rem!important;background:rgba(255,255,255,.72);border:1px solid rgba(148,163,184,.2);border-radius:14px;box-shadow:0 5px 20px rgba(37,52,90,.035)}
-div[role="radiogroup"] label{border-radius:10px!important;padding:.3rem .78rem!important;font-weight:700!important}
-[data-testid="stChatMessage"]{border-radius:14px!important;margin-bottom:.42rem!important}[data-testid="stChatInput"]{border-radius:14px!important;box-shadow:0 8px 28px rgba(79,70,229,.12)!important}
-[data-testid="stDataFrame"]{border-radius:12px!important;overflow:hidden!important;box-shadow:0 6px 20px rgba(37,52,90,.055)}[data-testid="stAlert"]{border-radius:12px!important}.payment-cta{border:1px solid rgba(37,99,235,.22);background:linear-gradient(135deg,rgba(239,246,255,.98),rgba(250,245,255,.98));border-radius:16px;padding:.55rem .7rem;box-shadow:0 10px 28px rgba(79,70,229,.10)}.privacy-note{font-size:.76rem;color:#697386}.success-card{border:1px solid rgba(22,163,74,.20);background:rgba(240,253,244,.88);border-radius:14px;padding:.45rem .65rem}
-.money-player{border:2px solid rgba(236,72,153,.28)!important;background:#fff1f2!important;box-shadow:0 16px 42px rgba(236,72,153,.13),0 5px 18px rgba(79,70,229,.07)!important}.money-player:hover{border-color:rgba(236,72,153,.58)!important;background:#ffe4e6!important;box-shadow:0 21px 50px rgba(236,72,153,.21),0 8px 22px rgba(79,70,229,.10)!important}.option-card{min-height:78px!important}.option-card button{min-height:54px!important;font-size:.96rem!important}.selected-option button{border:2px solid rgba(79,70,229,.48)!important;background:#fff1f2!important}.home-mini-card{min-height:118px!important}.home-mini-card button{min-height:48px!important}.stSelectbox{display:none!important}.hr-hero{padding:.2rem 0 .35rem}.hr-badge{display:inline-block;padding:.28rem .7rem;border-radius:999px;background:rgba(255,255,255,.8);border:1px solid rgba(79,70,229,.16);font-weight:800;color:#4f46e5}.hr-card-title{font-weight:850}.hr-note{font-size:.86rem;color:#687083}.stButton>button[kind="secondary"]{font-weight:700!important}@media(max-width:900px){.block-container{padding-left:.55rem!important;padding-right:.55rem!important}h1{letter-spacing:-1.8px!important;font-size:2rem!important}h2{font-size:1.45rem!important}h3{font-size:1.15rem!important}.stButton>button,.stDownloadButton>button{min-height:44px!important}.stTextInput input,.stTextArea textarea{font-size:16px!important}.payment-cta{padding:.45rem}.privacy-note{font-size:.72rem}}
+.workspace-choice{min-height:180px!important}.workspace-choice button{min-height:150px!important;font-size:1.08rem!important;border-radius:20px!important;background:#e11d48!important;border:2px solid #e11d48!important;color:#fff!important;box-shadow:0 10px 24px rgba(225,29,72,.16)!important}.workspace-choice button:hover{background:#be123c!important;border-color:#be123c!important;box-shadow:0 14px 30px rgba(225,29,72,.22)!important}
+.stButton>button[kind="primary"],.stButton>button[kind="primary"] p,.stButton>button[kind="primary"] span,.stButton>button[kind="primary"] div{color:#fff!important}.stButton>button[kind="primary"]{border:1px solid #e11d48!important;background:#e11d48!important;box-shadow:0 7px 18px rgba(225,29,72,.18)!important}
+.stButton>button[kind="primary"]:hover{background:#be123c!important;box-shadow:0 10px 24px rgba(225,29,72,.24)!important}
+.money-player{border:2px solid #f472b6!important;background:#fff1f2!important;box-shadow:0 12px 30px rgba(225,29,72,.10)!important}.money-player:hover{border-color:#e11d48!important;background:#ffe4e6!important;box-shadow:0 16px 36px rgba(225,29,72,.16)!important}.option-card{min-height:78px!important}.option-card button{min-height:54px!important;font-size:.96rem!important}.selected-option button{border:2px solid #e11d48!important;background:#fff1f2!important}.home-mini-card{min-height:118px!important}.home-mini-card button{min-height:48px!important}.stSelectbox{display:none!important}.hr-hero{padding:.2rem 0 .35rem}.hr-badge{display:inline-block;padding:.28rem .7rem;border-radius:999px;background:#fce7f3;border:1px solid #f9a8d4;font-weight:800;color:#9d174d}.hr-card-title{font-weight:850}.hr-note{font-size:.86rem;color:#687083}.stButton>button[kind="secondary"]{font-weight:700!important}@media(max-width:900px){.block-container{padding-left:.55rem!important;padding-right:.55rem!important}h1{letter-spacing:-1.8px!important;font-size:2rem!important}h2{font-size:1.45rem!important}h3{font-size:1.15rem!important}.stButton>button,.stDownloadButton>button{min-height:44px!important}.stTextInput input,.stTextArea textarea{font-size:16px!important}.payment-cta{padding:.45rem}.privacy-note{font-size:.72rem}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -958,10 +954,7 @@ if st.session_state.pricing_open:
                     use_container_width=True,
                     key="continue_payment",
                 )
-                st.caption(
-                    "Google Login is ready. The payment gateway can be connected "
-                    "to this button in the next phase."
-                )
+                st.caption("Checkout will open here after payment integration is enabled.")
 
     st.divider()
 
@@ -970,7 +963,7 @@ if st.session_state.pricing_open:
 # ============================================================
 def render_hr_hub():
     st.caption("✦ NEXORA HR & CAREER • SALARY • CAREER • TOOLS")
-    st.markdown("# HR work, career decisions. ✦ **Made simpler.**")
+    st.markdown("# HR Work, Career Decisions — Made Simpler ✦")
     st.write("Salary calculators, AI career tools and practical HR templates — built into Nexora.")
 
     if "hr_section" not in st.session_state:
@@ -1064,7 +1057,7 @@ def render_hr_hub():
 
     elif section == "AI Career Tools":
         st.markdown("## 🤖 AI Career Tools")
-        st.caption("Free analysis gives the user value first. Paid-demo actions turn the identified work into a finished professional document.")
+        st.caption("Analyze first, then create a polished professional document when you are ready.")
         st.caption("🔒 Career files may contain personal or employment information. Upload only documents you are authorized to process.")
         career_options = [
             ("🚀", "Resume Builder", "Analyze, fix weaknesses and create a stronger CV.", "Resume Analyzer"),
@@ -1411,22 +1404,7 @@ RESUME:\n{resume_text}\nJOB DESCRIPTION:\n{jd_text}
                 st.success("✓ No Nexora promotional branding is inserted into the downloaded document.")
                 st.info("Before issuing: replace all [BRACKETED] fields, verify names/dates/amounts, and review against company policy and applicable law.")
 
-    # ============================================================
-    st.divider()
-    with st.container(border=True):
-        st.subheader("🚀 Nexora HR roadmap")
-        r1, r2, r3, r4 = st.columns(4, gap="small")
-        for col, title, text in [
-            (r1, "NOW", "Free salary calculators + HR templates + AI career analysis"),
-            (r2, "NEXT", "SEO landing pages and shareable result pages"),
-            (r3, "PRO", "Detailed reports, saved history and higher AI limits"),
-            (r4, "SCALE", "HR teams, recruiter tools and business subscriptions"),
-        ]:
-            with col:
-                st.markdown(f"**{title}**")
-                st.caption(text)
 
-    st.caption("✦ NEXORA HR  ·  Practical tools for work and career")
 
 # ============================================================
 # MAIN EXPERIENCE
@@ -1688,12 +1666,12 @@ else:
             st.caption("Salary Tools · Resume · Job Description · Offer Letter · Cover Letter · HR Templates")
 
     st.divider()
-    st.markdown("## 🚀 Career Tools Users Will Love")
-    st.caption("Turn your career documents into polished, professional results. These are Nexora's featured paid-ready tools.")
+    st.markdown("## Featured Career Tools")
+    st.caption("Professional tools for improving resumes and job descriptions.")
     resume_col, jd_col = st.columns(2, gap="small", vertical_alignment="top")
 
     with resume_col:
-        with st.container(border=True):
+        with st.container(height=285, border=True):
             st.markdown("### 🚀 Resume Builder & ATS Optimizer")
             st.markdown("**Analyze → Fix Weaknesses → Build A Stronger Resume**")
             st.write("Upload your resume, discover gaps and create a polished professional version. Start free, then unlock the finished resume.")
@@ -1705,7 +1683,7 @@ else:
             st.caption("⭐ Featured Career Tool  ·  Free analysis  ·  Paid final resume")
 
     with jd_col:
-        with st.container(border=True):
+        with st.container(height=285, border=True):
             st.markdown("### 🎯 JD Builder & Recruitment Optimizer")
             st.markdown("**Analyze → Improve Structure → Create A Recruitment-Ready JD**")
             st.write("Turn a basic job description into a clearer, stronger and more professional recruitment document.")
@@ -1738,6 +1716,6 @@ else:
                     st.markdown(f"### {icon} {title}")
                     st.caption(text)
 
-    st.caption("✦ One home. Two focused workspaces. No duplicated navigation.")
+    
 
 st.caption("✦ NEXORA  ·  AI Document Intelligence • HR & Career Intelligence")
