@@ -50,7 +50,7 @@ div[role="radiogroup"]{gap:.3rem!important;padding:.18rem!important;background:r
 div[role="radiogroup"] label{border-radius:10px!important;padding:.3rem .78rem!important;font-weight:700!important}
 [data-testid="stChatMessage"]{border-radius:14px!important;margin-bottom:.42rem!important}[data-testid="stChatInput"]{border-radius:14px!important;box-shadow:0 8px 28px rgba(79,70,229,.12)!important}
 [data-testid="stDataFrame"]{border-radius:12px!important;overflow:hidden!important;box-shadow:0 6px 20px rgba(37,52,90,.055)}[data-testid="stAlert"]{border-radius:12px!important}.payment-cta{border:1px solid rgba(37,99,235,.22);background:linear-gradient(135deg,rgba(239,246,255,.98),rgba(250,245,255,.98));border-radius:16px;padding:.55rem .7rem;box-shadow:0 10px 28px rgba(79,70,229,.10)}.privacy-note{font-size:.76rem;color:#697386}.success-card{border:1px solid rgba(22,163,74,.20);background:rgba(240,253,244,.88);border-radius:14px;padding:.45rem .65rem}
-.hr-hero{padding:.2rem 0 .35rem}.hr-badge{display:inline-block;padding:.28rem .7rem;border-radius:999px;background:rgba(255,255,255,.8);border:1px solid rgba(79,70,229,.16);font-weight:800;color:#4f46e5}.hr-card-title{font-weight:850}.hr-note{font-size:.86rem;color:#687083}.stButton>button[kind="secondary"]{font-weight:700!important}@media(max-width:900px){.block-container{padding-left:.55rem!important;padding-right:.55rem!important}h1{letter-spacing:-1.8px!important;font-size:2rem!important}h2{font-size:1.45rem!important}h3{font-size:1.15rem!important}.stButton>button,.stDownloadButton>button{min-height:44px!important}.stTextInput input,.stTextArea textarea{font-size:16px!important}.payment-cta{padding:.45rem}.privacy-note{font-size:.72rem}}
+.money-player{border:2px solid rgba(79,70,229,.18)!important;background:linear-gradient(135deg,rgba(255,255,255,.98),rgba(239,246,255,.94) 48%,rgba(250,245,255,.96))!important;box-shadow:0 14px 40px rgba(79,70,229,.12)!important}.money-player:hover{border-color:rgba(236,72,153,.35)!important;box-shadow:0 18px 48px rgba(79,70,229,.18)!important}.option-card{min-height:78px!important}.option-card button{min-height:54px!important;font-size:.96rem!important}.selected-option button{border:2px solid rgba(79,70,229,.48)!important;background:linear-gradient(135deg,rgba(239,246,255,.98),rgba(245,243,255,.98))!important}.home-mini-card{min-height:118px!important}.home-mini-card button{min-height:48px!important}.stSelectbox{display:none!important}.hr-hero{padding:.2rem 0 .35rem}.hr-badge{display:inline-block;padding:.28rem .7rem;border-radius:999px;background:rgba(255,255,255,.8);border:1px solid rgba(79,70,229,.16);font-weight:800;color:#4f46e5}.hr-card-title{font-weight:850}.hr-note{font-size:.86rem;color:#687083}.stButton>button[kind="secondary"]{font-weight:700!important}@media(max-width:900px){.block-container{padding-left:.55rem!important;padding-right:.55rem!important}h1{letter-spacing:-1.8px!important;font-size:2rem!important}h2{font-size:1.45rem!important}h3{font-size:1.15rem!important}.stButton>button,.stDownloadButton>button{min-height:44px!important}.stTextInput input,.stTextArea textarea{font-size:16px!important}.payment-cta{padding:.45rem}.privacy-note{font-size:.72rem}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -60,6 +60,7 @@ DEFAULTS = {
     "messages": [], "active_view": "Summary", "extracted_information": None,
     "extracted_line_items": None, "analysis_result": None,
     "pricing_open": False, "home_choice": None, "document_tool_choice": "Summary", "hr_section": "Salary & HR Calculators",
+    "calculator_choice": "CTC → Take-Home Salary", "career_tool_choice": "Resume Analyzer", "hr_template_choice": "Offer Letter",
     "resume_analysis": None, "resume_file_bytes": None, "resume_file_name": None, "resume_file_type": None,
     "resume_target_role": "", "improved_resume_bytes": None, "improved_resume_name": None,
     "resume_fix_paid_demo": False,
@@ -984,6 +985,12 @@ def render_hr_hub():
         with col:
             if st.button(label, use_container_width=True, key=f"hr_tab_{value}"):
                 st.session_state.hr_section = value
+                if value == "Salary & HR Calculators":
+                    st.session_state.calculator_choice = "CTC → Take-Home Salary"
+                elif value == "AI Career Tools":
+                    st.session_state.career_tool_choice = "Resume Analyzer"
+                else:
+                    st.session_state.hr_template_choice = "Offer Letter"
                 st.rerun()
             st.caption(desc)
     section = st.session_state.hr_section
@@ -991,7 +998,22 @@ def render_hr_hub():
     if section == "Salary & HR Calculators":
         st.markdown("## 💰 Salary & HR Calculators")
         st.caption("Free calculators designed for quick, practical answers.")
-        calculator = st.selectbox("Choose a calculator", ["CTC → Take-Home Salary","Salary Increment Calculator","Gratuity Estimator","Notice Period Salary Calculator"])
+        calculator_options = [
+            ("🧾", "CTC → Take-Home", "Estimate monthly take-home salary.", "CTC → Take-Home Salary"),
+            ("📈", "Salary Increment", "Calculate your new CTC after an increment.", "Salary Increment Calculator"),
+            ("🏆", "Gratuity", "Estimate gratuity from wages and service.", "Gratuity Estimator"),
+            ("📅", "Notice Period", "Estimate notice-period salary.", "Notice Period Salary Calculator"),
+        ]
+        calc_cols = st.columns(4, gap="small")
+        for col, (icon, title, desc, value) in zip(calc_cols, calculator_options):
+            with col:
+                css = "selected-option" if st.session_state.calculator_choice == value else "option-card"
+                with st.container(border=True):
+                    if st.button(f"{icon}  {title}", use_container_width=True, key=f"calc_choice_{value}"):
+                        st.session_state.calculator_choice = value
+                        st.rerun()
+                    st.caption(desc)
+        calculator = st.session_state.calculator_choice
         if calculator == "CTC → Take-Home Salary":
             left,right=st.columns([1.1,1],gap="small",vertical_alignment="top")
             with left:
@@ -1043,7 +1065,21 @@ def render_hr_hub():
         st.markdown("## 🤖 AI Career Tools")
         st.caption("Free analysis gives the user value first. Paid-demo actions turn the identified work into a finished professional document.")
         st.caption("🔒 Career files may contain personal or employment information. Upload only documents you are authorized to process.")
-        tool=st.selectbox("Choose an AI career tool",["Resume Analyzer","Job Description Analyzer","Offer Letter Analyzer","Cover Letter Generator"])
+        career_options = [
+            ("🚀", "Resume Builder", "Analyze, fix weaknesses and create a stronger CV.", "Resume Analyzer"),
+            ("🎯", "JD Builder", "Analyze and professionally improve job descriptions.", "Job Description Analyzer"),
+            ("📑", "Offer Review", "Review an offer and create a decision-support pack.", "Offer Letter Analyzer"),
+            ("✉️", "Cover Letter", "Create a tailored application letter from resume + JD.", "Cover Letter Generator"),
+        ]
+        career_cols = st.columns(4, gap="small")
+        for col, (icon, title, desc, value) in zip(career_cols, career_options):
+            with col:
+                with st.container(border=True):
+                    if st.button(f"{icon}  {title}", use_container_width=True, key=f"career_choice_{value}"):
+                        st.session_state.career_tool_choice = value
+                        st.rerun()
+                    st.caption(desc)
+        tool = st.session_state.career_tool_choice
 
         if tool == "Resume Analyzer":
             st.subheader("📄 Resume Analyzer")
@@ -1243,14 +1279,26 @@ RESUME:\n{resume_text}\nJOB DESCRIPTION:\n{jd_text}
         st.markdown("## 📚 HR Templates")
         st.caption("Professional, editable HR drafts with a clean corporate layout. Replace bracketed fields and review against your company policy before issue.")
 
-        template = st.selectbox(
-            "Choose a template",
-            [
-                "Offer Letter", "Appointment Letter", "Salary Increment Letter", "Promotion Letter",
-                "Experience Certificate", "Relieving Letter", "Employee Warning Letter", "Exit Interview Form",
-            ],
-            key="hr_template_select",
-        )
+        template_options = [
+            ("📨", "Offer Letter"), ("🧾", "Appointment Letter"),
+            ("📈", "Salary Increment Letter"), ("🏆", "Promotion Letter"),
+            ("🎓", "Experience Certificate"), ("👋", "Relieving Letter"),
+            ("⚠️", "Employee Warning Letter"), ("🗣️", "Exit Interview Form"),
+        ]
+        template_cols = st.columns(4, gap="small")
+        for row_start in range(0, len(template_options), 4):
+            row_cols = st.columns(4, gap="small")
+            for col, (icon, title) in zip(row_cols, template_options[row_start:row_start+4]):
+                with col:
+                    with st.container(border=True):
+                        if st.button(f"{icon}  {title}", use_container_width=True, key=f"template_choice_{row_start}_{title}"):
+                            st.session_state.hr_template_choice = title
+                            st.rerun()
+                        if st.session_state.hr_template_choice == title:
+                            st.caption("✓ Selected")
+                        else:
+                            st.caption("Open template")
+        template = st.session_state.hr_template_choice
 
         templates = {
             "Offer Letter": {
@@ -1637,6 +1685,35 @@ else:
                 st.session_state.hr_section = "Salary & HR Calculators"
                 st.rerun()
             st.caption("Salary Tools · Resume · Job Description · Offer Letter · Cover Letter · HR Templates")
+
+    st.divider()
+    st.markdown("## 🚀 Career Tools Users Will Love")
+    st.caption("Turn your career documents into polished, professional results. These are Nexora's featured paid-ready tools.")
+    resume_col, jd_col = st.columns(2, gap="small", vertical_alignment="top")
+
+    with resume_col:
+        with st.container(border=True):
+            st.markdown("### 🚀 Resume Builder & ATS Optimizer")
+            st.markdown("**Analyze → Fix Weaknesses → Build A Stronger Resume**")
+            st.write("Upload your resume, discover gaps and create a polished professional version. Start free, then unlock the finished resume.")
+            if st.button("Open Resume Builder →", type="primary", use_container_width=True, key="home_resume_builder"):
+                st.session_state.main_section = "HR"
+                st.session_state.hr_section = "AI Career Tools"
+                st.session_state.career_tool_choice = "Resume Analyzer"
+                st.rerun()
+            st.caption("⭐ Featured Career Tool  ·  Free analysis  ·  Paid final resume")
+
+    with jd_col:
+        with st.container(border=True):
+            st.markdown("### 🎯 JD Builder & Recruitment Optimizer")
+            st.markdown("**Analyze → Improve Structure → Create A Recruitment-Ready JD**")
+            st.write("Turn a basic job description into a clearer, stronger and more professional recruitment document.")
+            if st.button("Open JD Builder →", type="primary", use_container_width=True, key="home_jd_builder"):
+                st.session_state.main_section = "HR"
+                st.session_state.hr_section = "AI Career Tools"
+                st.session_state.career_tool_choice = "Job Description Analyzer"
+                st.rerun()
+            st.caption("⭐ Featured Career Tool  ·  Free analysis  ·  Paid professional JD")
 
     st.divider()
     st.markdown("## Explore All Nexora Capabilities")
