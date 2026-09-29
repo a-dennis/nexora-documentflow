@@ -733,6 +733,7 @@ DOCUMENT_AI_BODY = r"""
     html = html.replace(/^### (.*)$/gm, '<h4>$1</h4>');
     html = html.replace(/^## (.*)$/gm, '<h4>$1</h4>');
     html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/^\s*[-*] (.*)$/gm, '\u2022 $1');
     el.innerHTML = html;
   }
 
