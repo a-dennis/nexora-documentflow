@@ -1501,3 +1501,36 @@ buildTabs();
 buildForm();
 </script>
 """
+
+
+LOGIN_BODY = """
+<section class="page-hero"><div class="container">
+  <h1>Sign in to Nexora</h1>
+  <p>Free tools never need an account. Sign in is only needed for paid
+  features and for saving your work.</p>
+</div></section>
+<section class="section"><div class="container" style="max-width:480px">
+  <div class="card" style="text-align:center;padding:36px 28px">
+    __ERR__
+    __MSG__
+    <div class="t-icon" style="font-size:40px;margin-bottom:10px">&#x1F512;</div>
+    <h2 style="margin:0 0 8px">One click with Google</h2>
+    <p style="margin:0 0 20px">Use your Google account to sign in - no new
+    password to remember.</p>
+    <a class="btn" href="/auth/google" style="width:100%">Continue with Google</a>
+    <div style="display:flex;align-items:center;gap:12px;margin:22px 0;color:var(--muted);font-size:13px">
+      <span style="flex:1;border-top:1px solid var(--line)"></span>or with email<span style="flex:1;border-top:1px solid var(--line)"></span>
+    </div>
+    <form method="post" action="/auth/email" style="text-align:left">
+      <div class="field"><label>Email</label>
+        <input name="email" type="email" required placeholder="you@example.com"></div>
+      <div class="field"><label>Password</label>
+        <input name="password" type="password" required minlength="6" placeholder="At least 6 characters"></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn" type="submit" name="mode" value="login" style="flex:1">Sign in</button>
+        <button class="btn ghost" type="submit" name="mode" value="signup" style="flex:1">Create account</button>
+      </div>
+    </form>
+  </div>
+</div></section>
+"""
