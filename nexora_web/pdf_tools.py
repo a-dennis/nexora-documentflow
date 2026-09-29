@@ -714,10 +714,45 @@ def _tesseract_ready():
     return bool(td and os.path.exists(os.path.join(td, "eng.traineddata")))
 
 
+def _ocr_rapidocr(data):
+    """Searchable PDF via RapidOCR (ONNX, no system deps). Returns pdf bytes."""
+    import fitz
+    from rapidocr_onnxruntime import RapidOCR
+    engine = RapidOCR()
+    src = fitz.open(stream=data, filetype="pdf")
+    out = fitz.open()
+    for page in src:
+        pix = page.get_pixmap(dpi=200)
+        newp = out.new_page(width=page.rect.width, height=page.rect.height)
+        newp.insert_image(newp.rect, pixmap=pix)
+        result, _ = engine(pix.tobytes("png"))
+        if not result:
+            continue
+        sx = page.rect.width / pix.width
+        sy = page.rect.height / pix.height
+        for box, text, conf in result:
+            if conf < 0.5 or not text.strip():
+                continue
+            x0 = min(p[0] for p in box) * sx
+            y0 = min(p[1] for p in box) * sy
+            y1 = max(p[1] for p in box) * sy
+            size = max(4.0, (y1 - y0) * 0.9)
+            newp.insert_text(fitz.Point(x0, y1 - size * 0.15), text,
+                             fontsize=size, render_mode=3)
+    buf = io.BytesIO()
+    out.save(buf, garbage=3, deflate=True)
+    return buf.getvalue()
+
+
 def h_ocr(files, opts):
     name, data = _one(files)
     if not _tesseract_ready():
-        raise ToolError("ocr-unavailable")
+        try:
+            return _ocr_rapidocr(data), "ocr-searchable.pdf", "application/pdf"
+        except ImportError:
+            raise ToolError("ocr-unavailable")
+        except Exception:
+            raise ToolError("OCR failed on that document. Try a clearer scan.")
     try:
         import fitz
         src = fitz.open(stream=data, filetype="pdf")
