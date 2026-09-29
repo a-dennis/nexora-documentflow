@@ -47,7 +47,7 @@ app = FastAPI(title="Nexora", docs_url=None, redoc_url=None, openapi_url=None)
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
 
 # Fast, cost-efficient model first; fallbacks protect against renames.
-GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash"]
+GEMINI_MODELS = ["gemini-3.8-flash"]
 
 MAX_UPLOAD_BYTES = 12 * 1024 * 1024        # 12 MB per file
 MAX_TEXT_CHARS = 120_000                   # text sent to the AI per request
@@ -1160,21 +1160,41 @@ def gemini_generate(doc: dict, instruction: str, json_mode: bool = False) -> str
     if json_mode:
         config = types.GenerateContentConfig(response_mime_type="application/json")
 
-    models = [_gemini_model] if _gemini_model else GEMINI_MODELS
+    def _call(model):
+        resp = _client().models.generate_content(
+            model=model, contents=[types.Content(role="user", parts=parts)],
+            config=config)
+        return (resp.text or "").strip()
+
+    models = [_gemini_model] if _gemini_model else list(GEMINI_MODELS)
     last_err = None
     for model in models:
         try:
-            resp = _client().models.generate_content(
-                model=model, contents=[types.Content(role="user", parts=parts)],
-                config=config)
+            out = _call(model)
             _gemini_model = model
-            return (resp.text or "").strip()
+            return out
         except Exception as e:  # try next model on model-not-found style errors
             last_err = e
             msg = str(e).lower()
-            if "not found" in msg or "not supported" in msg or "invalid" in msg:
+            if "not found" in msg or "no longer available" in msg or "not supported" in msg:
                 continue
             raise
+
+    # Dynamic fallback: ask the API which flash models this key can use.
+    try:
+        for m in _client().models.list():
+            short = (getattr(m, "name", "") or "").split("/")[-1]
+            if "flash" not in short or short in models:
+                continue
+            try:
+                out = _call(short)
+                _gemini_model = short
+                return out
+            except Exception as e:
+                last_err = e
+                continue
+    except Exception as e:
+        last_err = e
     raise RuntimeError(f"AI model error: {last_err}")
 
 
