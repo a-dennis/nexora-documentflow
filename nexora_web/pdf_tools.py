@@ -716,8 +716,10 @@ def _tesseract_ready():
 
 def _ocr_rapidocr(data):
     """Searchable PDF via RapidOCR (ONNX, no system deps). Returns pdf bytes."""
+    import cv2
     import fitz
-    from rapidocr_onnxruntime import RapidOCR
+    import numpy as np
+    from rapidocr import RapidOCR
     engine = RapidOCR()
     src = fitz.open(stream=data, filetype="pdf")
     out = fitz.open()
@@ -725,14 +727,17 @@ def _ocr_rapidocr(data):
         pix = page.get_pixmap(dpi=200)
         newp = out.new_page(width=page.rect.width, height=page.rect.height)
         newp.insert_image(newp.rect, pixmap=pix)
-        result, _ = engine(pix.tobytes("png"))
-        if not result:
+        img = cv2.imdecode(np.frombuffer(pix.tobytes("png"), np.uint8),
+                           cv2.IMREAD_COLOR)
+        result = engine(img)
+        if result is None or result.txts is None:
             continue
         sx = page.rect.width / pix.width
         sy = page.rect.height / pix.height
-        for box, text, conf in result:
+        for box, text, conf in zip(result.boxes, result.txts, result.scores):
             if conf < 0.5 or not text.strip():
                 continue
+            box = [[float(px), float(py)] for px, py in box]
             x0 = min(p[0] for p in box) * sx
             y0 = min(p[1] for p in box) * sy
             y1 = max(p[1] for p in box) * sy
