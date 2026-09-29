@@ -1517,7 +1517,7 @@ LOGIN_BODY = """
     <h2 style="margin:0 0 8px">One click with Google</h2>
     <p style="margin:0 0 20px">Use your Google account to sign in - no new
     password to remember.</p>
-    <a class="btn" href="/auth/google" style="width:100%">Continue with Google</a>
+    __GOOGLE__
     <div style="display:flex;align-items:center;gap:12px;margin:22px 0;color:var(--muted);font-size:13px">
       <span style="flex:1;border-top:1px solid var(--line)"></span>or with email<span style="flex:1;border-top:1px solid var(--line)"></span>
     </div>
