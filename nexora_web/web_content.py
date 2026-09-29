@@ -1631,6 +1631,7 @@ LOGIN_BODY = """
       <span style="flex:1;border-top:1px solid var(--line)"></span>or with email<span style="flex:1;border-top:1px solid var(--line)"></span>
     </div>
     <form method="post" action="/auth/email" style="text-align:left">
+      __NEXT__
       <div class="field"><label>Email</label>
         <input name="email" type="email" required placeholder="you@example.com"></div>
       <div class="field"><label>Password</label>
@@ -1642,4 +1643,146 @@ LOGIN_BODY = """
     </form>
   </div>
 </div></section>
+"""
+
+PREMIUM_BODY = """
+<section class="section" style="padding-top:0"><div class="container" style="max-width:780px">
+  <div class="card" id="premcard" style="display:none;border:1.5px solid rgba(124,58,237,.35);background:linear-gradient(180deg,#fdfbff 0%,#ffffff 100%);box-shadow:0 8px 26px rgba(124,58,237,.12)">
+    <span class="tag featured">Premium</span>
+    <h2 style="margin:10px 0 6px" id="prem-name"></h2>
+    <p id="prem-blurb" style="color:var(--muted);margin:0 0 16px"></p>
+    <button class="btn" id="prem-buy" type="button"></button>
+    <span id="prem-msg" style="margin-left:12px;font-size:13.5px;color:var(--muted)"></span>
+    <div id="prem-panel" style="display:none;margin-top:20px;text-align:left">
+      <div class="field"><label id="prem-srclabel"></label>
+        <textarea id="prem-src" placeholder="Paste the text here" style="min-height:150px"></textarea></div>
+      <div class="field"><label>Anything to emphasize? (optional)</label>
+        <input id="prem-target" placeholder="e.g. target role, your concerns, company context"></div>
+      <button class="btn" id="prem-run" type="button">Generate my result</button>
+      <span id="prem-spin" style="display:none;margin-left:12px;font-size:14px;color:var(--muted)"><span class="spin"></span> The AI is working - this can take up to a minute...</span>
+    </div>
+    <div class="result" id="prem-result" style="display:none;text-align:left"></div>
+    <div id="prem-dl" style="display:none;margin-top:14px;text-align:left">
+      <button class="btn ghost" id="prem-docx" type="button">Download as Word (.docx)</button>
+    </div>
+  </div>
+</div></section>
+<script>
+(function () {
+  var PC = __PCFG__;
+  var card = document.getElementById("premcard");
+  var buy = document.getElementById("prem-buy");
+  var msg = document.getElementById("prem-msg");
+  var panel = document.getElementById("prem-panel");
+  var result = document.getElementById("prem-result");
+  var dl = document.getElementById("prem-dl");
+  var lastResult = "";
+  function setMsg(t) { msg.textContent = t || ""; }
+  function goLogin() {
+    location.href = "/login?next=" + encodeURIComponent(location.pathname);
+  }
+  function loadRzp(cb) {
+    if (window.Razorpay) { cb(); return; }
+    var s = document.createElement("script");
+    s.src = "https://checkout.razorpay.com/v1/checkout.js";
+    s.onload = cb;
+    s.onerror = function () { setMsg("Could not load the payment window. Check your connection and try again."); };
+    document.body.appendChild(s);
+  }
+  fetch("/api/config").then(function (r) { return r.json(); }).then(function (cfg) {
+    if (!cfg.payments_ready) return;
+    card.style.display = "block";
+    document.getElementById("prem-name").textContent = PC.name;
+    document.getElementById("prem-blurb").textContent = PC.blurb;
+    document.getElementById("prem-srclabel").textContent =
+      "Paste " + PC.sourceLabel;
+    buy.textContent = "Unlock for \u20B9" + PC.price + " - one payment";
+  }).catch(function () {});
+  buy.onclick = function () {
+    setMsg("");
+    fetch("/api/me").then(function (r) { return r.json(); }).then(function (me) {
+      if (!me.authenticated) { goLogin(); return; }
+      buy.disabled = true; setMsg("Starting secure checkout...");
+      fetch("/api/pay/order", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({product: PC.product})
+      }).then(function (r) { return r.json(); }).then(function (o) {
+        buy.disabled = false;
+        if (o.login) { goLogin(); return; }
+        if (o.error) { setMsg(o.error); return; }
+        setMsg("");
+        loadRzp(function () {
+          var rzp = new Razorpay({
+            key: o.key_id, amount: o.amount, currency: o.currency,
+            order_id: o.order_id, name: "Nexora", description: o.name,
+            prefill: {email: o.email}, theme: {color: "#7c3aed"},
+            modal: {ondismiss: function () { setMsg("Payment cancelled - nothing was charged."); }},
+            handler: function (resp) {
+              setMsg("Verifying payment...");
+              fetch("/api/pay/verify", {
+                method: "POST", headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(resp)
+              }).then(function (r) { return r.json(); }).then(function (v) {
+                if (v.ok) {
+                  buy.style.display = "none";
+                  setMsg("Unlocked - your result is one step away.");
+                  panel.style.display = "block";
+                } else {
+                  setMsg(v.error || "Verification failed. If money was deducted it is refunded automatically.");
+                }
+              }).catch(function () { setMsg("Network error while verifying. If money was deducted it is refunded automatically."); });
+            }
+          });
+          rzp.open();
+        });
+      }).catch(function () { buy.disabled = false; setMsg("Network error. Please try again."); });
+    }).catch(function () {});
+  };
+  document.getElementById("prem-run").onclick = function () {
+    var src = document.getElementById("prem-src").value.trim();
+    if (src.length < 40) { setMsg("Please paste " + PC.sourceLabel + " first."); return; }
+    var run = document.getElementById("prem-run");
+    run.disabled = true;
+    document.getElementById("prem-spin").style.display = "inline";
+    result.style.display = "none"; dl.style.display = "none"; setMsg("");
+    fetch("/api/premium/" + PC.product, {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        source_text: src,
+        target: document.getElementById("prem-target").value
+      })
+    }).then(function (r) { return r.json(); }).then(function (v) {
+      run.disabled = false;
+      document.getElementById("prem-spin").style.display = "none";
+      if (v.error) { setMsg(v.error); return; }
+      lastResult = v.result;
+      panel.style.display = "none";
+      result.style.display = "block";
+      result.textContent = v.result;
+      dl.style.display = "block";
+      buy.style.display = "";
+      buy.textContent = "Unlock another run for \u20B9" + PC.price;
+      setMsg("Done! Your result is below.");
+    }).catch(function () {
+      run.disabled = false;
+      document.getElementById("prem-spin").style.display = "none";
+      setMsg("Network error. Your credit was not used - please try again.");
+    });
+  };
+  document.getElementById("prem-docx").onclick = function () {
+    if (!lastResult) return;
+    fetch("/api/download-docx", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({title: PC.name, content: lastResult})
+    }).then(function (r) { return r.ok ? r.blob() : null; }).then(function (blob) {
+      if (!blob) { setMsg("Could not create the Word file. Please try again."); return; }
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = PC.product + ".docx";
+      document.body.appendChild(a); a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+    });
+  };
+})();
+</script>
 """
