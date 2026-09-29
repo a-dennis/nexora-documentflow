@@ -375,6 +375,134 @@ h2.sech { font-size: 22px; margin: 34px 0 14px; }
 }
 .footer .row { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: center; }
 .footer .brand { font-size: 17px; margin: 0; }
+
+/* ============ Nexora design refresh (Sep 2026) ============ */
+:root {
+  --bg: #eef2ff;
+  --accent: #4f46e5;
+  --accent-dark: #4338ca;
+  --accent2: #7c3aed;
+  --tint: #eef0ff;
+  --radius: 18px;
+}
+body {
+  background:
+    radial-gradient(900px 480px at 85% -80px, #e0e7ff 0%, rgba(224,231,255,0) 60%),
+    radial-gradient(700px 420px at -10% 120px, #f3e8ff 0%, rgba(243,232,255,0) 55%),
+    linear-gradient(180deg, #f6f7ff 0%, #eef2f9 100%);
+  background-attachment: fixed;
+}
+.topnav {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.05), 0 8px 24px rgba(79, 70, 229, 0.06);
+}
+.brand span {
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.navlinks a { border-radius: 999px; padding: 8px 14px; }
+.navlinks a.active {
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+}
+.hero h1, .page-hero h1 { letter-spacing: -0.8px; }
+.kicker { color: var(--accent2); }
+
+/* cards */
+.card {
+  border-radius: var(--radius);
+  border: 1px solid rgba(99, 102, 241, 0.14);
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+.card-link:hover, a.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 30px rgba(79, 70, 229, 0.16);
+  text-decoration: none;
+  border-color: rgba(99, 102, 241, 0.35);
+}
+.card-icon {
+  width: 46px; height: 46px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 23px; line-height: 1;
+  background: linear-gradient(135deg, #eef0ff 0%, #f5edff 100%);
+  border: 1px solid rgba(99, 102, 241, 0.18);
+  color: inherit;
+}
+.card-icon svg { display: none; }
+
+/* buttons: pill shape, gradient, clear press feedback */
+.btn {
+  border-radius: 999px;
+  padding: 12px 24px;
+  font-weight: 700;
+  letter-spacing: 0.1px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.32);
+  border: none;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+}
+.btn:hover {
+  background: linear-gradient(135deg, var(--accent-dark) 0%, #6d28d9 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(79, 70, 229, 0.4);
+}
+.btn:active { transform: translateY(0); box-shadow: 0 3px 8px rgba(79, 70, 229, 0.3); }
+.btn.ghost {
+  background: #ffffff;
+  color: var(--accent);
+  border: 1.5px solid #c7d0fb;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+}
+.btn.ghost:hover { background: var(--tint); color: var(--accent-dark); transform: translateY(-1px); }
+
+/* tags / badges */
+.tag {
+  border-radius: 999px; font-weight: 700; letter-spacing: 0.4px;
+}
+.tag.live {
+  background: linear-gradient(135deg, #dcfce7, #d1fae5); color: #047857;
+  border: 1px solid #a7f3d0;
+}
+.tag.featured {
+  background: linear-gradient(135deg, #ede9fe, #e0e7ff); color: var(--accent-dark);
+  border: 1px solid #c7d2fe;
+}
+.tag.soon { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+
+/* inputs */
+.field input, .field textarea, .field select,
+.chatrow input {
+  border-radius: 12px;
+  border: 1.5px solid #dbe1f0;
+  background: #fbfcff;
+}
+.field input:focus, .field textarea:focus, .field select:focus,
+.chatrow input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+/* pill tabs */
+.pill-tabs button { border-radius: 999px; border: 1.5px solid #dbe1f0; }
+.pill-tabs button.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+/* hero polish */
+.page-hero, .hero { padding-top: 56px; }
+.dropzone, .srcbox { border-radius: var(--radius); }
+
+@media (max-width: 760px) {
+  .hero, .page-hero { padding-top: 40px; }
+  .btn { padding: 13px 22px; font-size: 15px; }
+}
 """
 
 # ----------------------------------------------------------------------
@@ -395,8 +523,19 @@ ICONS = {
     "letter": '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22 6 12 13 2 6"/></svg>',
     "check": '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
     "folder": '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
+
     "upload": '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
 }
+
+# Emoji shown on each option card (conveys the tool's meaning at a glance).
+EMOJI = {
+    "doc": "\U0001F4C4", "briefcase": "\U0001F4BC", "resume": "\U0001F4DD",
+    "target": "\U0001F3AF", "search": "\U0001F50D", "calc": "\U0001F9EE",
+    "pen": "\u270D\uFE0F", "chat": "\U0001F4AC", "table": "\U0001F4CA",
+    "pdf": "\U0001F4D5", "letter": "\u2709\uFE0F", "check": "\u2705",
+    "folder": "\U0001F4C1", "upload": "\u2B06\uFE0F",
+}
+
 
 # ----------------------------------------------------------------------
 # HTML building blocks
@@ -453,7 +592,7 @@ def card(icon: str, title: str, text: str, badge: str = "", extra: str = "") -> 
     badge_html = f'<span class="tag {badge.lower()}">{badge}</span>' if badge else ""
     return (
         '<div class="card">'
-        f'<div class="card-icon">{ICONS.get(icon, ICONS["doc"])}</div>'
+        f'<div class="card-icon">{EMOJI.get(icon, EMOJI["doc"])}</div>'
         f"<h3>{title}</h3><p>{text}</p>{badge_html}{extra}</div>"
     )
 
@@ -462,7 +601,7 @@ def linked_card(href: str, icon: str, title: str, text: str, cta: str, badge: st
     badge_html = f'<span class="tag {badge.lower()}">{badge}</span>' if badge else ""
     return (
         f'<a class="card card-link" href="{href}">'
-        f'<div class="card-icon">{ICONS.get(icon, ICONS["doc"])}</div>'
+        f'<div class="card-icon">{EMOJI.get(icon, EMOJI["doc"])}</div>'
         f"<h3>{title}</h3><p>{text}</p>"
         f'{badge_html}<p style="margin-top:12px"><strong style="color:var(--accent)">{cta} &rarr;</strong></p>'
         "</a>"
@@ -1343,23 +1482,23 @@ CALC_BODY = """
 </div></section>
 <script>
 var CALCS = [
-  {id: "ctc", name: "CTC Breakdown",
+  {id: "ctc", name: "🧮 CTC Breakdown",
    desc: "See how an annual CTC typically splits into components.",
    fields: [["ctc", "Annual CTC (Rs.)", "e.g. 600000"]],
    note: "A common structure: Basic 40% of CTC, HRA 50% of Basic, employer PF 12% of Basic, gratuity 4.81% of Basic, rest as special allowance. Actual structures vary by company."},
-  {id: "takehome", name: "Take-home Pay",
+  {id: "takehome", name: "💰 Take-home Pay",
    desc: "Estimate monthly in-hand salary from CTC (new tax regime).",
    fields: [["ctc", "Annual CTC (Rs.)", "e.g. 600000"]],
    note: "Simplified estimate using the new regime (FY 2025-26) with Rs. 75,000 standard deduction, employee PF 12% of Basic (40% of CTC) and Rs. 200/month professional tax. Actual take-home depends on your company's structure and your tax choices."},
-  {id: "increment", name: "Increment",
+  {id: "increment", name: "📈 Increment",
    desc: "New salary after a percentage hike.",
    fields: [["cur", "Current annual CTC (Rs.)", "e.g. 600000"], ["pct", "Hike (%)", "e.g. 12"]],
    note: ""},
-  {id: "gratuity", name: "Gratuity",
+  {id: "gratuity", name: "🎁 Gratuity",
    desc: "Gratuity payable under the Payment of Gratuity Act.",
    fields: [["basic", "Last drawn monthly Basic + DA (Rs.)", "e.g. 25000"], ["years", "Years of service", "e.g. 6"]],
    note: "Formula: 15/26 x last drawn Basic+DA x completed years (6+ months rounds up). Gratuity generally applies after 5 years of continuous service."},
-  {id: "notice", name: "Notice Period",
+  {id: "notice", name: "📅 Notice Period",
    desc: "Find your last working day from your resignation date.",
    fields: [["date", "Resignation date", "", "date"], ["days", "Notice period (days)", "e.g. 30"]],
    note: "Counts calendar days. Check your offer/appointment letter - some companies count differently or allow buy-out."}
@@ -1702,7 +1841,7 @@ Conducted by: {hr_name}          Date: __DATE__""".format_map(_F(f)) + _doc_foot
 
 HR_DOCS = {
     "offer-letter": {
-        "title": "Offer Letter",
+        "title": "📜 Offer Letter",
         "fields": [
             ["company", "Company name", "e.g. Nexora Technologies"],
             ["candidate", "Candidate name", "e.g. Priya Sharma"],
@@ -1715,7 +1854,7 @@ HR_DOCS = {
         "render": _render_offer,
     },
     "appointment-letter": {
-        "title": "Appointment Letter",
+        "title": "📋 Appointment Letter",
         "fields": [
             ["company", "Company name", ""],
             ["employee", "Employee name", ""],
@@ -1730,7 +1869,7 @@ HR_DOCS = {
         "render": _render_appointment,
     },
     "increment-letter": {
-        "title": "Salary Increment Letter",
+        "title": "📈 Salary Increment Letter",
         "fields": [
             ["company", "Company name", ""],
             ["employee", "Employee name", ""],
@@ -1743,7 +1882,7 @@ HR_DOCS = {
         "render": _render_increment,
     },
     "promotion-letter": {
-        "title": "Promotion Letter",
+        "title": "⭐ Promotion Letter",
         "fields": [
             ["company", "Company name", ""],
             ["employee", "Employee name", ""],
@@ -1756,7 +1895,7 @@ HR_DOCS = {
         "render": _render_promotion,
     },
     "experience-certificate": {
-        "title": "Experience Certificate",
+        "title": "🏅 Experience Certificate",
         "fields": [
             ["company", "Company name", ""],
             ["employee", "Employee name", ""],
@@ -1768,7 +1907,7 @@ HR_DOCS = {
         "render": _render_experience,
     },
     "relieving-letter": {
-        "title": "Relieving Letter",
+        "title": "👋 Relieving Letter",
         "fields": [
             ["company", "Company name", ""],
             ["employee", "Employee name", ""],
@@ -1779,7 +1918,7 @@ HR_DOCS = {
         "render": _render_relieving,
     },
     "warning-letter": {
-        "title": "Warning Letter",
+        "title": "\⚠️ Warning Letter",
         "fields": [
             ["company", "Company name", ""],
             ["employee", "Employee name", ""],
@@ -1791,7 +1930,7 @@ HR_DOCS = {
         "render": _render_warning,
     },
     "exit-interview": {
-        "title": "Exit Interview Form",
+        "title": "🚪 Exit Interview Form",
         "fields": [
             ["company", "Company name", ""],
             ["employee", "Employee name", ""],
