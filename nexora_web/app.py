@@ -55,7 +55,7 @@ app = FastAPI(title="Nexora", docs_url=None, redoc_url=None, openapi_url=None)
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
 
 # Fast, cost-efficient model first; fallbacks protect against renames.
-GEMINI_MODELS = ["gemini-3.8-flash"]
+GEMINI_MODELS = ["gemini-3.8-flash", "gemini-flash-lite-latest", "gemini-3.1-flash-lite"]
 
 MAX_UPLOAD_BYTES = 12 * 1024 * 1024        # 12 MB per file
 MAX_TEXT_CHARS = 120_000                   # text sent to the AI per request
@@ -2100,7 +2100,14 @@ def gemini_generate(doc: dict, instruction: str, json_mode: bool = False) -> str
         except Exception as e:  # try next model on model-not-found style errors
             last_err = e
             msg = str(e).lower()
-            if "not found" in msg or "no longer available" in msg or "not supported" in msg:
+            # Move to the next candidate model on renames (404) and on
+            # transient capacity/quota errors (503/429) - a single congested
+            # model must not take the whole feature down.
+            if ("not found" in msg or "no longer available" in msg
+                    or "not supported" in msg or "503" in msg
+                    or "unavailable" in msg or "high demand" in msg
+                    or "429" in msg or "resource_exhausted" in msg
+                    or "quota" in msg):
                 continue
             raise
 
