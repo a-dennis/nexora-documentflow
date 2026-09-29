@@ -1,30 +1,37 @@
-# Nexora - web production shell
+# Nexora - production web app
 
-FastAPI production shell for Nexora (Phase 1). Deployed on Render.
+Nexora is an AI-powered productivity platform for documents, HR and careers.
+This folder contains the production FastAPI application deployed on Render.
 
-## Render settings
+## Current status
 
-- Root Directory: `nexora_web`
-- Build Command: `pip install -r requirements.txt`
-- Start Command: `uvicorn app:app --host 0.0.0.0 --port $PORT`
-- Python: 3.13 (from `.python-version`)
-
-## Routes
-
-| Path | Purpose |
-| --- | --- |
-| `/` | Home |
-| `/document-ai` | Document AI section (placeholder) |
-| `/hr-career` | HR & Career section (placeholder) |
-| `/resume-builder` | Resume Builder + ATS Optimizer (featured placeholder) |
-| `/jd-builder` | JD Builder + Recruitment Optimizer (featured placeholder) |
-| `/health` | Health check: `{"status":"ok","service":"nexora"}` |
+- Phase 1 - production shell: live
+- Phase 2 - Document AI: live
+  (upload PDF / Word / TXT / CSV / Excel / images, AI summary, document chat,
+  structured data extraction with Excel export, deep analysis)
 
 ## Run locally
 
-```
+```bash
 pip install -r requirements.txt
+export GEMINI_API_KEY="your-key-here"
 uvicorn app:app --reload
 ```
 
-Then open http://127.0.0.1:8000
+Open http://127.0.0.1:8000
+
+Without GEMINI_API_KEY the pages still load, but Document AI features stay
+switched off (the site shows a friendly notice).
+
+## Render setup
+
+- Root Directory: nexora_web
+- Build Command: pip install -r requirements.txt
+- Start Command: uvicorn app:app --host 0.0.0.0 --port $PORT
+- Environment variable: GEMINI_API_KEY (server-side secret - never commit it)
+
+Auto-deploy is on: pushing to main deploys automatically.
+
+## Health check
+
+GET /health -> {"status": "ok", "service": "nexora"}
