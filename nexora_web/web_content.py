@@ -419,6 +419,21 @@ body {
   .hero, .page-hero { padding-top: 40px; }
   .btn { padding: 13px 22px; font-size: 15px; }
 }
+
+/* ilovepdf-style tools grid */
+.cat-pills{display:flex;flex-wrap:wrap;gap:10px;margin:2px 0 26px}
+.cat-pills button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 18px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;color:var(--ink);transition:all .15s}
+.cat-pills button:hover{border-color:var(--accent);color:var(--accent)}
+.cat-pills button.active{background:#161322;border-color:#161322;color:#fff}
+.tools-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+a.tool-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:24px 20px;display:block;text-decoration:none;color:inherit;transition:transform .18s ease,box-shadow .18s ease,border-color .18s}
+a.tool-card:hover{transform:translateY(-4px);box-shadow:0 14px 30px rgba(76,60,229,.13);border-color:rgba(76,60,229,.25)}
+a.tool-card .t-icon{font-size:32px;line-height:1;margin-bottom:14px}
+a.tool-card h3{margin:0 0 6px;font-size:16.5px}
+a.tool-card p{margin:0;color:var(--muted);font-size:13.5px;line-height:1.55}
+a.tool-card.hide{display:none}
+@media(max-width:1024px){.tools-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:760px){.tools-grid{grid-template-columns:repeat(2,1fr);gap:12px}a.tool-card{padding:18px 16px}a.tool-card .t-icon{font-size:26px;margin-bottom:10px}a.tool-card h3{font-size:15px}}
 """
 
 ICONS = {
@@ -445,6 +460,9 @@ EMOJI = {
     "pen": "\u270D\uFE0F", "chat": "\U0001F4AC", "table": "\U0001F4CA",
     "pdf": "\U0001F4D5", "letter": "\u2709\uFE0F", "check": "\u2705",
     "folder": "\U0001F4C1", "upload": "\u2B06\uFE0F",
+    "money": "\U0001F4B0", "chart": "\U0001F4C8", "gift": "\U0001F381",
+    "calendar": "\U0001F4C5", "megaphone": "\U0001F4E3", "mag": "\U0001F9D0",
+    "page": "\U0001F4D1",
 }
 
 DOCUMENT_AI_BODY = r"""
