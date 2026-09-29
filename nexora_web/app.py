@@ -170,73 +170,96 @@ def linked_card(href: str, icon: str, title: str, text: str, cta: str, badge: st
 # ----------------------------------------------------------------------
 
 
+# ----------------------------------------------------------------------
+# ilovepdf-style tools grid (home + hub)
+# ----------------------------------------------------------------------
+
+HOME_TOOLS = [
+    ("/document-ai", "doc", "Document AI",
+     "Summaries, answers and data extraction from any document.", "document"),
+    ("/resume-builder", "resume", "Resume Builder",
+     "A complete, ATS-friendly resume written from your details.", "career"),
+    ("/career/resume-analyzer", "search", "Resume Analyzer",
+     "Score, weaknesses, missing keywords and concrete fixes.", "career"),
+    ("/resume-ats-checker", "target", "Resume ATS Checker",
+     "Match score, missing keywords and tailoring advice for a specific job.", "career"),
+    ("/jd-builder", "pen", "JD Builder",
+     "Complete job descriptions with the right structure and tone.", "career"),
+    ("/jd-quality-checker", "mag", "JD Quality Checker",
+     "Find gaps, bias and clarity issues before you post a JD.", "career"),
+    ("/career/recruitment-optimizer", "megaphone", "Recruitment Optimizer",
+     "Sourcing channels, screening questions and a faster hiring process.", "career"),
+    ("/cover-letter-generator", "letter", "Cover Letter Generator",
+     "Tailored cover letters that match your resume to the job.", "career"),
+    ("/offer-letter-analyzer", "page", "Offer Letter Analyzer",
+     "Clause-by-clause explanation, red flags and negotiation points.", "career"),
+    ("/ctc-calculator", "calc", "CTC Breakdown Calculator",
+     "See how any CTC splits into Basic, HRA, PF, gratuity and allowances.", "calc"),
+    ("/salary-calculator", "money", "Take-home Salary Calculator",
+     "Estimate your monthly in-hand salary from any CTC.", "calc"),
+    ("/increment-calculator", "chart", "Increment Calculator",
+     "Your new salary after a hike - per year and per month.", "calc"),
+    ("/gratuity-calculator", "gift", "Gratuity Calculator",
+     "Gratuity payable under the Payment of Gratuity Act.", "calc"),
+    ("/notice-period-calculator", "calendar", "Notice Period Calculator",
+     "Find your exact last working day from your resignation date.", "calc"),
+    ("/hr/documents", "folder", "HR Document Generator",
+     "Offer, appointment, increment, promotion, experience, relieving letters and more - as Word files.", "docs"),
+]
+
+FILTER_JS = """<script>
+function filterTools(cat, btn) {
+  document.querySelectorAll(".cat-pills button").forEach(function (b) { b.classList.remove("active"); });
+  btn.classList.add("active");
+  document.querySelectorAll(".tools-grid .tool-card").forEach(function (c) {
+    c.classList.toggle("hide", cat !== "all" && c.getAttribute("data-cat") !== cat);
+  });
+}
+</script>"""
+
+
+def _tool_card(href, icon, name, desc, cat):
+    return (f'<a class="tool-card" data-cat="{cat}" href="{href}">'
+            f'<div class="t-icon">{EMOJI.get(icon, EMOJI["doc"])}</div>'
+            f'<h3>{name}</h3><p>{desc}</p></a>')
+
+
+def _pills(cats):
+    btns = ["<button class=\"active\" onclick=\"filterTools('all', this)\">All</button>"]
+    for key, label in cats:
+        btns.append(f"<button onclick=\"filterTools('{key}', this)\">{label}</button>")
+    return '<div class="cat-pills">' + "".join(btns) + "</div>"
+
+
+def _tools_grid(tools):
+    return '<div class="tools-grid">' + "".join(
+        _tool_card(*t) for t in tools) + "</div>"
+
+
 def home_page() -> str:
+    grid = _tools_grid(HOME_TOOLS)
+    pills = _pills([("document", "Document AI"), ("career", "Career AI"),
+                    ("calc", "Calculators"), ("docs", "HR Documents")])
     body = f"""
-<section class="hero"><div class="container">
-  <p class="kicker">AI-powered productivity tools</p>
-  <h1>Document, HR &amp; career work - done in minutes</h1>
-  <p class="lede">Understand your documents, build stronger resumes and job
-  descriptions, and handle everyday office paperwork without complicated software.</p>
+<section class="page-hero"><div class="container">
+  <h1 style="max-width:760px">Every tool you need for document, HR &amp;
+  career work, in one place</h1>
+  <p>Free AI tools at your fingertips. Summarize documents, build resumes,
+  write job descriptions, generate letters and do salary math - all in a few
+  clicks, no sign-up needed.</p>
 </div></section>
-
 <section class="section"><div class="container">
-  <div class="grid">
-    {linked_card("/document-ai", "doc", "Document AI Intelligence",
-                 "Understand, analyze and work with your documents - summaries, answers and extracted data.",
-                 "Open Document AI", badge="Live")}
-    {linked_card("/hr-career", "briefcase", "HR &amp; Career Intelligence",
-                 "Build better resumes, job descriptions and career documents with practical AI help.",
-                 "Open HR &amp; Career")}
-  </div>
+  {pills}
+  {grid}
 </div></section>
-
-<section class="section"><div class="container">
-  <div class="section-head center">
-    <h2>Featured products</h2>
-    <p>Our most useful tools for job seekers and hiring teams.</p>
-  </div>
-  <div class="grid four">
-    {linked_card("/resume-builder", "resume", "Resume Builder",
-                 "Create a clean, professional resume that is easy for recruiters and software to read.",
-                 "Explore", badge="Featured")}
-    {card("target", "ATS Optimizer",
-          "Check how well a resume passes applicant tracking systems and fix what holds it back.",
-          badge="Soon")}
-    {linked_card("/jd-builder", "pen", "JD Builder",
-                 "Write clear, complete job descriptions that attract the right candidates.",
-                 "Explore", badge="Featured")}
-    {card("check", "Recruitment Optimizer",
-          "Improve job ads and screening so good candidates stop slipping through.",
-          badge="Soon")}
-  </div>
-</div></section>
-
-<section class="section"><div class="container">
-  <div class="section-head center">
-    <h2>More tools, free to use</h2>
-    <p>Simple utilities that solve everyday document and HR problems.</p>
-  </div>
-  <div class="grid four">
-    {linked_card("/document-ai", "doc", "Document Summarizer", "Turn long documents into short, clear summaries.", "Use it", badge="Live")}
-    {linked_card("/document-ai", "chat", "Document Q&amp;A", "Ask questions and get answers straight from your files.", "Use it", badge="Live")}
-    {linked_card("/document-ai", "table", "Data Extraction", "Pull key fields and tables out of documents into Excel.", "Use it", badge="Live")}
-    {card("calc", "CTC Calculator", "Break any CTC into take-home, deductions and benefits.", badge="Soon")}
-    {card("calc", "Salary Calculator", "Estimate in-hand salary from any offer.", badge="Soon")}
-    {card("calc", "Increment Calculator", "See what your next hike really means per month.", badge="Soon")}
-    {card("calc", "Gratuity Calculator", "Work out gratuity on exit, instantly.", badge="Soon")}
-    {card("letter", "HR Templates", "Offer, appointment, relieving letters and more - ready to use.", badge="Soon")}
-  </div>
-</div></section>
+{FILTER_JS}
 """
     return page(
         "AI-powered productivity tools",
-        "Nexora: AI-powered productivity tools for documents, HR and careers. "
-        "Document AI, Resume Builder, JD Builder and free HR utilities.",
+        "Nexora: free AI tools for documents, HR and careers - Document AI, Resume Builder, ATS Checker, JD Builder, HR calculators and HR documents.",
         "/",
         body,
     )
-
-
 
 
 def document_ai_page() -> str:
@@ -283,50 +306,23 @@ def career_tool_page(slug: str) -> str:
 
 
 def hr_career_page() -> str:
-    tools = "".join(
-        linked_card(f"/career/{slug}", spec["icon"], spec["title"],
-                    spec["card"], "Use it", badge="Live")
-        for slug, spec in CAREER_TOOLS.items()
-    )
-    docs = "".join(
-        f'<span class="tag">{name}</span>' for name in (
-            "Offer Letter", "Appointment Letter", "Salary Increment Letter",
-            "Promotion Letter", "Experience Certificate", "Relieving Letter",
-            "Warning Letter", "Exit Interview Form")
-    )
+    tools = [t for t in HOME_TOOLS if t[4] != "document"]
+    grid = _tools_grid(tools)
+    pills = _pills([("career", "Career AI"), ("calc", "Calculators"),
+                    ("docs", "HR Documents")])
     body = f"""
 <section class="page-hero"><div class="container">
-  <h1>HR &amp; Career Intelligence</h1>
+  <h1>Every HR &amp; career tool, in one place</h1>
   <p>Practical AI tools for job seekers and HR teams - resumes, job
-  descriptions, letters, documents and calculators.</p>
+  descriptions, letters, documents and salary calculators.</p>
 </div></section>
 <section class="section"><div class="container">
-  <h2 class="sech">Career AI</h2>
-  <div class="grid three">{tools}</div>
-
-  <h2 class="sech">HR Utilities</h2>
-  <div class="grid three">
-    {linked_card("/hr/calculators", "calc", "HR Calculators",
-                 "CTC breakdown, take-home pay, increment, gratuity and notice period - instant, no sign-up.",
-                 "Open calculators", badge="Live")}
-  </div>
-
-  <h2 class="sech">HR Documents</h2>
-  <div class="grid three">
-    {linked_card("/hr/documents", "letter", "HR Document Generator",
-                 "Offer, appointment, increment, promotion, experience, relieving, warning and exit forms - ready to download as Word files.",
-                 "Create documents", badge="Live")}
-  </div>
-  <p style="margin-top:12px">{docs}</p>
+  {pills}
+  {grid}
 </div></section>
+{FILTER_JS}
 """
-    return page("HR & Career", "HR and career AI tools: resume builder, resume analyzer, ATS optimizer, JD builder, cover letters, offer analysis, HR calculators and HR documents.", "/hr-career", body)
-
-
-# ----------------------------------------------------------------------
-# Phase 3: HR calculators (client-side, instant)
-# ----------------------------------------------------------------------
-
+    return page("HR & Career", "HR and career AI tools: resume builder, resume analyzer, ATS checker, JD builder, cover letters, offer analysis, HR calculators and HR documents.", "/hr-career", body)
 
 
 def calculators_page() -> str:
