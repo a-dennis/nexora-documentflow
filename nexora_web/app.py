@@ -1359,6 +1359,10 @@ var CALCS = [
    note: "Counts calendar days. Check your offer/appointment letter - some companies count differently or allow buy-out."}
 ];
 var cur = "ctc";
+function esc(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
 function inr(n) {
   return "Rs. " + Math.round(n).toLocaleString("en-IN");
 }
