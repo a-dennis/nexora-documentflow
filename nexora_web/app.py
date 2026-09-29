@@ -1269,7 +1269,7 @@ async def login_page(err: str = "", msg: str = "", next: str = "") -> str:
     hidden = ('<input type="hidden" name="next" value="' + safe_next + '">') if next_url else ""
     notices = {
         "rate": "Confirmation emails are temporarily rate-limited. Please wait before trying again; repeated taps will not send another email.",
-        "mail": "The confirmation email could not be sent. Please try later.",
+        "mail": "Confirmation email is not available for this address yet. Please contact the site owner; retrying the same form will not fix it.",
         "confirm": "Please confirm your email using the link in your inbox (check Spam too), then sign in.",
         "exists": "An account may already exist for this address. Try signing in, or check your inbox for a confirmation link.",
         "signup": "Could not create your account right now. Please try later.",
