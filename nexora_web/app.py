@@ -1267,8 +1267,16 @@ async def login_page(err: str = "", msg: str = "", next: str = "") -> str:
     safe_next = (next_url.replace("&", "&amp;").replace('"', "&quot;")
                  .replace("<", "&lt;").replace(">", "&gt;"))
     hidden = ('<input type="hidden" name="next" value="' + safe_next + '">') if next_url else ""
-    notice = ('<div class="err" style="margin-bottom:14px">Sign-in did not '
-              'complete. Check your email and password and try again.</div>') if err else ""
+    notices = {
+        "rate": "Confirmation emails are temporarily rate-limited. Please wait before trying again; repeated taps will not send another email.",
+        "mail": "The confirmation email could not be sent. Please try later.",
+        "confirm": "Please confirm your email using the link in your inbox (check Spam too), then sign in.",
+        "exists": "An account may already exist for this address. Try signing in, or check your inbox for a confirmation link.",
+        "signup": "Could not create your account right now. Please try later.",
+        "1": "Sign-in did not complete. Check your email and password and try again.",
+    }
+    notice = ('<div class="err" style="margin-bottom:14px">'
+              + notices[err] + '</div>') if err in notices else ""
     info = ('<div class="hint" style="margin-bottom:14px;color:var(--accent)">'
             'Account created - check your inbox and confirm your email, then sign in.</div>') if msg == "confirm" else ""
     google_on = False
@@ -1324,11 +1332,25 @@ async def auth_email(request: Request):
         resp.set_cookie(SESSION_COOKIE, _session_value(data),
                         max_age=7 * 24 * 3600, httponly=True, secure=True, samesite="lax")
         return resp
-    if mode == "signup" and status == 200:
-        return RedirectResponse("/login?msg=confirm"
-                                + ("&next=" + next_url if next_url else ""),
-                                status_code=302)
-    return RedirectResponse("/login?err=1", status_code=302)
+    from urllib.parse import quote
+    suffix = ("&next=" + quote(next_url, safe="") if next_url else "")
+    if mode == "signup":
+        if status in (200, 201) and data.get("id"):
+            return RedirectResponse("/login?msg=confirm" + suffix, status_code=302)
+        code = str(data.get("error_code") or data.get("code") or "")
+        if status == 429 or code in ("over_email_send_rate_limit", "over_request_rate_limit"):
+            err = "rate"
+        elif code in ("email_address_not_authorized", "email_provider_disabled"):
+            err = "mail"
+        elif code in ("user_already_exists", "email_exists"):
+            err = "exists"
+        else:
+            err = "signup"
+        print("signup failed: status=%s code=%s" % (status, code), flush=True)
+        return RedirectResponse("/login?err=" + err + suffix, status_code=302)
+    if str(data.get("error_code") or "") in ("email_not_confirmed",):
+        return RedirectResponse("/login?err=confirm" + suffix, status_code=302)
+    return RedirectResponse("/login?err=1" + suffix, status_code=302)
 
 
 @app.get("/auth/callback")
