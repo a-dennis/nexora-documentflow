@@ -32,6 +32,7 @@ import time
 import uuid
 import json
 import threading
+import traceback
 from collections import defaultdict, deque
 
 from fastapi import FastAPI, Request, UploadFile, File
@@ -499,7 +500,7 @@ def home_page() -> str:
     )
 
 
-DOCUMENT_AI_BODY = """
+DOCUMENT_AI_BODY = r"""
 <section class="page-hero"><div class="container">
   <span class="tag live">Live</span>
   <h1 style="margin-top:12px">Document AI Intelligence</h1>
@@ -1332,6 +1333,7 @@ async def api_summary(request: Request, doc_id: str) -> JSONResponse:
     try:
         out = gemini_generate(doc, SUMMARY_PROMPT)
     except Exception:
+        traceback.print_exc()
         return err_response(502, "The AI could not process this right now. Please try again.")
     return JSONResponse({"summary": out})
 
@@ -1344,6 +1346,7 @@ async def api_analyze(request: Request, doc_id: str) -> JSONResponse:
     try:
         out = gemini_generate(doc, ANALYZE_PROMPT)
     except Exception:
+        traceback.print_exc()
         return err_response(502, "The AI could not process this right now. Please try again.")
     return JSONResponse({"analysis": out})
 
@@ -1357,6 +1360,7 @@ async def api_extract(request: Request, doc_id: str) -> JSONResponse:
         raw = gemini_generate(doc, EXTRACT_PROMPT, json_mode=True)
         data = json.loads(raw)
     except Exception:
+        traceback.print_exc()
         return err_response(502, "Could not extract data from this document. Please try again.")
     fields = data.get("fields") if isinstance(data, dict) else {}
     tables = data.get("tables") if isinstance(data, dict) else []
@@ -1410,6 +1414,7 @@ async def api_chat(request: Request, doc_id: str) -> JSONResponse:
     try:
         out = gemini_generate(doc, prompt)
     except Exception:
+        traceback.print_exc()
         return err_response(502, "The AI could not process this right now. Please try again.")
     return JSONResponse({"answer": out})
 
