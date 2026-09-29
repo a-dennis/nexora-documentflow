@@ -572,6 +572,15 @@ EMOJI = {
     "money": "\U0001F4B0", "chart": "\U0001F4C8", "gift": "\U0001F381",
     "calendar": "\U0001F4C5", "megaphone": "\U0001F4E3", "mag": "\U0001F9D0",
     "page": "\U0001F4D1",
+    "merge": "\U0001F517", "split": "\u2702\uFE0F", "compress": "\U0001F5DC\uFE0F",
+    "word": "\U0001F4DD", "ppt": "\U0001F4FD", "excel": "\U0001F4CA",
+    "image": "\U0001F5BC\uFE0F", "sign": "\u2712\uFE0F", "stamp": "\U0001F516",
+    "rotate": "\U0001F504", "code": "\U0001F310", "unlock": "\U0001F513",
+    "lock": "\U0001F512", "organize": "\U0001F5C2\uFE0F", "wrench": "\U0001F527",
+    "numbers": "\U0001F522", "scan": "\U0001F4F7", "ocr": "\U0001F441\uFE0F",
+    "compare": "\u2696\uFE0F", "redact": "\u2B1B", "crop": "\U0001F532",
+    "markdown": "\U0001F4D8", "txt": "\U0001F4C3", "images": "\U0001F5BE",
+    "gray": "\U0001F311",
 }
 
 DOCUMENT_AI_BODY = r"""
@@ -1783,6 +1792,146 @@ PREMIUM_BODY = """
       setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 800);
     });
   };
+})();
+</script>
+"""
+
+
+PDF_TOOL_BODY = r"""
+<section class="page-hero"><div class="container">
+  <span class="tag live">PDF Tools</span>
+  <h1 style="margin-top:12px">__TITLE__</h1>
+  <p>__DESC__ Free, unlimited and private - files are processed in memory
+  and never stored.</p>
+</div></section>
+
+<section class="section"><div class="container" style="max-width:820px">
+  <div class="card" style="padding:26px">
+    <div class="dropzone" id="dz" role="button" tabindex="0" aria-label="Upload">
+      <span style="color:var(--accent)">__UPLOAD_ICON__</span>
+      <h3 id="dzTitle">Drop your file here, or tap to choose</h3>
+      <p id="dzHint">__HINT__</p>
+    </div>
+    <input type="file" id="fileInput" hidden accept="__ACCEPT__" __MULTI__>
+    <div id="fileList" style="margin-top:10px"></div>
+    <div id="optArea" style="margin-top:16px"></div>
+    <div class="err" id="errBox" style="margin-top:10px"></div>
+    <button class="btn" id="goBtn" type="button" style="margin-top:16px;width:100%">
+      __TITLE__</button>
+    <div id="doneBox" style="display:none;margin-top:16px;text-align:center">
+      <p style="font-weight:700;color:var(--accent)">Done! Your download should
+      start automatically.</p>
+      <a class="btn" id="dlLink" href="#" download>Download again</a>
+    </div>
+  </div>
+  <p style="text-align:center;margin-top:14px;font-size:13px;opacity:.65">
+    <a href="/" style="color:inherit">&larr; All 30 PDF tools on the home page</a>
+  </p>
+</div></section>
+
+<script>
+(function () {
+  var CFG = __CFG_JSON__;
+  var dz = document.getElementById('dz'),
+      input = document.getElementById('fileInput'),
+      list = document.getElementById('fileList'),
+      err = document.getElementById('errBox'),
+      go = document.getElementById('goBtn'),
+      doneBox = document.getElementById('doneBox'),
+      dlLink = document.getElementById('dlLink'),
+      files = [];
+
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; });
+  }
+  function renderFiles() {
+    list.innerHTML = files.map(function (f, i) {
+      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 4px;'
+        + 'border-bottom:1px solid rgba(15,23,42,.06)">'
+        + '<span style="font-weight:600;flex:1;word-break:break-all">'
+        + esc(f.name) + '</span>'
+        + '<span style="opacity:.6;font-size:13px">'
+        + (f.size / 1024).toFixed(0) + ' KB</span>'
+        + '<button type="button" data-i="' + i + '" class="rm" '
+        + 'style="border:0;background:none;color:#c00;cursor:pointer;font-size:16px">'
+        + '&times;</button></div>';
+    }).join('');
+    list.querySelectorAll('.rm').forEach(function (b) {
+      b.addEventListener('click', function () {
+        files.splice(+b.getAttribute('data-i'), 1); renderFiles();
+      });
+    });
+  }
+  function addFiles(fl) {
+    for (var i = 0; i < fl.length; i++) {
+      if (!CFG.multiple && files.length >= 1) files = [];
+      files.push(fl[i]);
+      if (!CFG.multiple) break;
+    }
+    renderFiles();
+  }
+  dz.addEventListener('click', function () { input.click(); });
+  dz.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); }
+  });
+  input.addEventListener('change', function () { addFiles(input.files); input.value = ''; });
+  dz.addEventListener('dragover', function (e) { e.preventDefault(); });
+  dz.addEventListener('drop', function (e) {
+    e.preventDefault(); addFiles(e.dataTransfer.files);
+  });
+
+  var optArea = document.getElementById('optArea');
+  optArea.innerHTML = CFG.options.map(function (o) {
+    if (o.kind === 'select') {
+      return '<label class="field" style="display:block;margin-top:10px;font-weight:600;font-size:14px">'
+        + esc(o.label) + '<select id="opt_' + esc(o.key) + '" '
+        + 'style="margin-top:6px">'
+        + o.choices.map(function (c) {
+            return '<option value="' + esc(c[0]) + '">' + esc(c[1]) + '</option>';
+          }).join('') + '</select></label>';
+    }
+    return '<label class="field" style="display:block;margin-top:10px;font-weight:600;font-size:14px">'
+      + esc(o.label) + '<input id="opt_' + esc(o.key) + '" '
+      + 'style="margin-top:6px" placeholder="' + esc(o.ph || '') + '"></label>';
+  }).join('');
+
+  go.addEventListener('click', function () {
+    err.textContent = '';
+    if (!files.length) { err.textContent = 'Please choose a file first.'; return; }
+    var fd = new FormData();
+    files.forEach(function (f) { fd.append('files', f, f.name); });
+    CFG.options.forEach(function (o) {
+      var el = document.getElementById('opt_' + o.key);
+      if (el) fd.append(o.key, el.value);
+    });
+    go.disabled = true;
+    go.innerHTML = '<span class="spin"></span> Working...';
+    fetch('/api/pdf/' + CFG.slug, { method: 'POST', body: fd })
+      .then(function (r) {
+        var ct = r.headers.get('content-type') || '';
+        if (!r.ok || ct.indexOf('json') !== -1) {
+          return r.json().then(function (j) {
+            throw new Error(j.error || 'Something went wrong. Please try again.');
+          });
+        }
+        var cd = r.headers.get('content-disposition') || '';
+        var m = cd.match(/filename="?([^";]+)"?/);
+        var fname = m ? m[1] : 'download';
+        return r.blob().then(function (b) {
+          var url = URL.createObjectURL(b);
+          dlLink.href = url; dlLink.setAttribute('download', fname);
+          var a = document.createElement('a');
+          a.href = url; a.download = fname;
+          document.body.appendChild(a); a.click(); a.remove();
+          doneBox.style.display = 'block';
+        });
+      })
+      .catch(function (e) { err.textContent = e.message; })
+      .finally(function () {
+        go.disabled = false; go.textContent = CFG.title;
+      });
+  });
 })();
 </script>
 """
