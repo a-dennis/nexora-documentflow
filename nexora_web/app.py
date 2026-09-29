@@ -227,11 +227,11 @@ def _auth_call(path: str, form: dict = None, token: str = None):
     import urllib.parse
     import urllib.error
     url = SUPABASE_URL + "/auth/v1/" + path
-    data = urllib.parse.urlencode(form).encode() if form is not None else None
+    data = json.dumps(form).encode() if form is not None else None
     req = urllib.request.Request(url, data=data, method="POST" if data else "GET")
     req.add_header("apikey", SUPABASE_ANON_KEY)
     if form is not None:
-        req.add_header("Content-Type", "application/x-www-form-urlencoded")
+        req.add_header("Content-Type", "application/json")
     if token:
         req.add_header("Authorization", "Bearer " + token)
     try:
@@ -1265,8 +1265,16 @@ async def login_page(err: str = "", msg: str = "") -> str:
               'complete. Check your email and password and try again.</div>') if err else ""
     info = ('<div class="hint" style="margin-bottom:14px;color:var(--accent)">'
             'Account created - check your inbox and confirm your email, then sign in.</div>') if msg == "confirm" else ""
+    google_on = False
+    if auth_ready():
+        st, settings = _auth_call("settings")
+        google_on = bool(st == 200 and (settings.get("external") or {}).get("google"))
+    gbtn = ('<a class="btn" href="/auth/google" style="width:100%">Continue with Google</a>'
+            if google_on else
+            '<p class="hint" style="margin:0">Google sign-in is being set up - '
+            'use email below for now.</p>')
     return page("Sign in", "Sign in to Nexora with Google or email. Free tools never need an account.",
-                "", LOGIN_BODY.replace("__ERR__", notice).replace("__MSG__", info))
+                "", LOGIN_BODY.replace("__ERR__", notice).replace("__MSG__", info).replace("__GOOGLE__", gbtn))
 
 
 @app.get("/auth/google")
