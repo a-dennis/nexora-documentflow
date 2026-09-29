@@ -46,7 +46,7 @@ from collections import defaultdict, deque
 from fastapi import FastAPI, Request, UploadFile, File, HTTPException
 
 from web_content import *  # noqa: F401,F403 - HTML/CSS/content constants
-from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, RedirectResponse
 
 app = FastAPI(title="Nexora", docs_url=None, redoc_url=None, openapi_url=None)
 
@@ -111,8 +111,14 @@ def nav_html(active: str) -> str:
         '<input type="checkbox" id="navtoggle" class="navtoggle" aria-label="Menu">'
         '<label for="navtoggle" class="burger" aria-hidden="true">'
         "<span></span><span></span><span></span></label>"
-        f'<div class="navlinks">{"".join(links)}</div>'
+        f'<div class="navlinks">{"".join(links)}'
+        '<a href="/login" id="authLink" class="auth-link">Sign in</a></div>'
         "</div></nav>"
+        "<script>fetch(\"/api/me\").then(function(r){return r.json()}).then(function(d){"
+        "var a=document.getElementById(\"authLink\");if(!a)return;"
+        "if(d.authenticated){var n=(d.name||d.email||\"Account\").split(\" \")[0];"
+        "a.textContent=n;a.href=\"/auth/logout\";a.title=\"Sign out\";}"
+        "}).catch(function(){});</script>"
     )
 
 
@@ -168,6 +174,98 @@ def linked_card(href: str, icon: str, title: str, text: str, cta: str, badge: st
 # ----------------------------------------------------------------------
 # Pages
 # ----------------------------------------------------------------------
+
+
+# ----------------------------------------------------------------------
+# Phase 5: Authentication (Supabase Auth, Google OAuth via PKCE)
+# ----------------------------------------------------------------------
+
+SESSION_COOKIE = "nx_session"
+PKCE_COOKIE = "nx_pkce"
+SITE_URL = os.environ.get("SITE_URL", "https://nexora-web-q7rn.onrender.com").rstrip("/")
+
+
+def auth_ready() -> bool:
+    return bool(SUPABASE_URL and SUPABASE_ANON_KEY)
+
+
+def _session_key() -> bytes:
+    import hashlib
+    secret = (os.environ.get("SESSION_SECRET", "").strip()
+              or SUPABASE_SERVICE_KEY or "nexora-dev-secret")
+    return hashlib.sha256(secret.encode()).digest()
+
+
+def _sign(data: str) -> str:
+    import hmac, hashlib
+    sig = hmac.new(_session_key(), data.encode(), hashlib.sha256).hexdigest()[:32]
+    return data + "." + sig
+
+
+def _unsign(signed: str):
+    import hmac, hashlib
+    if not signed or "." not in signed:
+        return None
+    data, sig = signed.rsplit(".", 1)
+    expect = hmac.new(_session_key(), data.encode(), hashlib.sha256).hexdigest()[:32]
+    return data if hmac.compare_digest(sig, expect) else None
+
+
+def _b64url(raw: bytes) -> str:
+    import base64
+    return base64.urlsafe_b64encode(raw).decode().rstrip("=")
+
+
+def _b64url_decode(s: str) -> bytes:
+    import base64
+    return base64.urlsafe_b64decode(s + "=" * (-len(s) % 4))
+
+
+def _auth_call(path: str, form: dict = None, token: str = None):
+    """Call Supabase Auth REST. Returns (status, parsed-json)."""
+    import urllib.request
+    import urllib.parse
+    import urllib.error
+    url = SUPABASE_URL + "/auth/v1/" + path
+    data = urllib.parse.urlencode(form).encode() if form is not None else None
+    req = urllib.request.Request(url, data=data, method="POST" if data else "GET")
+    req.add_header("apikey", SUPABASE_ANON_KEY)
+    if form is not None:
+        req.add_header("Content-Type", "application/x-www-form-urlencoded")
+    if token:
+        req.add_header("Authorization", "Bearer " + token)
+    try:
+        with urllib.request.urlopen(req, timeout=10) as r:
+            return r.status, json.loads(r.read().decode() or "{}")
+    except urllib.error.HTTPError as e:
+        try:
+            return e.code, json.loads(e.read().decode() or "{}")
+        except Exception:
+            return e.code, {}
+    except Exception:
+        traceback.print_exc()
+        return 0, {}
+
+
+def _load_session(request: Request):
+    """Return (payload_dict, expired) or (None, False)."""
+    data = _unsign(request.cookies.get(SESSION_COOKIE, ""))
+    if not data:
+        return None, False
+    try:
+        payload = json.loads(_b64url_decode(data).decode())
+    except Exception:
+        return None, False
+    return payload, payload.get("exp", 0) < time.time()
+
+
+def _session_value(tokens: dict) -> str:
+    payload = {
+        "at": tokens["access_token"],
+        "rt": tokens.get("refresh_token", ""),
+        "exp": int(time.time()) + int(tokens.get("expires_in", 3600)) - 120,
+    }
+    return _sign(_b64url(json.dumps(payload).encode()))
 
 
 # ----------------------------------------------------------------------
@@ -1156,6 +1254,119 @@ async def career_tool(slug: str) -> str:
 @app.get("/hr/calculators", response_class=HTMLResponse)
 async def hr_calculators() -> str:
     return calculators_page()
+
+
+# Phase 5 auth routes ---------------------------------------------------
+
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(err: str = "", msg: str = "") -> str:
+    notice = ('<div class="err" style="margin-bottom:14px">Sign-in did not '
+              'complete. Check your email and password and try again.</div>') if err else ""
+    info = ('<div class="hint" style="margin-bottom:14px;color:var(--accent)">'
+            'Account created - check your inbox and confirm your email, then sign in.</div>') if msg == "confirm" else ""
+    return page("Sign in", "Sign in to Nexora with Google or email. Free tools never need an account.",
+                "", LOGIN_BODY.replace("__ERR__", notice).replace("__MSG__", info))
+
+
+@app.get("/auth/google")
+async def auth_google():
+    if not auth_ready():
+        raise HTTPException(status_code=503, detail="Sign-in is not configured yet.")
+    import secrets, hashlib
+    verifier = _b64url(secrets.token_bytes(32))
+    challenge = _b64url(hashlib.sha256(verifier.encode()).digest())
+    redirect_to = SITE_URL + "/auth/callback"
+    from urllib.parse import quote
+    url = (SUPABASE_URL + "/auth/v1/authorize?provider=google"
+           "&flow_type=pkce&code_challenge=" + challenge
+           + "&code_challenge_method=s256&redirect_to=" + quote(redirect_to, safe=""))
+    resp = RedirectResponse(url, status_code=302)
+    resp.set_cookie(PKCE_COOKIE, verifier, max_age=600, httponly=True,
+                    secure=True, samesite="lax")
+    return resp
+
+
+@app.post("/auth/email")
+async def auth_email(request: Request):
+    if not auth_ready():
+        raise HTTPException(status_code=503, detail="Sign-in is not configured yet.")
+    form = await request.form()
+    email = str(form.get("email", "")).strip()
+    password = str(form.get("password", ""))
+    mode = str(form.get("mode", "login"))
+    if not email or len(password) < 6:
+        return RedirectResponse("/login?err=1", status_code=302)
+    if mode == "signup":
+        status, data = _auth_call("signup", {"email": email, "password": password})
+    else:
+        status, data = _auth_call("token?grant_type=password",
+                                  {"email": email, "password": password})
+    if status == 200 and "access_token" in data:
+        resp = RedirectResponse("/", status_code=302)
+        resp.set_cookie(SESSION_COOKIE, _session_value(data),
+                        max_age=7 * 24 * 3600, httponly=True, secure=True, samesite="lax")
+        return resp
+    if mode == "signup" and status == 200:
+        return RedirectResponse("/login?msg=confirm", status_code=302)
+    return RedirectResponse("/login?err=1", status_code=302)
+
+
+@app.get("/auth/callback")
+async def auth_callback(request: Request):
+    code = request.query_params.get("code", "")
+    verifier = request.cookies.get(PKCE_COOKIE, "")
+    if not code or not verifier or not auth_ready():
+        return RedirectResponse("/login?err=1", status_code=302)
+    status, tokens = _auth_call("token?grant_type=pkce", {
+        "code": code,
+        "code_verifier": verifier,
+        "redirect_uri": SITE_URL + "/auth/callback",
+    })
+    if status != 200 or "access_token" not in tokens:
+        return RedirectResponse("/login?err=1", status_code=302)
+    resp = RedirectResponse("/", status_code=302)
+    resp.set_cookie(SESSION_COOKIE, _session_value(tokens),
+                    max_age=7 * 24 * 3600, httponly=True, secure=True, samesite="lax")
+    resp.delete_cookie(PKCE_COOKIE, path="/")
+    return resp
+
+
+@app.get("/auth/logout")
+async def auth_logout():
+    resp = RedirectResponse("/", status_code=302)
+    resp.delete_cookie(SESSION_COOKIE, path="/")
+    return resp
+
+
+@app.get("/api/me")
+async def api_me(request: Request):
+    payload, expired = _load_session(request)
+    if not payload:
+        return JSONResponse({"authenticated": False})
+    refreshed_cookie = None
+    if expired and payload.get("rt"):
+        status, tokens = _auth_call("token?grant_type=refresh_token",
+                                    {"refresh_token": payload["rt"]})
+        if status == 200 and "access_token" in tokens:
+            payload = {"at": tokens["access_token"],
+                       "rt": tokens.get("refresh_token", payload["rt"]),
+                       "exp": int(time.time()) + int(tokens.get("expires_in", 3600)) - 120}
+            refreshed_cookie = _session_value(tokens)
+        else:
+            return JSONResponse({"authenticated": False})
+    status, user = _auth_call("user", token=payload["at"])
+    if status != 200:
+        return JSONResponse({"authenticated": False})
+    meta = user.get("user_metadata") or {}
+    name = meta.get("full_name") or meta.get("name") or ""
+    out = JSONResponse({"authenticated": True,
+                        "email": user.get("email", ""), "name": name})
+    if refreshed_cookie:
+        out.set_cookie(SESSION_COOKIE, refreshed_cookie,
+                       max_age=7 * 24 * 3600, httponly=True,
+                       secure=True, samesite="lax")
+    return out
 
 
 @app.get("/{seo_slug}", response_class=HTMLResponse)
