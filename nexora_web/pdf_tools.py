@@ -714,26 +714,44 @@ def _tesseract_ready():
     return bool(td and os.path.exists(os.path.join(td, "eng.traineddata")))
 
 
+_OCR_ENGINE = None
+
+
+def _ocr_engine():
+    """Lazy singleton RapidOCR engine, single-threaded (512MB instances)."""
+    global _OCR_ENGINE
+    if _OCR_ENGINE is None:
+        os.environ["OMP_NUM_THREADS"] = "1"
+        os.environ["OPENBLAS_NUM_THREADS"] = "1"
+        os.environ["MKL_NUM_THREADS"] = "1"
+        from rapidocr import RapidOCR
+        _OCR_ENGINE = RapidOCR()
+    return _OCR_ENGINE
+
+
 def _ocr_rapidocr(data):
     """Searchable PDF via RapidOCR (ONNX, no system deps). Returns pdf bytes."""
+    import gc
     import cv2
     import fitz
     import numpy as np
-    from rapidocr import RapidOCR
-    engine = RapidOCR()
+    engine = _ocr_engine()
     src = fitz.open(stream=data, filetype="pdf")
     out = fitz.open()
     for page in src:
-        pix = page.get_pixmap(dpi=200)
+        pix = page.get_pixmap(dpi=150)
         newp = out.new_page(width=page.rect.width, height=page.rect.height)
         newp.insert_image(newp.rect, pixmap=pix)
         img = cv2.imdecode(np.frombuffer(pix.tobytes("png"), np.uint8),
                            cv2.IMREAD_COLOR)
+        pw, ph = pix.width, pix.height
         result = engine(img)
+        del pix, img
+        gc.collect()
         if result is None or result.txts is None:
             continue
-        sx = page.rect.width / pix.width
-        sy = page.rect.height / pix.height
+        sx = page.rect.width / pw
+        sy = page.rect.height / ph
         for box, text, conf in zip(result.boxes, result.txts, result.scores):
             if conf < 0.5 or not text.strip():
                 continue
