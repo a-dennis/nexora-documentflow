@@ -81,6 +81,7 @@ NAV_ITEMS = [
     ("/hr-career", "HR &amp; Career"),
     ("/resume-builder", "Resume Builder"),
     ("/jd-builder", "JD Builder"),
+    ("/pro", "Pro"),
 ]
 
 # ----------------------------------------------------------------------
@@ -1031,6 +1032,48 @@ def rate_ok(ip: str) -> bool:
 
 
 # ----------------------------------------------------------------------
+# Free-tier daily limits. Per device/network until sign-in is finished;
+# the plan doc (30 Sep 2026) moves counting to per-account after that.
+# In-memory counter (fast path); every consumed job is also logged to
+# Supabase usage for the record. Limits reset at midnight IST.
+# ----------------------------------------------------------------------
+DAILY_LIMITS = {"pdf": 5, "ai": 3, "doc": 5}
+DAILY_COUNTER = {}
+DAILY_LOCK = threading.Lock()
+
+
+def _ist_day() -> str:
+    from datetime import datetime, timezone, timedelta
+    return (datetime.now(timezone.utc) + timedelta(hours=5,
+                                                   minutes=30)).strftime("%Y-%m-%d")
+
+
+def daily_limit_response(request: Request, group: str,
+                         label: str) -> JSONResponse | None:
+    """None when the job may run (and counts it); a friendly 429 when the
+    free daily limit for this group is already used up."""
+    limit = DAILY_LIMITS.get(group)
+    if not limit:
+        return None
+    ip = request.client.host if request.client else "unknown"
+    day = _ist_day()
+    key = (group, ip, day)
+    with DAILY_LOCK:
+        if len(DAILY_COUNTER) > 20000:
+            DAILY_COUNTER.clear()
+        used = DAILY_COUNTER.get(key, 0)
+        if used >= limit:
+            return err_response(
+                429,
+                "That is your " + str(limit) + " free " + label + " for "
+                "today. They reset at midnight IST - or go Pro for "
+                "unlimited use: /pro")
+        DAILY_COUNTER[key] = used + 1
+    db_usage("daily:" + group, {"day": day})
+    return None
+
+
+# ----------------------------------------------------------------------
 # Gemini
 # ----------------------------------------------------------------------
 
@@ -1421,6 +1464,50 @@ async def health() -> JSONResponse:
     return JSONResponse({"status": "ok", "service": "nexora"})
 
 
+PRO_BODY = r"""
+<section class="hero">
+  <div class="container">
+    <span class="pill pill-soft">Early access</span>
+    <h1>Nexora Pro</h1>
+    <p class="lead">Every tool, unlimited. No daily caps, bigger files,
+    batch jobs and priority speed - for the price of one movie ticket a
+    month.</p>
+  </div>
+</section>
+<section class="section">
+  <div class="container grid-2">
+    <div class="card">
+      <h3>Free</h3>
+      <p class="price">&#8377;0 <span>/ forever</span></p>
+      <p>All 45 tools, every day: 5 PDF jobs, 3 AI runs and 5 documents
+      per day, files up to 25 MB. No sign-up needed.</p>
+    </div>
+    <div class="card">
+      <h3>Pro <span class="tag pro">Launch offer</span></h3>
+      <p class="price">&#8377;149 <span>/ month</span></p>
+      <p>Unlimited jobs, files up to 100 MB, batch processing and
+      priority speed. Pay by UPI in ten seconds. First month
+      &#8377;99 for early users.</p>
+      <p style="margin-top:16px"><button class="btn" disabled
+        style="opacity:.6;cursor:not-allowed">Checkout opens soon</button></p>
+      <p style="margin-top:10px;font-size:14px;color:var(--ink-2,#666)">
+      UPI checkout is being finished and tested. Until it opens,
+      everything stays free with the daily limits above - no card
+      needed, nothing to cancel.</p>
+    </div>
+  </div>
+</section>
+"""
+
+
+@app.get("/pro", response_class=HTMLResponse)
+async def pro_page() -> str:
+    return page("Nexora Pro - unlimited tools, one small price",
+                "Nexora Pro: unlimited PDF and AI tools, bigger files, "
+                "batch jobs and priority speed for one small monthly price.",
+                "/pro", PRO_BODY)
+
+
 @app.get("/{seo_slug}", response_class=HTMLResponse)
 async def seo_tool_page(seo_slug: str) -> HTMLResponse:
     if seo_slug in SEO_CALC_PAGES:
@@ -1483,6 +1570,9 @@ async def api_pdf_tool(request: Request, slug: str) -> Response:
     ip = request.client.host if request.client else "unknown"
     if not rate_ok(ip):
         return err_response(429, "Too many requests. Please wait a while and try again.")
+    limited = daily_limit_response(request, "pdf", "PDF jobs")
+    if limited:
+        return limited
     form = await request.form()
     files = []
     total = 0
@@ -1847,6 +1937,9 @@ async def api_upload(request: Request, file: UploadFile = File(...)) -> JSONResp
     ip = request.client.host if request.client else "unknown"
     if not rate_ok(ip):
         return err_response(429, "Too many requests. Please wait a while and try again.")
+    limited = daily_limit_response(request, "ai", "AI runs")
+    if limited:
+        return limited
     data = await file.read()
     if not data:
         return err_response(400, "That file is empty.")
@@ -1889,6 +1982,9 @@ def _ai_guard(request: Request, doc_id: str):
     ip = request.client.host if request.client else "unknown"
     if not rate_ok(ip):
         return None, err_response(429, "You have reached the free usage limit for now. Please try again later.")
+    limited = daily_limit_response(request, "ai", "AI runs")
+    if limited:
+        return None, limited
     return doc, None
 
 
@@ -2094,6 +2190,9 @@ async def api_career(slug: str, request: Request) -> JSONResponse:
     ip = request.client.host if request.client else "unknown"
     if not rate_ok(ip):
         return err_response(429, "You have reached the free usage limit for now. Please try again later.")
+    limited = daily_limit_response(request, "doc", "documents")
+    if limited:
+        return limited
     try:
         payload = await request.json()
     except Exception:
@@ -2143,6 +2242,9 @@ async def api_hr_document(slug: str, request: Request):
     spec = HR_DOCS.get(slug)
     if not spec:
         return err_response(404, "Unknown document.")
+    limited = daily_limit_response(request, "doc", "documents")
+    if limited:
+        return limited
     try:
         payload = await request.json()
     except Exception:
