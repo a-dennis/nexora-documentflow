@@ -1401,9 +1401,293 @@ async def health() -> JSONResponse:
 # ----------------------------------------------------------------------
 
 
+# ----------------------------------------------------------------------
+# Phase 6+7: Razorpay payments and secure paid-feature unlocking.
+# Inert until RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET are set in Render.
+# Flow: login -> /api/pay/order -> Razorpay checkout -> /api/pay/verify
+# (server-side HMAC check) -> purchases credit -> /api/premium/{product}
+# re-checks the credit server-side before any AI run. Never trust client.
+# ----------------------------------------------------------------------
+
+RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "").strip()
+RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "").strip()
+
+PAID_PRODUCTS = {
+    "resume_improve": {
+        "name": "AI Resume Improvement",
+        "price_paise": 9900,
+        "source_label": "your current resume",
+        "prompt": (
+            "You are a senior resume writer and ATS specialist. Rewrite this resume "
+            "into a complete, improved, ATS-optimized version. Keep every true fact; "
+            "strengthen wording, quantify achievements where the source implies them, "
+            "fix structure and ordering, and add a short professional summary. "
+            "Output the full improved resume in clean markdown, then a short "
+            "'What changed and why' section with 5-8 bullets. Target role (if any): {target}"),
+    },
+    "jd_improve": {
+        "name": "AI JD Improvement",
+        "price_paise": 14900,
+        "source_label": "your job description",
+        "prompt": (
+            "You are a senior HR consultant. Rewrite this job description into a "
+            "complete, improved version: clear structure (about the role, "
+            "responsibilities, must-have vs nice-to-have skills, benefits, how to "
+            "apply), inclusive and bias-free language, realistic requirements, and "
+            "a compelling but honest tone. Output the full improved JD in clean "
+            "markdown, then a short 'What changed and why' section with 5-8 bullets. "
+            "Company context (if any): {target}"),
+    },
+    "offer_review": {
+        "name": "Full Offer Letter Review",
+        "price_paise": 9900,
+        "source_label": "your offer letter",
+        "prompt": (
+            "You are an expert compensation and employment advisor in India. Give a "
+            "full review of this offer letter: (1) plain-English explanation of every "
+            "clause, (2) red flags and risky terms with why they matter, (3) "
+            "compensation breakdown sanity check (CTC vs in-hand, variable, joining "
+            "bonus, bond/notice clauses), (4) specific negotiation points with exact "
+            "wording the candidate can send, (5) questions to ask before signing. "
+            "Be concrete and specific to this letter, not generic. Candidate's "
+            "concerns (if any): {target}"),
+    },
+    "cover_letter_pro": {
+        "name": "Professional Cover Letter",
+        "price_paise": 7900,
+        "source_label": "the job description (and your resume if you have it)",
+        "prompt": (
+            "You are a professional cover-letter writer. Write a polished, specific, "
+            "ready-to-send cover letter based on the material provided. Match the "
+            "candidate's real experience to the role's actual requirements, keep it "
+            "under 350 words, no clichés, confident warm tone, and end with a clear "
+            "call to action. Output only the letter, ready to paste. "
+            "Anything to emphasize (if any): {target}"),
+    },
+}
+
+
+def payments_ready() -> bool:
+    return bool(RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET)
+
+
+def _current_user(request: Request):
+    """Return the Supabase auth user dict (has 'id' and 'email') or None."""
+    if not auth_ready():
+        return None
+    payload, expired = _load_session(request)
+    if not payload:
+        return None
+    if expired:
+        rt = payload.get("rt")
+        if not rt:
+            return None
+        status, tokens = _auth_call("token?grant_type=refresh_token",
+                                    {"refresh_token": rt})
+        if status != 200 or "access_token" not in tokens:
+            return None
+        payload = {"at": tokens["access_token"]}
+    status, user = _auth_call("user", token=payload["at"])
+    if status != 200 or not isinstance(user, dict) or not user.get("id"):
+        return None
+    return user
+
+
+def _rzp_call(path: str, payload: dict):
+    """POST to the Razorpay REST API with basic auth. Returns (status, json)."""
+    import urllib.request
+    import urllib.error
+    import base64
+    url = "https://api.razorpay.com/v1/" + path
+    data = json.dumps(payload).encode()
+    req = urllib.request.Request(url, data=data, method="POST")
+    cred = base64.b64encode(
+        (RAZORPAY_KEY_ID + ":" + RAZORPAY_KEY_SECRET).encode()).decode()
+    req.add_header("Authorization", "Basic " + cred)
+    req.add_header("Content-Type", "application/json")
+    try:
+        with urllib.request.urlopen(req, timeout=12) as r:
+            return r.status, json.loads(r.read().decode() or "{}")
+    except urllib.error.HTTPError as e:
+        try:
+            return e.code, json.loads(e.read().decode() or "{}")
+        except Exception:
+            return e.code, {}
+    except Exception:
+        traceback.print_exc()
+        return 0, {}
+
+
+def _verify_signature(order_id: str, payment_id: str, signature: str) -> bool:
+    import hmac
+    import hashlib
+    expect = hmac.new(RAZORPAY_KEY_SECRET.encode(),
+                      (order_id + "|" + payment_id).encode(),
+                      hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expect, signature or "")
+
+
+def _payment_row(order_id: str):
+    rows = _db_request("GET", "payments?razorpay_order_id=eq." + order_id
+                       + "&select=*")
+    return rows[0] if isinstance(rows, list) and rows else None
+
+
+@app.post("/api/pay/order")
+async def api_pay_order(request: Request):
+    if not payments_ready():
+        return err_response(503, "Payments are being set up. Please check back soon.")
+    if not db_ready():
+        return err_response(503, "Payments are being set up. Please check back soon.")
+    user = _current_user(request)
+    if not user:
+        return JSONResponse({"error": "Please sign in to continue.", "login": True},
+                            status_code=401)
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+    product = str(payload.get("product") or "") if isinstance(payload, dict) else ""
+    spec = PAID_PRODUCTS.get(product)
+    if not spec:
+        return err_response(404, "Unknown product.")
+    receipt = "nx_" + uuid.uuid4().hex[:16]
+    status, order = _rzp_call("orders", {
+        "amount": spec["price_paise"],
+        "currency": "INR",
+        "receipt": receipt,
+        "notes": {"product": product, "email": user.get("email", "")},
+    })
+    if status not in (200, 201) or not order.get("id"):
+        return err_response(502, "Could not start the payment. Please try again.")
+    db_insert("payments", {
+        "user_id": user["id"],
+        "razorpay_order_id": order["id"],
+        "amount_paise": spec["price_paise"],
+        "currency": "INR",
+        "status": "created",
+        "product": product,
+    })
+    return JSONResponse({
+        "order_id": order["id"], "amount": spec["price_paise"],
+        "currency": "INR", "key_id": RAZORPAY_KEY_ID,
+        "product": product, "name": spec["name"],
+        "email": user.get("email", "")})
+
+
+@app.post("/api/pay/verify")
+async def api_pay_verify(request: Request):
+    if not payments_ready() or not db_ready():
+        return err_response(503, "Payments are being set up. Please check back soon.")
+    user = _current_user(request)
+    if not user:
+        return JSONResponse({"error": "Please sign in to continue.", "login": True},
+                            status_code=401)
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+    if not isinstance(payload, dict):
+        payload = {}
+    order_id = str(payload.get("razorpay_order_id") or "")
+    payment_id = str(payload.get("razorpay_payment_id") or "")
+    signature = str(payload.get("razorpay_signature") or "")
+    if not (order_id and payment_id and signature):
+        return err_response(400, "Missing payment details.")
+    row = _payment_row(order_id)
+    if not row or row.get("user_id") != user["id"]:
+        return err_response(404, "Unknown order.")
+    if row.get("status") == "verified":
+        return JSONResponse({"ok": True, "product": row.get("product"),
+                             "already": True})
+    if not _verify_signature(order_id, payment_id, signature):
+        _db_request("PATCH", "payments?razorpay_order_id=eq." + order_id,
+                    {"status": "failed"})
+        return err_response(400, "Payment could not be verified. If any money was "
+                            "deducted, Razorpay refunds it automatically.")
+    _db_request("PATCH", "payments?razorpay_order_id=eq." + order_id,
+                {"status": "verified", "razorpay_payment_id": payment_id})
+    db_insert("purchases", {"user_id": user["id"],
+                            "product": row.get("product") or "",
+                            "unlocked": True})
+    db_usage("purchase", {"product": row.get("product")})
+    return JSONResponse({"ok": True, "product": row.get("product")})
+
+
+@app.post("/api/premium/{product}")
+async def api_premium(product: str, request: Request):
+    spec = PAID_PRODUCTS.get(product)
+    if not spec:
+        return err_response(404, "Unknown product.")
+    if not db_ready():
+        return err_response(503, "This feature is being set up. Please check back soon.")
+    if not gemini_ready():
+        return err_response(503, "The AI engine is being configured. Please try again shortly.")
+    user = _current_user(request)
+    if not user:
+        return JSONResponse({"error": "Please sign in to continue.", "login": True},
+                            status_code=401)
+    credits = _db_request("GET", "purchases?user_id=eq." + user["id"]
+                          + "&product=eq." + product
+                          + "&unlocked=eq.true&select=id&limit=1")
+    if not (isinstance(credits, list) and credits):
+        return JSONResponse({"error": "This feature needs a one-time payment.",
+                             "pay_required": True, "product": product,
+                             "name": spec["name"],
+                             "price_paise": spec["price_paise"]}, status_code=402)
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+    if not isinstance(payload, dict):
+        payload = {}
+    source_text = str(payload.get("source_text") or "")[:30000].strip()
+    doc_id = str(payload.get("doc_id") or "").strip()
+    if doc_id and not source_text:
+        doc, err = doc_or_404(doc_id)
+        if err:
+            return err
+        source_text = doc.get("text", "")[:30000]
+    if len(source_text) < 40:
+        return err_response(400, "Please paste " + spec["source_label"] + " first.")
+    fields = {"target": str(payload.get("target") or "")[:500]}
+    # Consume the credit before the AI run so a double-click cannot spend it twice.
+    _db_request("PATCH", "purchases?id=eq." + str(credits[0]["id"]),
+                {"unlocked": False})
+    try:
+        out = gemini_generate({"name": spec["name"], "text": source_text,
+                               "raw": None},
+                              spec["prompt"].format_map(_F(fields)))
+    except Exception:
+        traceback.print_exc()
+        # AI failed - give the credit back.
+        _db_request("PATCH", "purchases?id=eq." + str(credits[0]["id"]),
+                    {"unlocked": True})
+        return err_response(502, "The AI could not process this right now. "
+                            "Your credit was not used - please try again.")
+    db_history(doc_id or None, "premium:" + product,
+               input_preview=source_text[:500], output_preview=out)
+    db_usage("premium:" + product)
+    return JSONResponse({"result": out})
+
+
+@app.get("/api/purchases")
+async def api_purchases(request: Request):
+    user = _current_user(request)
+    if not user:
+        return JSONResponse({"authenticated": False, "purchases": []})
+    rows = _db_request("GET", "purchases?user_id=eq." + user["id"]
+                       + "&select=product,unlocked,created_at"
+                       + "&order=created_at.desc&limit=50")
+    return JSONResponse({"authenticated": True,
+                         "purchases": rows if isinstance(rows, list) else []})
+
+
 @app.get("/api/config")
 async def api_config() -> JSONResponse:
-    return JSONResponse({"ai_ready": gemini_ready(), "db_ready": db_ready()})
+    return JSONResponse({"ai_ready": gemini_ready(), "db_ready": db_ready(),
+                        "auth_ready": auth_ready(),
+                        "payments_ready": payments_ready()})
 
 
 @app.post("/api/documents")
