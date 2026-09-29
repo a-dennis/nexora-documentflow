@@ -43,7 +43,7 @@ import threading
 import traceback
 from collections import defaultdict, deque
 
-from fastapi import FastAPI, Request, UploadFile, File
+from fastapi import FastAPI, Request, UploadFile, File, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 
 app = FastAPI(title="Nexora", docs_url=None, redoc_url=None, openapi_url=None)
@@ -1620,6 +1620,129 @@ def calculators_page() -> str:
 
 
 # ----------------------------------------------------------------------
+# Phase 9: individual SEO tool pages
+# ----------------------------------------------------------------------
+
+CALC_TOOL = '<section class="section">' + CALC_BODY.split('<section class="section">', 1)[1]
+
+SEO_CALC_PAGES = {
+    "ctc-calculator": {
+        "calc": "ctc",
+        "title": "CTC Breakdown Calculator",
+        "meta": "Free CTC breakdown calculator for India. See how your annual CTC splits into Basic, HRA, PF, gratuity and allowances - yearly and monthly.",
+        "h1": "CTC Breakdown Calculator",
+        "intro": "CTC (Cost to Company) is the total your employer spends on you in a year, but it is not what lands in your bank account. Enter your annual CTC to see a typical split into Basic salary, HRA, employer PF, gratuity and special allowance.",
+        "how": ["Enter your annual CTC in rupees (the number in your offer letter).",
+                "The calculator applies a common Indian salary structure: Basic 40% of CTC, HRA 50% of Basic, employer PF 12% of Basic, gratuity 4.81% of Basic.",
+                "Read your yearly and monthly Basic, and each component, instantly."],
+        "example": "Example: on a Rs. 6,00,000 CTC, Basic is typically Rs. 2,40,000/year (Rs. 20,000/month), HRA Rs. 1,20,000, employer PF Rs. 28,800 and gratuity about Rs. 11,544.",
+        "faqs": [["Is CTC the same as take-home salary?", "No. CTC includes components you never receive in cash, like employer PF and gratuity. Take-home is CTC minus PF, professional tax and income tax. Use our take-home salary calculator for that estimate."],
+                 ["Does every company use this exact structure?", "No. Structures vary - some companies keep Basic at 50% of CTC, some cap PF at Rs. 1,800/month. Treat this as a typical structure and check your salary slip for your actual split."],
+                 ["Is my salary data stored anywhere?", "No. This calculator runs entirely in your browser. Nothing you enter is sent to our servers."]],
+    },
+    "salary-calculator": {
+        "calc": "takehome",
+        "title": "Take-home Salary Calculator",
+        "meta": "Free take-home salary calculator for India (new tax regime). Estimate your monthly in-hand salary from CTC after PF, professional tax and income tax.",
+        "h1": "Take-home Salary Calculator (In-hand)",
+        "intro": "Your offer letter says CTC, but what matters every month is the in-hand amount. Enter your annual CTC to estimate your monthly take-home salary under the new tax regime, after employee PF, professional tax and income tax.",
+        "how": ["Enter your annual CTC in rupees.",
+                "The calculator estimates employee PF (12% of Basic at 40% of CTC), Rs. 200/month professional tax, and income tax under the new regime (FY 2025-26) with the Rs. 75,000 standard deduction.",
+                "See your estimated monthly take-home and each deduction."],
+        "example": "Example: a Rs. 6,00,000 CTC typically works out to roughly Rs. 45,000-47,000 per month in hand, depending on your company's PF and structure.",
+        "faqs": [["Which tax regime does this use?", "The new regime for FY 2025-26, where income up to Rs. 12 lakh (taxable) effectively pays zero tax after the rebate. The old regime needs your investment details, so it is not estimated here."],
+                 ["Why is my actual in-hand different?", "Companies structure salaries differently - PF caps, variable pay, gratuity in CTC and reimbursements all move the number. Use this as a close estimate, then verify with your offer breakup."],
+                 ["Is my salary data stored anywhere?", "No. Everything runs in your browser and nothing is sent to our servers."]],
+    },
+    "increment-calculator": {
+        "calc": "increment",
+        "title": "Salary Increment Calculator",
+        "meta": "Free salary increment calculator. Enter your current CTC and hike percentage to see your new salary, plus the increase per year and per month.",
+        "h1": "Salary Increment Calculator",
+        "intro": "Got a hike percentage and want the real numbers? Enter your current annual CTC and the hike percent to see your new CTC and how much more you earn per year and per month.",
+        "how": ["Enter your current annual CTC.",
+                "Enter the hike percentage (for example 12 for a 12% hike).",
+                "See your new CTC, the yearly increase and the monthly increase."],
+        "example": "Example: a 12% hike on a Rs. 6,00,000 CTC gives a new CTC of Rs. 6,72,000 - that is Rs. 72,000 more per year, or Rs. 6,000 more per month.",
+        "faqs": [["Is the hike always on the full CTC?", "Usually yes for appraisals, but some companies apply the percentage only to Basic. Check your increment letter - if it is on Basic, enter your Basic here instead."],
+                 ["How do I compare two job offers?", "Run both CTCs through the take-home salary calculator - a higher CTC does not always mean higher in-hand if the structure differs."]],
+    },
+    "gratuity-calculator": {
+        "calc": "gratuity",
+        "title": "Gratuity Calculator",
+        "meta": "Free gratuity calculator for India. Calculate gratuity payable under the Payment of Gratuity Act from your last drawn Basic + DA and years of service.",
+        "h1": "Gratuity Calculator (India)",
+        "intro": "Gratuity is a lump sum your employer pays when you leave after long service. Under the Payment of Gratuity Act, it is 15/26 of your last drawn Basic + DA for each completed year. Enter your details to see the amount payable.",
+        "how": ["Enter your last drawn monthly Basic + DA (not full CTC).",
+                "Enter your years of service - 6 months or more rounds up to a full year.",
+                "See the gratuity payable under the standard formula."],
+        "example": "Example: with Rs. 25,000 Basic + DA and 6 years of service, gratuity is 15/26 x 25,000 x 6, about Rs. 86,538.",
+        "faqs": [["When am I eligible for gratuity?", "Generally after 5 years of continuous service with the same employer. The 5-year rule does not apply in cases of death or disablement."],
+                 ["Is gratuity taxable?", "For most private-sector employees, gratuity up to Rs. 20 lakh is tax-exempt. Amounts above that are taxed as income."],
+                 ["My company is not covered by the Act - what changes?", "The formula becomes 15/30 (half month) instead of 15/26 per year. Most registered companies with 10+ employees are covered by the Act."]],
+    },
+    "notice-period-calculator": {
+        "calc": "notice",
+        "title": "Notice Period Calculator",
+        "meta": "Free notice period calculator. Enter your resignation date and notice days to find your last working day instantly.",
+        "h1": "Notice Period Calculator - Last Working Day",
+        "intro": "Resigning and need to know your last working day? Enter your resignation date and the notice period in your appointment letter to see the exact date you finish.",
+        "how": ["Pick your resignation date (the day you submit your resignation).",
+                "Enter your notice period in days - 30, 60 or 90 are common in India.",
+                "See your last working day, counting calendar days."],
+        "example": "Example: resigning on 1 October with a 30-day notice period makes your last working day 31 October.",
+        "faqs": [["Does the notice period count weekends and holidays?", "This calculator counts calendar days, which is the common practice. Some companies count only working days - check your appointment letter."],
+                 ["Can I leave earlier than my notice period?", "Often yes, with a notice buy-out (paying salary in lieu) or by adjusting earned leave. Both need your employer's agreement."]],
+    },
+}
+
+SEO_CALC_ORDER = ["ctc-calculator", "salary-calculator", "increment-calculator",
+                  "gratuity-calculator", "notice-period-calculator"]
+
+
+def _seo_links(current: str) -> str:
+    items = []
+    for slug in SEO_CALC_ORDER:
+        if slug == current:
+            continue
+        spec = SEO_CALC_PAGES[slug]
+        items.append(f'<a class="btn ghost" href="/{slug}">{spec["title"]}</a>')
+    items.append('<a class="btn ghost" href="/career/ats-optimizer">Resume ATS Checker</a>')
+    return '<div style="display:flex;flex-wrap:wrap;gap:10px">' + "".join(items) + "</div>"
+
+
+def seo_calc_page(slug: str) -> str:
+    spec = SEO_CALC_PAGES[slug]
+    how = "".join(f"<li>{step}</li>" for step in spec["how"])
+    faqs = "".join(f"<h3 style='margin:18px 0 6px'>{q}</h3><p>{a}</p>"
+                   for q, a in spec["faqs"])
+    body = f"""
+<section class="page-hero"><div class="container">
+  <span class="tag live">Free tool</span>
+  <h1 style="margin-top:12px">{spec['h1']}</h1>
+  <p>{spec['intro']}</p>
+</div></section>
+{CALC_TOOL}
+<script>pick("{spec['calc']}");document.getElementById("tabs").style.display="none";</script>
+<section class="section"><div class="container" style="max-width:780px">
+  <div class="card">
+    <h2 style="margin-top:0">How it works</h2>
+    <ol style="line-height:1.9;color:var(--muted)">{how}</ol>
+    <p style="margin-top:14px"><strong>{spec['example']}</strong></p>
+  </div>
+  <div class="card">
+    <h2 style="margin-top:0">Common questions</h2>
+    {faqs}
+  </div>
+  <div class="card">
+    <h2 style="margin-top:0">More free Nexora tools</h2>
+    {_seo_links(slug)}
+  </div>
+</div></section>"""
+    return page(spec["title"], spec["meta"], "", body)
+
+
+# ----------------------------------------------------------------------
 # Phase 3: HR document generator
 # ----------------------------------------------------------------------
 
@@ -2429,6 +2552,13 @@ async def career_tool(slug: str) -> str:
 @app.get("/hr/calculators", response_class=HTMLResponse)
 async def hr_calculators() -> str:
     return calculators_page()
+
+
+@app.get("/{seo_slug}", response_class=HTMLResponse)
+async def seo_tool_page(seo_slug: str) -> HTMLResponse:
+    if seo_slug not in SEO_CALC_PAGES:
+        raise HTTPException(status_code=404, detail="Not found")
+    return HTMLResponse(seo_calc_page(seo_slug))
 
 
 @app.get("/hr/documents", response_class=HTMLResponse)
