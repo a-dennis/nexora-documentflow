@@ -434,6 +434,115 @@ a.tool-card p{margin:0;color:var(--muted);font-size:13.5px;line-height:1.55}
 a.tool-card.hide{display:none}
 @media(max-width:1024px){.tools-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:760px){.tools-grid{grid-template-columns:repeat(2,1fr);gap:12px}a.tool-card{padding:18px 16px}a.tool-card .t-icon{font-size:26px;margin-bottom:10px}a.tool-card h3{font-size:15px}}
+
+/* ============ Nexora signature accent refresh (Sep 2026, round 2) ============ */
+/* Bold violet-to-fuchsia signature: ilovepdf energy, Nexora's own color. */
+:root {
+  --accent: #7c3aed;
+  --accent-dark: #6d28d9;
+  --accent2: #db2777;
+  --tint: #f6f1ff;
+  --bg: #fbfaff;
+}
+body {
+  background:
+    radial-gradient(1000px 540px at 88% -120px, rgba(219, 39, 119, 0.13) 0%, rgba(219, 39, 119, 0) 60%),
+    radial-gradient(840px 480px at -12% 40px, rgba(124, 58, 237, 0.15) 0%, rgba(124, 58, 237, 0) 55%),
+    radial-gradient(760px 520px at 50% 118%, rgba(99, 102, 241, 0.10) 0%, rgba(99, 102, 241, 0) 62%),
+    linear-gradient(180deg, #fdfbff 0%, #f9f7ff 55%, #f6f8fc 100%);
+  background-attachment: fixed;
+}
+.kicker { color: var(--accent2); }
+.brand span {
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.navlinks a.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  box-shadow: 0 4px 14px rgba(168, 60, 200, 0.38);
+}
+
+/* buttons: bold gradient, real depth, lively hover */
+.btn {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+  box-shadow: 0 8px 20px rgba(168, 60, 200, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+.btn:hover {
+  background: linear-gradient(135deg, #8b5cf6 0%, #e0358a 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(168, 60, 200, 0.44),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+.btn:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 10px rgba(168, 60, 200, 0.34);
+}
+.btn.ghost {
+  background: #ffffff; color: var(--accent);
+  border: 1.5px solid #d9c8fb;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.08);
+}
+.btn.ghost:hover {
+  background: var(--tint); color: var(--accent-dark);
+  border-color: var(--accent); transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(124, 58, 237, 0.16);
+}
+
+/* cards: icon chips, richer hover */
+.card-icon {
+  background: linear-gradient(135deg, #f3ecff 0%, #ffe9f4 100%);
+  border: 1px solid rgba(124, 58, 237, 0.16);
+}
+a.card-link:hover, a.card:hover {
+  box-shadow: 0 16px 34px rgba(124, 58, 237, 0.18);
+  border-color: rgba(124, 58, 237, 0.4);
+}
+a.tool-card { border: 1px solid rgba(15, 23, 42, 0.07); box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04); }
+a.tool-card .t-icon {
+  width: 56px; height: 56px; border-radius: 16px; font-size: 28px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #f3ecff 0%, #ffe9f4 100%);
+  border: 1px solid rgba(124, 58, 237, 0.14);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+a.tool-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 34px rgba(124, 58, 237, 0.17);
+  border-color: rgba(124, 58, 237, 0.38);
+}
+a.tool-card:hover .t-icon {
+  transform: scale(1.06);
+  box-shadow: 0 6px 16px rgba(219, 39, 119, 0.22);
+  border-color: rgba(219, 39, 119, 0.3);
+}
+a.tool-card h3 { letter-spacing: -0.2px; }
+
+/* category pills: confident dark active like the reference, accent hover */
+.cat-pills button:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 3px 10px rgba(124, 58, 237, 0.12); }
+.cat-pills button.active { background: #1b1430; border-color: #1b1430; color: #fff; box-shadow: 0 4px 12px rgba(27, 20, 48, 0.3); }
+
+/* accents elsewhere */
+.pill-tabs button.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  box-shadow: 0 4px 12px rgba(168, 60, 200, 0.32);
+}
+.msg.user { background: linear-gradient(135deg, var(--accent), var(--accent2)); }
+.tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
+.sugg button:hover { background: var(--tint); border-color: var(--accent); }
+.dropzone:hover, .dropzone.drag { border-color: var(--accent); background: var(--tint); }
+.field input:focus, .field textarea:focus, .field select:focus,
+.chatrow input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.16);
+}
+.tag.featured {
+  background: linear-gradient(135deg, #f3ecff, #ffe9f4);
+  color: var(--accent-dark); border: 1px solid #ddc9fb;
+}
+table.kv th { background: var(--tint); }
+.spin { border-top-color: var(--accent); }
+@media(max-width:760px){a.tool-card .t-icon{width:48px;height:48px;font-size:24px;border-radius:14px}}
 """
 
 ICONS = {
