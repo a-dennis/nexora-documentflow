@@ -1528,7 +1528,11 @@ def premium_section(career_slug: str) -> str:
 
 
 def payments_ready() -> bool:
-    return bool(RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET)
+    # Fail closed. Keys alone must never expose checkout. Enable only after the
+    # schema, order persistence, verification, credit grants and consumption
+    # have been tested end-to-end. Keep PAYMENTS_ENABLED unset until then.
+    return bool(os.environ.get("PAYMENTS_ENABLED", "").lower() == "true"
+                and RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET and db_ready())
 
 
 def _current_user(request: Request):
