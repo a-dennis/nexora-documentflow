@@ -1151,7 +1151,7 @@ function buildForm() {
       + '<textarea id="srcText" placeholder="Paste the text here..."></textarea>'
       + '<div class="hint">' + esc(CFG.source.help) + '</div></div>'
       + '<div class="toolbar" style="margin-top:4px">'
-      + '<button class="btn ghost" type="button" onclick="document.getElementById(\'fileInput\').click()">Upload file instead</button>'
+      + '<button class="btn ghost" type="button" onclick="document.getElementById(\\'fileInput\\').click()">Upload file instead</button>'
       + '<span class="attached" id="attName"></span></div></div>';
   }
   CFG.fields.forEach(function (f) {
