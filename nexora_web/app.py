@@ -46,7 +46,8 @@ from collections import defaultdict, deque
 from fastapi import FastAPI, Request, UploadFile, File, HTTPException
 
 from web_content import *  # noqa: F401,F403 - HTML/CSS/content constants
-from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, RedirectResponse
+from pdf_tools import TOOLS as PDF_TOOL_SPECS, ORDER as PDF_TOOL_ORDER, ToolError, run_tool
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, RedirectResponse, Response
 
 app = FastAPI(title="Nexora", docs_url=None, redoc_url=None, openapi_url=None)
 
@@ -127,7 +128,8 @@ def footer_html() -> str:
         '<footer class="footer"><div class="container row">'
         '<a class="brand" href="/">Nexo<span>ra</span></a>'
         "<span>AI-powered productivity tools for documents, HR &amp; careers.</span>"
-        '<span style="margin-left:auto">&copy; 2026 Nexora</span>'
+        '<span style="margin-left:auto;opacity:.55;font-size:13px">Built with Instinct</span>'
+        '<span>&copy; 2026 Nexora</span>'
         "</div></footer>"
     )
 
@@ -273,6 +275,8 @@ def _session_value(tokens: dict) -> str:
 # ----------------------------------------------------------------------
 
 HOME_TOOLS = [
+    *[(f"/pdf/{slug}", PDF_TOOL_SPECS[slug]["icon"], PDF_TOOL_SPECS[slug]["title"],
+       PDF_TOOL_SPECS[slug]["desc"], "pdf") for slug in PDF_TOOL_ORDER],
     ("/document-ai", "doc", "Document AI",
      "Summaries, answers and data extraction from any document.", "document"),
     ("/resume-builder", "resume", "Resume Builder",
@@ -336,15 +340,17 @@ def _tools_grid(tools):
 
 def home_page() -> str:
     grid = _tools_grid(HOME_TOOLS)
-    pills = _pills([("document", "Document AI"), ("career", "Career AI"),
-                    ("calc", "Calculators"), ("docs", "HR Documents")])
+    pills = _pills([("pdf", "PDF Tools"), ("document", "Document AI"),
+                    ("career", "Career AI"), ("calc", "Calculators"),
+                    ("docs", "HR Documents")])
     body = f"""
 <section class="page-hero"><div class="container">
-  <h1 style="max-width:760px">Every tool you need for document, HR &amp;
-  career work, in one place</h1>
-  <p>Free AI tools at your fingertips. Summarize documents, build resumes,
-  write job descriptions, generate letters and do salary math - all in a few
-  clicks, no sign-up needed.</p>
+  <h1 style="max-width:760px">Every tool you need for PDF, document,
+  HR &amp; career work, in one place</h1>
+  <p>30 free PDF tools plus AI superpowers. Merge, split, compress and
+  convert PDFs, summarize documents, build resumes, write job descriptions,
+  generate letters and do salary math - all in a few clicks, no sign-up
+  needed.</p>
 </div></section>
 <section class="section"><div class="container">
   {pills}
@@ -1410,6 +1416,11 @@ async def api_me(request: Request):
     return out
 
 
+@app.get("/health")
+async def health() -> JSONResponse:
+    return JSONResponse({"status": "ok", "service": "nexora"})
+
+
 @app.get("/{seo_slug}", response_class=HTMLResponse)
 async def seo_tool_page(seo_slug: str) -> HTMLResponse:
     if seo_slug in SEO_CALC_PAGES:
@@ -1424,9 +1435,84 @@ async def hr_documents() -> str:
     return hr_documents_page()
 
 
-@app.get("/health")
-async def health() -> JSONResponse:
-    return JSONResponse({"status": "ok", "service": "nexora"})
+# ----------------------------------------------------------------------
+# PDF Tools: 30 self-hosted utilities (pdf_tools.py)
+# ----------------------------------------------------------------------
+
+PDF_TOOL_MAX_BYTES = 25 * 1024 * 1024  # 25 MB total per request
+
+
+def pdf_tool_page(slug: str) -> str:
+    spec = PDF_TOOL_SPECS.get(slug)
+    if not spec:
+        raise HTTPException(status_code=404, detail="Not found")
+    cfg = {
+        "slug": slug,
+        "title": spec["title"],
+        "multiple": bool(spec["multiple"]),
+        "options": spec["options"],
+    }
+    hint = "Accepted: " + spec["accept"]
+    if spec["multiple"]:
+        hint += " - you can add several files"
+    if spec.get("extra_file"):
+        hint += ". " + spec["extra_file"]
+    body = (PDF_TOOL_BODY
+            .replace("__TITLE__", spec["title"])
+            .replace("__DESC__", spec["desc"])
+            .replace("__ACCEPT__", spec["accept"])
+            .replace("__MULTI__", "multiple" if spec["multiple"] else "")
+            .replace("__HINT__", hint)
+            .replace("__CFG_JSON__", json.dumps(cfg))
+            .replace("__UPLOAD_ICON__", ICONS["upload"]))
+    return page(spec["title"],
+                spec["title"] + " - free online, no sign-up. " + spec["desc"],
+                "/", body)
+
+
+@app.get("/pdf/{slug}", response_class=HTMLResponse)
+async def pdf_tool(slug: str) -> str:
+    return pdf_tool_page(slug)
+
+
+@app.post("/api/pdf/{slug}")
+async def api_pdf_tool(request: Request, slug: str) -> Response:
+    from starlette.concurrency import run_in_threadpool
+    if slug not in PDF_TOOL_SPECS:
+        raise HTTPException(status_code=404, detail="Not found")
+    ip = request.client.host if request.client else "unknown"
+    if not rate_ok(ip):
+        return err_response(429, "Too many requests. Please wait a while and try again.")
+    form = await request.form()
+    files = []
+    total = 0
+    for f in form.getlist("files"):
+        blob = await f.read()
+        if not blob:
+            continue
+        total += len(blob)
+        if total > PDF_TOOL_MAX_BYTES:
+            return err_response(400, "Those files together are larger than 25 MB. "
+                                     "Please use smaller files.")
+        files.append((os.path.basename(f.filename or "file")[:120], blob))
+    opts = {k: str(v)[:500] for k, v in form.items() if k != "files"}
+    try:
+        data, fname, mime = await run_in_threadpool(run_tool, slug, files, opts)
+    except ToolError as e:
+        msg = str(e)
+        if msg == "ocr-unavailable":
+            msg = ("The OCR engine is being enabled on the server. "
+                   "Please try again shortly.")
+        return err_response(400, msg)
+    except Exception:
+        traceback.print_exc()
+        return err_response(500, "That file could not be processed. Please try another one.")
+    db_usage("pdf_tool", {"tool": slug})
+    db_history(None, "pdf_tool:" + slug)
+    safe = re.sub(r"[^A-Za-z0-9._-]", "_", fname)
+    return Response(content=data, media_type=mime,
+                    headers={"Content-Disposition": 'attachment; filename="' + safe + '"'})
+
 
 
 # ----------------------------------------------------------------------
