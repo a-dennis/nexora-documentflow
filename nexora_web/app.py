@@ -400,6 +400,7 @@ def career_tool_page(slug: str) -> str:
             .replace("__TITLE__", spec["title"])
             .replace("__TAGLINE__", spec["tagline"])
             .replace("__BUTTON__", spec["button"]))
+    body += premium_section(slug)
     return page(spec["title"], spec["seo"], "/hr-career", body)
 
 
@@ -460,6 +461,7 @@ def seo_career_page(seo_slug: str) -> str:
             .replace("__BUTTON__", tool["button"]))
     faqs = "".join(f"<h3 style='margin:18px 0 6px'>{q}</h3><p>{a}</p>"
                    for q, a in spec["faqs"])
+    body += premium_section(spec["career"])
     body += f"""
 <section class="section" style="padding-top:0"><div class="container" style="max-width:780px">
   <div class="card">
@@ -1260,7 +1262,11 @@ async def hr_calculators() -> str:
 
 
 @app.get("/login", response_class=HTMLResponse)
-async def login_page(err: str = "", msg: str = "") -> str:
+async def login_page(err: str = "", msg: str = "", next: str = "") -> str:
+    next_url = next if (next.startswith("/") and not next.startswith("//")) else ""
+    safe_next = (next_url.replace("&", "&amp;").replace('"', "&quot;")
+                 .replace("<", "&lt;").replace(">", "&gt;"))
+    hidden = ('<input type="hidden" name="next" value="' + safe_next + '">') if next_url else ""
     notice = ('<div class="err" style="margin-bottom:14px">Sign-in did not '
               'complete. Check your email and password and try again.</div>') if err else ""
     info = ('<div class="hint" style="margin-bottom:14px;color:var(--accent)">'
@@ -1274,7 +1280,7 @@ async def login_page(err: str = "", msg: str = "") -> str:
             '<p class="hint" style="margin:0">Google sign-in is being set up - '
             'use email below for now.</p>')
     return page("Sign in", "Sign in to Nexora with Google or email. Free tools never need an account.",
-                "", LOGIN_BODY.replace("__ERR__", notice).replace("__MSG__", info).replace("__GOOGLE__", gbtn))
+                "", LOGIN_BODY.replace("__ERR__", notice).replace("__MSG__", info).replace("__GOOGLE__", gbtn).replace("__NEXT__", hidden))
 
 
 @app.get("/auth/google")
@@ -1303,6 +1309,9 @@ async def auth_email(request: Request):
     email = str(form.get("email", "")).strip()
     password = str(form.get("password", ""))
     mode = str(form.get("mode", "login"))
+    next_url = str(form.get("next", ""))
+    if not (next_url.startswith("/") and not next_url.startswith("//")) or len(next_url) > 200:
+        next_url = ""
     if not email or len(password) < 6:
         return RedirectResponse("/login?err=1", status_code=302)
     if mode == "signup":
@@ -1311,12 +1320,14 @@ async def auth_email(request: Request):
         status, data = _auth_call("token?grant_type=password",
                                   {"email": email, "password": password})
     if status == 200 and "access_token" in data:
-        resp = RedirectResponse("/", status_code=302)
+        resp = RedirectResponse(next_url or "/", status_code=302)
         resp.set_cookie(SESSION_COOKIE, _session_value(data),
                         max_age=7 * 24 * 3600, httponly=True, secure=True, samesite="lax")
         return resp
     if mode == "signup" and status == 200:
-        return RedirectResponse("/login?msg=confirm", status_code=302)
+        return RedirectResponse("/login?msg=confirm"
+                                + ("&next=" + next_url if next_url else ""),
+                                status_code=302)
     return RedirectResponse("/login?err=1", status_code=302)
 
 
@@ -1415,6 +1426,7 @@ RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "").strip()
 PAID_PRODUCTS = {
     "resume_improve": {
         "name": "AI Resume Improvement",
+        "blurb": "Your whole resume rewritten by AI - stronger wording, quantified achievements, ATS-optimized - as an editable Word file.",
         "price_paise": 9900,
         "source_label": "your current resume",
         "prompt": (
@@ -1427,6 +1439,7 @@ PAID_PRODUCTS = {
     },
     "jd_improve": {
         "name": "AI JD Improvement",
+        "blurb": "The complete improved JD - restructured, bias-free, realistic requirements - ready to post, as an editable Word file.",
         "price_paise": 14900,
         "source_label": "your job description",
         "prompt": (
@@ -1440,6 +1453,7 @@ PAID_PRODUCTS = {
     },
     "offer_review": {
         "name": "Full Offer Letter Review",
+        "blurb": "Every clause explained in plain English, red flags flagged, and exact negotiation wording you can send - as an editable Word file.",
         "price_paise": 9900,
         "source_label": "your offer letter",
         "prompt": (
@@ -1454,6 +1468,7 @@ PAID_PRODUCTS = {
     },
     "cover_letter_pro": {
         "name": "Professional Cover Letter",
+        "blurb": "A polished, ready-to-send cover letter matched to the job and your real experience - as an editable Word file.",
         "price_paise": 7900,
         "source_label": "the job description (and your resume if you have it)",
         "prompt": (
@@ -1465,6 +1480,29 @@ PAID_PRODUCTS = {
             "Anything to emphasize (if any): {target}"),
     },
 }
+
+
+TOOL_PRODUCT = {
+    "resume-builder": "resume_improve",
+    "resume-analyzer": "resume_improve",
+    "ats-optimizer": "resume_improve",
+    "jd-builder": "jd_improve",
+    "jd-analyzer": "jd_improve",
+    "offer-letter-analyzer": "offer_review",
+    "cover-letter-builder": "cover_letter_pro",
+}
+
+
+def premium_section(career_slug: str) -> str:
+    product = TOOL_PRODUCT.get(career_slug)
+    if not product:
+        return ""
+    spec = PAID_PRODUCTS[product]
+    cfg = json.dumps({
+        "product": product, "name": spec["name"], "blurb": spec["blurb"],
+        "price": spec["price_paise"] // 100,
+        "sourceLabel": spec["source_label"]})
+    return PREMIUM_BODY.replace("__PCFG__", cfg)
 
 
 def payments_ready() -> bool:
