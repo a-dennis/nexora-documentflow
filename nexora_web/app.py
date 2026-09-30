@@ -1038,6 +1038,9 @@ def rate_ok(ip: str) -> bool:
 # Supabase usage for the record. Limits reset at midnight IST.
 # ----------------------------------------------------------------------
 DAILY_LIMITS = {"pdf": 5, "ai": 3, "doc": 5}
+# Single launch toggle: set LIMITS_ENABLED=on in the Render dashboard
+# when we go live. Until then every job passes (friends are testing).
+LIMITS_ENABLED = os.environ.get("LIMITS_ENABLED", "off").strip().lower() in ("1", "true", "on", "yes")
 DAILY_COUNTER = {}
 DAILY_LOCK = threading.Lock()
 
@@ -1052,6 +1055,8 @@ def daily_limit_response(request: Request, group: str,
                          label: str) -> JSONResponse | None:
     """None when the job may run (and counts it); a friendly 429 when the
     free daily limit for this group is already used up."""
+    if not LIMITS_ENABLED:
+        return None
     limit = DAILY_LIMITS.get(group)
     if not limit:
         return None
