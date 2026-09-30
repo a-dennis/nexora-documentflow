@@ -1418,7 +1418,7 @@ async def auth_callback(request: Request):
     if not code or not verifier or not auth_ready():
         return RedirectResponse("/login?err=1", status_code=302)
     status, tokens = _auth_call("token?grant_type=pkce", {
-        "code": code,
+        "auth_code": code,
         "code_verifier": verifier,
         "redirect_uri": SITE_URL + "/auth/callback",
     })
