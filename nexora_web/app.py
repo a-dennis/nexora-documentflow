@@ -114,12 +114,14 @@ def nav_html(active: str) -> str:
         '<label for="navtoggle" class="burger" aria-hidden="true">'
         "<span></span><span></span><span></span></label>"
         f'<div class="navlinks">{"".join(links)}'
-        '<a href="/login" id="authLink" class="auth-link">Sign in</a></div>'
+        '<a href="/login" id="authLink" class="auth-link">Sign in</a>'
+        '<a href="/auth/logout" id="signOutLink" class="auth-link" style="display:none">Sign out</a></div>'
         "</div></nav>"
-        "<script>fetch(\"/api/me\").then(function(r){return r.json()}).then(function(d){"
+        "<script>fetch(\"/api/me\",{credentials:\"same-origin\",cache:\"no-store\"}).then(function(r){return r.json()}).then(function(d){"
         "var a=document.getElementById(\"authLink\");if(!a)return;"
         "if(d.authenticated){var n=(d.name||d.email||\"Account\").split(\" \")[0];"
-        "a.textContent=n;a.href=\"/auth/logout\";a.title=\"Sign out\";}"
+        "a.textContent=n;a.removeAttribute(\"href\");a.title=\"Signed in as \"+(d.email||n);"
+        "document.getElementById(\"signOutLink\").style.display=\"\";}"
         "}).catch(function(){});</script>"
     )
 
