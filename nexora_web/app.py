@@ -394,6 +394,9 @@ CAREER_SLUGS = [
 
 def career_tool_page(slug: str) -> str:
     spec = CAREER_TOOLS[slug]
+    nxt = [["/career/" + s, CAREER_TOOLS[s]["title"]]
+           for s in CAREER_NEXT.get(slug, [])]
+    nxt.append(["/document-ai", "Document AI"])
     cfg = {
         "slug": slug,
         "title": spec["title"],
@@ -401,6 +404,7 @@ def career_tool_page(slug: str) -> str:
         "source": spec.get("source"),
         "sourceRequired": bool(spec.get("source")) and slug not in ("recruitment-optimizer",),
         "download": bool(spec.get("download")),
+        "next": nxt,
     }
     body = (CAREER_BODY
             .replace("__CFG_JSON__", json.dumps(cfg))
@@ -1534,6 +1538,88 @@ async def hr_documents() -> str:
 PDF_TOOL_MAX_BYTES = 25 * 1024 * 1024  # 25 MB total per request
 
 
+
+# ----------------------------------------------------------------------
+# Post-task success panel: "Continue to..." suggestions and share phrases
+# ----------------------------------------------------------------------
+
+PDF_NEXT = {
+    "merge": ["split", "compress", "pdf-to-word", "organize", "protect"],
+    "split": ["merge", "extract-images", "compress", "organize", "rotate"],
+    "compress": ["merge", "grayscale", "repair", "split", "pdf-to-word"],
+    "pdf-to-word": ["pdf-to-excel", "pdf-to-ppt", "word-to-pdf", "pdf-to-txt", "edit"],
+    "word-to-pdf": ["excel-to-pdf", "ppt-to-pdf", "merge", "compress", "protect"],
+    "pdf-to-ppt": ["pdf-to-word", "pdf-to-excel", "ppt-to-pdf", "pdf-to-jpg", "merge"],
+    "ppt-to-pdf": ["word-to-pdf", "excel-to-pdf", "merge", "pdf-to-ppt", "compress"],
+    "pdf-to-excel": ["pdf-to-word", "pdf-to-txt", "excel-to-pdf", "split", "merge"],
+    "excel-to-pdf": ["word-to-pdf", "pdf-to-excel", "merge", "compress", "protect"],
+    "pdf-to-jpg": ["extract-images", "jpg-to-pdf", "pdf-to-word", "compress", "split"],
+    "jpg-to-pdf": ["scan-to-pdf", "pdf-to-jpg", "compress", "merge", "watermark"],
+    "edit": ["sign", "watermark", "page-numbers", "merge", "protect"],
+    "sign": ["protect", "watermark", "edit", "merge", "pdf-to-word"],
+    "watermark": ["protect", "sign", "page-numbers", "merge", "compress"],
+    "rotate": ["organize", "crop", "merge", "split", "page-numbers"],
+    "html-to-pdf": ["word-to-pdf", "jpg-to-pdf", "merge", "compress", "protect"],
+    "unlock": ["protect", "merge", "split", "compress", "repair"],
+    "protect": ["unlock", "watermark", "sign", "merge", "compress"],
+    "organize": ["merge", "split", "rotate", "page-numbers", "extract-images"],
+    "repair": ["compress", "unlock", "split", "merge", "pdf-to-word"],
+    "page-numbers": ["watermark", "organize", "rotate", "merge", "sign"],
+    "scan-to-pdf": ["jpg-to-pdf", "ocr", "compress", "merge", "edit"],
+    "ocr": ["pdf-to-word", "pdf-to-txt", "scan-to-pdf", "pdf-to-markdown", "compress"],
+    "compare": ["redact", "organize", "split", "merge", "pdf-to-word"],
+    "redact": ["protect", "watermark", "compare", "merge", "sign"],
+    "crop": ["rotate", "organize", "compress", "merge", "split"],
+    "pdf-to-markdown": ["pdf-to-txt", "pdf-to-word", "ocr", "split", "extract-images"],
+    "pdf-to-txt": ["pdf-to-markdown", "pdf-to-word", "ocr", "extract-images", "split"],
+    "extract-images": ["pdf-to-jpg", "split", "compress", "jpg-to-pdf", "pdf-to-word"],
+    "grayscale": ["compress", "watermark", "merge", "rotate", "pdf-to-word"],
+}
+
+PDF_SHARE = {
+    "merge": "merged my PDFs",
+    "split": "split a PDF",
+    "compress": "compressed a PDF",
+    "pdf-to-word": "turned a PDF into Word",
+    "word-to-pdf": "turned a Word file into a PDF",
+    "pdf-to-ppt": "turned a PDF into slides",
+    "ppt-to-pdf": "turned slides into a PDF",
+    "pdf-to-excel": "pulled a PDF table into Excel",
+    "excel-to-pdf": "turned a spreadsheet into a PDF",
+    "pdf-to-jpg": "turned PDF pages into images",
+    "jpg-to-pdf": "turned photos into a PDF",
+    "edit": "edited a PDF online",
+    "sign": "signed a PDF online",
+    "watermark": "watermarked a PDF",
+    "rotate": "rotated a PDF",
+    "html-to-pdf": "saved a webpage as a PDF",
+    "unlock": "unlocked a PDF",
+    "protect": "password-protected a PDF",
+    "organize": "reorganized PDF pages",
+    "repair": "repaired a broken PDF",
+    "page-numbers": "added page numbers to a PDF",
+    "scan-to-pdf": "turned phone photos into a clean PDF scan",
+    "ocr": "made a scanned PDF searchable",
+    "compare": "compared two PDFs",
+    "redact": "blacked out sensitive text in a PDF",
+    "crop": "cropped a PDF",
+    "pdf-to-markdown": "turned a PDF into Markdown",
+    "pdf-to-txt": "pulled text out of a PDF",
+    "extract-images": "pulled images out of a PDF",
+    "grayscale": "made a PDF print-friendly",
+}
+
+CAREER_NEXT = {
+    "resume-builder": ["ats-optimizer", "resume-analyzer", "cover-letter-builder", "offer-letter-analyzer"],
+    "resume-analyzer": ["ats-optimizer", "resume-builder", "cover-letter-builder", "jd-analyzer"],
+    "ats-optimizer": ["resume-builder", "resume-analyzer", "cover-letter-builder", "jd-builder"],
+    "jd-builder": ["jd-analyzer", "recruitment-optimizer", "cover-letter-builder", "ats-optimizer"],
+    "jd-analyzer": ["jd-builder", "recruitment-optimizer", "ats-optimizer", "resume-analyzer"],
+    "recruitment-optimizer": ["jd-builder", "jd-analyzer", "ats-optimizer", "resume-analyzer"],
+    "cover-letter-builder": ["resume-builder", "ats-optimizer", "offer-letter-analyzer", "jd-analyzer"],
+    "offer-letter-analyzer": ["resume-analyzer", "cover-letter-builder", "jd-analyzer", "ats-optimizer"],
+}
+
 def pdf_tool_page(slug: str) -> str:
     spec = PDF_TOOL_SPECS.get(slug)
     if not spec:
@@ -1543,6 +1629,10 @@ def pdf_tool_page(slug: str) -> str:
         "title": spec["title"],
         "multiple": bool(spec["multiple"]),
         "options": spec["options"],
+        "next": [["/pdf/" + s, PDF_TOOL_SPECS[s]["title"]]
+                 for s in PDF_NEXT.get(slug, [])],
+        "share": ("I just " + PDF_SHARE[slug] + " with Nexora - free, no sign-up. Try it: ")
+                 if slug in PDF_SHARE else None,
     }
     hint = "Accepted: " + spec["accept"]
     if spec["multiple"]:
