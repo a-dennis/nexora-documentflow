@@ -543,6 +543,57 @@ a.tool-card h3 { letter-spacing: -0.2px; }
 table.kv th { background: var(--tint); }
 .spin { border-top-color: var(--accent); }
 @media(max-width:760px){a.tool-card .t-icon{width:48px;height:48px;font-size:24px;border-radius:14px}}
+/* ---------- post-task success panel & share ---------- */
+.success-panel { text-align: center; }
+.success-check {
+  width: 62px; height: 62px; margin: 0 auto 12px; border-radius: 50%;
+  background: linear-gradient(135deg, #22c55e, #10b981); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 30px; font-weight: 800;
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.35);
+}
+.success-panel h3 { margin: 0 0 6px; font-size: 22px; letter-spacing: -0.3px; }
+.success-panel .success-msg { margin: 0 0 14px; color: var(--muted); font-size: 15px; }
+.success-panel .btn-download {
+  width: 100%; font-size: 17px; min-height: 52px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+}
+.success-next { margin-top: 22px; text-align: left; }
+.success-next h4, .success-share h4 {
+  margin: 0 0 10px; font-size: 13px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1.1px; color: var(--muted);
+}
+.next-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+.next-tools a {
+  display: inline-block; padding: 9px 14px; border-radius: 999px;
+  background: var(--tint); color: var(--accent-dark);
+  font-weight: 600; font-size: 14px;
+  border: 1px solid rgba(124, 58, 237, 0.18);
+}
+.next-tools a:hover {
+  text-decoration: none; color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+}
+.success-share { margin-top: 20px; text-align: left; }
+.share-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.share-btn {
+  display: inline-flex; align-items: center; gap: 7px; padding: 9px 14px;
+  border-radius: 999px; font-weight: 600; font-size: 14px; cursor: pointer;
+  border: 1px solid var(--line); background: #fff; color: var(--ink);
+}
+.share-btn:hover {
+  text-decoration: none; transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.10);
+}
+.share-btn .dot { width: 10px; height: 10px; border-radius: 50%; }
+.share-btn.wa .dot { background: #25d366; }
+.share-btn.tg .dot { background: #229ed9; }
+.share-btn.x .dot { background: #111111; }
+.share-btn.li .dot { background: #0a66c2; }
+.share-btn.copy .dot { background: #7c3aed; }
+.share-btn.copy.copied { background: var(--green-tint); color: var(--green); border-color: #b7e4c9; }
+.share-note { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+
 """
 
 ICONS = {
@@ -562,6 +613,79 @@ ICONS = {
 
     "upload": '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
 }
+
+SUCCESS_JS = r"""
+<script>
+(function () {
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+  window.nexoraSuccess = function (mount, opts) {
+    opts = opts || {};
+    var box = (typeof mount === 'string') ? document.getElementById(mount) : mount;
+    if (!box) { return; }
+    var pageUrl = location.origin + (opts.path || location.pathname);
+    var shareText = (opts.shareText || 'I just used Nexora - free, no sign-up. Try it: ') + pageUrl;
+    var h = '<div class="success-check">&#10003;</div>';
+    h += '<h3>' + esc(opts.heading || 'Done!') + '</h3>';
+    if (opts.message) { h += '<p class="success-msg">' + esc(opts.message) + '</p>'; }
+    if (opts.download) {
+      h += '<a class="btn btn-download" href="' + opts.download.url
+        + '" download="' + esc(opts.download.name || 'download') + '">&#11015; Download '
+        + esc(opts.download.label || opts.download.name || 'file') + '</a>';
+    }
+    if (opts.next && opts.next.length) {
+      h += '<div class="success-next"><h4>Continue to...</h4><div class="next-tools">';
+      opts.next.forEach(function (n) {
+        h += '<a href="' + esc(n[0]) + '">' + esc(n[1]) + '</a>';
+      });
+      h += '</div></div>';
+    }
+    h += '<div class="success-share"><h4>Spread the word - it keeps Nexora free</h4><div class="share-row">';
+    h += '<a class="share-btn wa" target="_blank" rel="noopener" href="https://wa.me/?text='
+      + encodeURIComponent(shareText) + '"><span class="dot"></span>WhatsApp</a>';
+    h += '<a class="share-btn tg" target="_blank" rel="noopener" href="https://t.me/share/url?url='
+      + encodeURIComponent(pageUrl) + '&text='
+      + encodeURIComponent(opts.shareText || 'I just used Nexora - free, no sign-up. Try it: ')
+      + '"><span class="dot"></span>Telegram</a>';
+    h += '<a class="share-btn x" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text='
+      + encodeURIComponent(shareText) + '"><span class="dot"></span>X</a>';
+    h += '<a class="share-btn li" target="_blank" rel="noopener" href="https://www.linkedin.com/sharing/share-offsite/?url='
+      + encodeURIComponent(pageUrl) + '"><span class="dot"></span>LinkedIn</a>';
+    h += '<button class="share-btn copy" type="button"><span class="dot"></span><span class="copy-label">Copy link</span></button>';
+    h += '</div><p class="share-note">Loving Nexora? Send it to one friend - that helps us more than any ad.</p></div>';
+    box.innerHTML = h;
+    var copyBtn = box.querySelector('.share-btn.copy');
+    copyBtn.addEventListener('click', function () {
+      var done = function () {
+        copyBtn.classList.add('copied');
+        copyBtn.querySelector('.copy-label').textContent = 'Copied!';
+        setTimeout(function () {
+          copyBtn.classList.remove('copied');
+          copyBtn.querySelector('.copy-label').textContent = 'Copy link';
+        }, 2000);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(shareText).then(done, done);
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = shareText;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        ta.remove();
+        done();
+      }
+    });
+    box.style.display = 'block';
+    box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  };
+})();
+</script>
+"""
+
 
 EMOJI = {
     "doc": "\U0001F4C4", "briefcase": "\U0001F4BC", "resume": "\U0001F4DD",
@@ -670,6 +794,8 @@ DOCUMENT_AI_BODY = r"""
     </div>
   </div>
 
+  <div class="success-panel card" id="shareStrip" style="display:none;margin-top:16px"></div>
+
 </div></section>
 
 <script>
@@ -753,6 +879,8 @@ DOCUMENT_AI_BODY = r"""
 
   document.getElementById('newDocBtn').addEventListener('click', function () {
     docId = null;
+    var strip = document.getElementById('shareStrip');
+    if (strip) { strip.style.display = 'none'; strip.innerHTML = ''; }
     document.getElementById('workspace').classList.remove('on');
     document.getElementById('uploadCard').style.display = 'block';
     restoreDropzone();
@@ -785,6 +913,19 @@ DOCUMENT_AI_BODY = r"""
     el.innerHTML = html;
   }
 
+  function showShare(action) {
+    window.nexoraSuccess('shareStrip', {
+      heading: 'Done! ' + action + ' complete',
+      message: 'Nexora AI just worked through your document in seconds.',
+      next: [['/career/resume-builder', 'Resume Builder'],
+             ['/career/ats-optimizer', 'ATS Optimizer'],
+             ['/pdf/merge', 'Merge PDF'],
+             ['/pdf/compress', 'Compress PDF']],
+      shareText: 'I just used Nexora Document AI on a file - free, no sign-up. Try it: ',
+      path: '/document-ai'
+    });
+  }
+
   function aiCall(url, payload, btn, errEl, onDone) {
     errEl.textContent = '';
     var old = btn.textContent;
@@ -812,6 +953,7 @@ DOCUMENT_AI_BODY = r"""
     aiCall('/api/documents/' + docId + '/summary', {}, btn,
       document.getElementById('errSummary'), function (j) {
         renderMarkdownLite(document.getElementById('outSummary'), j.summary);
+        showShare('Summary');
       });
   });
 
@@ -904,6 +1046,7 @@ DOCUMENT_AI_BODY = r"""
         var dl = document.getElementById('dlExcel');
         dl.href = '/api/documents/' + docId + '/export.xlsx';
         dl.style.display = 'inline-block';
+        showShare('Data extraction');
       });
   });
 
@@ -912,11 +1055,12 @@ DOCUMENT_AI_BODY = r"""
     aiCall('/api/documents/' + docId + '/analyze', {}, btn,
       document.getElementById('errAnalyze'), function (j) {
         renderMarkdownLite(document.getElementById('outAnalyze'), j.analysis);
+        showShare('Analysis');
       });
   });
 })();
 </script>
-"""
+""" + SUCCESS_JS
 
 CAREER_TOOLS = {
     "resume-builder": {
@@ -1140,6 +1284,7 @@ CAREER_BODY = """
     <div class="toolbar" id="dlBar" style="display:none">
       <button class="btn ghost" onclick="downloadDocx()">Download as Word (.docx)</button>
     </div>
+    <div class="success-panel" id="successBox" style="display:none;margin-top:18px;border-top:1px solid var(--line);padding-top:18px"></div>
   </div>
   <div class="note" style="max-width:780px">AI-generated output - review it
   before using it for real applications or hiring.</div>
@@ -1248,6 +1393,13 @@ function runTool() {
       document.getElementById("resultBox").style.display = "block";
       document.getElementById("dlBar").style.display = CFG.download ? "flex" : "none";
       document.getElementById("resultBox").scrollIntoView({behavior: "smooth"});
+      window.nexoraSuccess("successBox", {
+        heading: "Done! Your result is ready",
+        message: CFG.title + " finished. Review it above, then send Nexora to a friend.",
+        next: CFG.next || [],
+        shareText: "I just used Nexora " + CFG.title + " - free AI, no sign-up. Try it: ",
+        path: "/career/" + CFG.slug
+      });
     } else {
       showErr(o.j.error || "Something went wrong. Please try again.");
     }
@@ -1278,7 +1430,7 @@ function downloadDocx() {
   });
 }
 </script>
-"""
+""" + SUCCESS_JS
 
 CALC_BODY = """
 <section class="page-hero"><div class="container">
@@ -1560,6 +1712,7 @@ HRDOC_BODY = """
     <div class="err" id="err"></div>
     <div class="hint">The document downloads as a .docx file you can edit in
     Word or Google Docs. It is a template - have HR/legal review before use.</div>
+    <div class="success-panel" id="successBox" style="display:none;margin-top:18px;border-top:1px solid var(--line);padding-top:18px"></div>
   </div>
 </div></section>
 <script>
@@ -1613,12 +1766,22 @@ function genDoc() {
     document.body.appendChild(a);
     a.click();
     setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+    window.nexoraSuccess("successBox", {
+      heading: "Done! Your document is downloading",
+      message: "Edit it freely in Word or Google Docs - and send Nexora to a friend who needs it.",
+      next: [["/hr/calculators", "HR Calculators"],
+             ["/career/resume-builder", "Resume Builder"],
+             ["/document-ai", "Document AI"],
+             ["/pdf/merge", "Merge PDF"]],
+      shareText: "I just created an HR document with Nexora - free, no sign-up. Try it: ",
+      path: "/hr/documents"
+    });
   }).catch(function (e) { err.textContent = e.message || "Something went wrong."; });
 }
 buildTabs();
 buildForm();
 </script>
-"""
+""" + SUCCESS_JS
 
 
 LOGIN_BODY = """
@@ -1818,11 +1981,7 @@ PDF_TOOL_BODY = r"""
     <div class="err" id="errBox" style="margin-top:10px"></div>
     <button class="btn" id="goBtn" type="button" style="margin-top:16px;width:100%">
       __TITLE__</button>
-    <div id="doneBox" style="display:none;margin-top:16px;text-align:center">
-      <p style="font-weight:700;color:var(--accent)">Done! Your download should
-      start automatically.</p>
-      <a class="btn" id="dlLink" href="#" download>Download again</a>
-    </div>
+    <div class="success-panel" id="doneBox" style="display:none;margin-top:6px"></div>
   </div>
   <p style="text-align:center;margin-top:14px;font-size:13px;opacity:.65">
     <a href="/" style="color:inherit">&larr; All 30 PDF tools on the home page</a>
@@ -1838,7 +1997,6 @@ PDF_TOOL_BODY = r"""
       err = document.getElementById('errBox'),
       go = document.getElementById('goBtn'),
       doneBox = document.getElementById('doneBox'),
-      dlLink = document.getElementById('dlLink'),
       files = [];
 
   function esc(s) {
@@ -1920,11 +2078,40 @@ PDF_TOOL_BODY = r"""
         var fname = m ? m[1] : 'download';
         return r.blob().then(function (b) {
           var url = URL.createObjectURL(b);
-          dlLink.href = url; dlLink.setAttribute('download', fname);
           var a = document.createElement('a');
           a.href = url; a.download = fname;
           document.body.appendChild(a); a.click(); a.remove();
-          doneBox.style.display = 'block';
+          dz.style.display = 'none';
+          list.style.display = 'none';
+          optArea.style.display = 'none';
+          err.style.display = 'none';
+          go.style.display = 'none';
+          window.nexoraSuccess(doneBox, {
+            heading: 'Done! Your file is ready',
+            message: CFG.title + ' completed - your download started automatically.',
+            download: { url: url, name: fname, label: fname },
+            next: CFG.next || [],
+            shareText: CFG.share || ('I just used Nexora ' + CFG.title + ' - free, no sign-up. Try it: '),
+            path: '/pdf/' + CFG.slug
+          });
+          var again = document.createElement('button');
+          again.className = 'btn ghost';
+          again.type = 'button';
+          again.style.marginTop = '18px';
+          again.textContent = 'Process another file';
+          again.addEventListener('click', function () {
+            files = [];
+            renderFiles();
+            doneBox.style.display = 'none';
+            doneBox.innerHTML = '';
+            dz.style.display = '';
+            list.style.display = '';
+            optArea.style.display = '';
+            err.style.display = '';
+            go.style.display = '';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          });
+          doneBox.appendChild(again);
         });
       })
       .catch(function (e) { err.textContent = e.message; })
@@ -1934,4 +2121,4 @@ PDF_TOOL_BODY = r"""
   });
 })();
 </script>
-"""
+""" + SUCCESS_JS
