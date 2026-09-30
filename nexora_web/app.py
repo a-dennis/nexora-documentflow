@@ -130,7 +130,7 @@ def footer_html() -> str:
         '<a class="brand" href="/">Nexo<span>ra</span></a>'
         "<span>AI-powered productivity tools for documents, HR &amp; careers.</span>"
         '<span style="margin-left:auto;opacity:.55;font-size:13px">Built with Instinct</span>'
-        '<span>&copy; 2026 Nexora</span>'
+        '<a href="/resume-service">Online document help</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><span>&copy; 2026 Nexora</span>'
         "</div></footer>"
     )
 
@@ -1515,6 +1515,118 @@ async def pro_page() -> str:
                 "Nexora Pro: unlimited PDF and AI tools, bigger files, "
                 "batch jobs and priority speed for one small monthly price.",
                 "/pro", PRO_BODY)
+
+
+# Online resume/document service. No street address, coordinates or LocalBusiness schema.
+RESUME_SERVICE_WHATSAPP = "https://wa.me/919353006448?text=Namaskara%21+I+found+Nexora%27s+resume+and+document+formatting+page.+I%27d+like+a+quote.+Document+type%3A%0AChanges+needed%3A%0ADeadline%3A"
+
+
+def resume_service_page() -> str:
+    body = """
+<style>
+.rs-hero{padding:56px 0 34px;background:linear-gradient(135deg,#faf5ff,#fff1f9)}
+.rs-layout{display:grid;grid-template-columns:1.25fr 1fr;gap:32px;align-items:center}
+.rs-hero h1{font-size:clamp(32px,5vw,54px);line-height:1.12;margin:16px 0}
+.rs-hero p{font-size:18px;max-width:650px;line-height:1.65}
+.rs-label{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#7c3aed}
+.rs-paper{background:white;border:1px solid #eee1f6;border-radius:20px;padding:30px;box-shadow:0 16px 48px #7c3aed12}
+.rs-paper h2{font-size:22px;margin:0 0 6px}.rs-paper small{color:#6b7280}
+.rs-line{height:9px;background:#ede9fe;border-radius:8px;margin-top:14px}.rs-line.short{width:62%}
+.rs-paper hr{border:0;border-top:2px solid #a78bfa;margin:22px 0}
+.rs-section{padding:36px 0}.rs-section h2{font-size:28px;margin:0 0 16px}
+.rs-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.rs-box{background:white;border:1px solid #eee5f3;border-radius:16px;padding:24px}
+.rs-box h3{margin:0 0 10px;font-size:19px}.rs-box p{line-height:1.65;margin:0;color:#5b5263}
+.rs-note{background:#faf5ff;border-radius:14px;padding:22px;line-height:1.7}
+.rs-faq details{border-bottom:1px solid #eee5f3;padding:16px 0}.rs-faq summary{font-weight:650;cursor:pointer}.rs-faq p{line-height:1.7;color:#5b5263}
+.rs-actions{display:flex;gap:12px;flex-wrap:wrap;margin:24px 0 12px}.rs-actions a{min-height:48px;display:inline-flex;align-items:center}
+.rs-small{font-size:14px!important;color:#6b7280}
+@media(max-width:700px){.rs-layout,.rs-grid{grid-template-columns:1fr}.rs-hero{padding:30px 0}.rs-paper{display:none}.rs-section{padding:26px 0}.rs-actions a{width:100%;justify-content:center}.rs-box{padding:20px}}
+</style>
+<section class="rs-hero"><div class="container rs-layout"><div>
+<span class="rs-label">Nexora / Online document help</span>
+<h1>A clean resume.<br>A simpler next step.</h1>
+<p>Resume formatting and Word/PDF document cleanup, handled online through WhatsApp. No shop visit or physical meeting needed.</p>
+<div class="rs-actions"><a class="btn" href="__WHATSAPP__" rel="noopener noreferrer">Ask for a quote on WhatsApp</a><a class="btn ghost" href="/resume-builder">Try the resume builder</a></div>
+<p class="rs-small">Price and delivery time agreed before work starts. No payment is taken on this page.</p>
+</div><div class="rs-paper" aria-label="Illustrative resume layout"><h2>Your name</h2><small>Clear structure. Consistent formatting.</small><hr><strong>Profile</strong><div class="rs-line"></div><div class="rs-line short"></div><br><strong>Experience &amp; skills</strong><div class="rs-line"></div><div class="rs-line"></div><div class="rs-line short"></div><p class="rs-small">Illustrative layout, not a customer resume.</p></div></div></section>
+<section class="rs-section"><div class="container"><h2>What you can request</h2><div class="rs-grid">
+<article class="rs-box"><h3>Resume formatting</h3><p>A clearer layout for your existing resume: consistent headings, spacing, fonts and sections. Suitable for freshers and experienced applicants.</p></article>
+<article class="rs-box"><h3>Word document cleanup</h3><p>Fix uneven spacing, headings, page breaks and alignment in an existing Word document. Send a short description of the changes you need.</p></article>
+<article class="rs-box"><h3>PDF preparation</h3><p>Prepare a readable PDF from your document. Tell us whether you also need the editable Word file, and we will confirm what can be delivered.</p></article>
+</div></div></section>
+<section class="rs-section"><div class="container"><h2>From first message to final file</h2><div class="rs-grid">
+<article class="rs-box"><h3>1. Tell us what you need</h3><p>Message on WhatsApp with the document type, requested changes and deadline. A redacted sample is enough to start a quote.</p></article>
+<article class="rs-box"><h3>2. Agree the scope</h3><p>Confirm the price, delivery date and file format before work starts. Ask what changes are included.</p></article>
+<article class="rs-box"><h3>3. Review your file</h3><p>Check the finished document, names and facts before using it. Formatting does not change or verify your qualifications.</p></article>
+</div></div></section>
+<section class="rs-section"><div class="container"><div class="rs-note"><strong>Share only what is needed.</strong><br>Share only the information needed for the document. Please remove Aadhaar/PAN numbers, bank details and other sensitive data. Never send passwords or OTPs. This service is fully online; no home address or meeting location is published here.</div></div></section>
+<section class="rs-section"><div class="container rs-faq"><h2>Before you message</h2>
+<details><summary>How much does it cost?</summary><p>Request a quote for your document. The price depends on the work and is agreed before starting. There is no published fixed price or automatic charge.</p></details>
+<details><summary>Do I need to meet someone?</summary><p>No. Requests and delivery are handled online through WhatsApp. No in-person appointments are offered.</p></details>
+<details><summary>Will this guarantee an interview or ATS score?</summary><p>No. This is a formatting and document-cleanup service, not recruitment or a job guarantee. Hiring decisions and ATS systems vary.</p></details>
+<details><summary>Can I use Nexora myself instead?</summary><p>Yes. Try the <a href="/resume-builder">resume builder</a>, <a href="/resume-ats-checker">resume ATS checker</a> and <a href="/hr-career">HR and career tools</a>. Tool limits and any paid options are shown separately in the app.</p></details>
+<div class="rs-actions"><a class="btn" href="__WHATSAPP__" rel="noopener noreferrer">Discuss your document on WhatsApp</a></div>
+</div></section>
+""".replace("__WHATSAPP__", RESUME_SERVICE_WHATSAPP)
+    html = page("Online resume formatting & document cleanup", "Get help formatting your resume and cleaning up Word/PDF documents online through WhatsApp. Agree a quote and delivery date before starting. No physical meetings.", "/resume-service", body)
+    metadata = '<link rel="canonical" href="https://nexora-web-q7rn.onrender.com/resume-service"><meta name="robots" content="index,follow"><meta property="og:title" content="Online resume formatting - Nexora"><meta property="og:description" content="Resume and document formatting, fully online. Ask for a quote before work starts."><meta property="og:url" content="https://nexora-web-q7rn.onrender.com/resume-service"><meta property="og:type" content="website">'
+    return html.replace("</head>", metadata + "</head>")
+
+
+@app.get("/resume-service", response_class=HTMLResponse)
+async def resume_service_landing() -> str:
+    return resume_service_page()
+
+
+@app.get("/robots.txt")
+async def robots_txt() -> Response:
+    return Response("User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /auth/\nSitemap: https://nexora-web-q7rn.onrender.com/sitemap.xml\n", media_type="text/plain")
+
+
+@app.get("/sitemap.xml")
+async def sitemap_xml() -> Response:
+    paths = ["/", "/privacy", "/terms", "/resume-service", "/document-ai", "/hr-career", "/resume-builder", "/jd-builder", "/hr/calculators", "/hr/documents"]
+    paths += ["/" + slug for slug in SEO_CALC_PAGES] + ["/" + slug for slug in SEO_CAREER_PAGES]
+    urls = "".join("<url><loc>https://nexora-web-q7rn.onrender.com" + path + "</loc></url>" for path in dict.fromkeys(paths))
+    return Response('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + urls + '</urlset>', media_type="application/xml")
+
+
+
+def legal_page(kind: str) -> str:
+    privacy = """
+<h1>Privacy policy</h1><p class="legal-date">Updated 30 September 2026</p>
+<p>Nexora provides document, PDF, HR and career tools and an online document-formatting service. This page explains the current handling of information on this website.</p>
+<h2>Information you provide</h2><p>Tools process files, document text, form answers and chat questions you submit. If you sign in with Google, Supabase authentication receives account information such as your email address and name and manages your user ID and authentication tokens. The website uses cookies for sign-in sessions and the Google sign-in flow.</p>
+<h2>Processing and service providers</h2><p>AI requests send the relevant document content, prompts or images to Google Gemini to produce a response. Supabase provides authentication and database storage. Render hosts the website. These services handle information under their own terms and privacy policies. Do not upload passwords, payment-card details, identity-document numbers or confidential material you do not have permission to share.</p>
+<h2>What is retained</h2><p>Uploaded documents and extracted content are held in the server's memory. The app checks for documents older than six hours when another upload happens, and can also remove older documents when its memory limit is reached. A server restart may remove them earlier. This is not a guaranteed six-hour deletion schedule.</p><p>When database storage is configured, Supabase stores document metadata (such as filename, type and size), input previews up to 500 characters and output previews up to 2,000 characters, chat questions up to 2,000 characters and replies up to 4,000 characters, usage records, and payment or purchase history where those features are used. These records can outlast the temporary in-memory documents. No fixed automatic deletion period is currently promised for database records.</p>
+<h2>WhatsApp document help</h2><p>The document-help button opens WhatsApp. Information or files you send there are handled separately from website uploads and are used to discuss and carry out your request. Ask about handling and deletion before sending sensitive documents. WhatsApp is governed by its own privacy policy.</p>
+<h2>Your choices and contact</h2><p>Share only what a task needs, remove sensitive details where possible, and review AI outputs before using them. For questions or requests about access, correction or deletion, email <a href="mailto:a.dennisasw@gmail.com">a.dennisasw@gmail.com</a>. Requests are reviewed according to available records and applicable requirements; this page does not promise instant deletion from every provider or backup.</p>
+"""
+    terms = """
+<h1>Terms of use</h1><p class="legal-date">Updated 30 September 2026</p>
+<p>These terms apply to Nexora's document, PDF, HR and career tools and the online document-formatting service. Please read the <a href="/privacy">privacy policy</a> before submitting information.</p>
+<h2>Use your own or authorized material</h2><p>Only upload documents and information you have permission to use and process. Do not use Nexora for unlawful activity, misleading qualifications, harmful content or attempts to access other people's accounts or files.</p>
+<h2>Review the results</h2><p>AI outputs can be incomplete or wrong. Check names, facts, calculations, formatting and suitability before relying on a result. Nexora is not a recruitment agency and does not guarantee interviews, jobs, ATS scores or other outcomes. Outputs are not legal, financial or professional advice.</p>
+<h2>Availability and limits</h2><p>The website uses free-tier hosting and other external services. It may be slow after inactivity, unavailable or subject to file-size, usage and service limits. Features can change. Keep copies of your original files and download results you need; Nexora is not a permanent document-storage service.</p>
+<h2>Paid options and online document help</h2><p>Any paid tool must show its price and purchase details before payment. Check those details before approving a purchase. For WhatsApp document help, agree the scope, price, delivery date, file format, included revisions and cancellation or refund arrangements before work begins. This service is fully online and does not offer physical meetings. The landing page itself does not take payment.</p>
+<h2>Accounts and third-party services</h2><p>Keep your account secure and do not share passwords or verification codes. Google, Supabase, Render, Gemini, WhatsApp and any payment provider may apply their own terms to their services. Nexora does not promise uninterrupted operation or error-free results. Nothing on this page removes rights that apply under law.</p>
+<h2>Contact</h2><p>For service questions or concerns, email <a href="mailto:a.dennisasw@gmail.com">a.dennisasw@gmail.com</a>. Check this page for updates before using the service.</p>
+"""
+    title = "Privacy policy" if kind == "privacy" else "Terms of use"
+    content = privacy if kind == "privacy" else terms
+    body = '<style>.legal-wrap{max-width:850px;margin:auto;padding:42px 22px 56px}.legal-wrap h1{font-size:clamp(30px,5vw,44px);line-height:1.2}.legal-wrap h2{font-size:23px;margin:30px 0 10px}.legal-wrap p{line-height:1.8;margin:12px 0}.legal-wrap a{overflow-wrap:anywhere}.legal-date{color:#6b7280;font-size:14px}</style><section class="legal-wrap">' + content + '</section>'
+    return page(title, title + " for Nexora document and career tools.", "/" + kind, body)
+
+
+@app.get("/privacy", response_class=HTMLResponse)
+async def privacy_policy() -> str:
+    return legal_page("privacy")
+
+
+@app.get("/terms", response_class=HTMLResponse)
+async def terms_of_use() -> str:
+    return legal_page("terms")
 
 
 @app.get("/{seo_slug}", response_class=HTMLResponse)
