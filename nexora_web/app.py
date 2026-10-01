@@ -1348,7 +1348,7 @@ def doc_or_404(doc_id: str):
 
 @app.get("/", response_class=HTMLResponse)
 async def home() -> str:
-    return home_page()
+    return home_page().replace("</head>", '<meta name="google-site-verification" content="0_iCwFkb_59fM8OaWu8ViOL-XH3COYn9jOpJ2gmH83s" />' + "</head>")
 
 
 @app.get("/document-ai", response_class=HTMLResponse)
