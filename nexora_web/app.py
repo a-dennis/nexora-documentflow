@@ -132,7 +132,7 @@ def footer_html() -> str:
         '<a class="brand" href="/">Nexo<span>ra</span></a>'
         "<span>AI-powered productivity tools for documents, HR &amp; careers.</span>"
         '<span style="margin-left:auto;opacity:.55;font-size:13px">Built with Instinct</span>'
-        '<a href="/resume-service">Online document help</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><span>&copy; 2026 Nexora</span>'
+        '<a href="/resume-service">Online document help</a><a href="/excel-service">Excel &amp; PDF to Excel</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><span>&copy; 2026 Nexora</span>'
         "</div></footer>"
     )
 
@@ -1646,6 +1646,14 @@ async def resume_service_landing() -> str:
     return resume_service_page()
 
 
+from excel_service import EXCEL_BODY, EXCEL_META, EXCEL_TITLE, EXCEL_DESC
+
+
+@app.get("/excel-service", response_class=HTMLResponse)
+async def excel_service_landing() -> str:
+    return page(EXCEL_TITLE, EXCEL_DESC, "/excel-service", EXCEL_BODY).replace("</head>", EXCEL_META + "</head>")
+
+
 @app.get("/robots.txt")
 async def robots_txt() -> Response:
     return Response("User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /auth/\nSitemap: https://nexora-web-q7rn.onrender.com/sitemap.xml\n", media_type="text/plain")
@@ -1653,7 +1661,7 @@ async def robots_txt() -> Response:
 
 @app.get("/sitemap.xml")
 async def sitemap_xml() -> Response:
-    paths = ["/", "/privacy", "/terms", "/resume-service", "/document-ai", "/hr-career", "/resume-builder", "/jd-builder", "/hr/calculators", "/hr/documents"]
+    paths = ["/", "/privacy", "/terms", "/resume-service", "/excel-service", "/document-ai", "/hr-career", "/resume-builder", "/jd-builder", "/hr/calculators", "/hr/documents"]
     paths += ["/" + slug for slug in SEO_CALC_PAGES] + ["/" + slug for slug in SEO_CAREER_PAGES]
     urls = "".join("<url><loc>https://nexora-web-q7rn.onrender.com" + path + "</loc></url>" for path in dict.fromkeys(paths))
     return Response('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + urls + '</urlset>', media_type="application/xml")
