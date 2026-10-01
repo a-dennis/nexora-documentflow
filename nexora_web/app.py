@@ -394,7 +394,61 @@ CAREER_SLUGS = [
 
 
 
+# Sample-led paid builders. Static samples contain fictional data only.
+BUILDER_SAMPLES = {
+    "resume-builder": [
+        ("Classic professional", "A clear, single-column CV for experienced applicants.", '''<header><h2>PRIYA RAO</h2><p class="sample-role">Operations &amp; inventory executive</p><p>Bengaluru, India | priya.rao@example.com | Phone: [your number]</p></header>
+<h3>Professional summary</h3><p>Operations professional with four years of experience in stock records, vendor coordination and ERP reporting. Skilled in Excel, purchase documentation and accurate month-end reconciliation.</p>
+<h3>Core skills</h3><p>Inventory control · Microsoft Excel · ERP reporting · Purchase orders · Vendor coordination · Stock reconciliation</p>
+<h3>Professional experience</h3><h4>Inventory executive | Example Manufacturing Pvt. Ltd.</h4><p class="sample-meta">July 2022 - Present | Bengaluru</p><ul><li>Maintain daily receipt and issue records for 1,200 stock items using ERP and Excel.</li><li>Reduced stock-record discrepancies by 18% through weekly reconciliation and exception tracking.</li><li>Coordinate purchase documentation with production, finance and suppliers.</li></ul><h4>Stores assistant | Example Trading Co.</h4><p class="sample-meta">June 2021 - June 2022 | Mysuru</p><ul><li>Prepared goods-receipt notes and checked deliveries against purchase orders.</li><li>Supported monthly stock counts and maintained organised supplier records.</li></ul>
+<h3>Education</h3><p>Bachelor of Commerce | Example University | 2021</p><h3>Languages</h3><p>English · Kannada · Hindi</p>'''),
+        ("Modern career starter", "A refined CV that puts projects and skills first.", '''<header><h2>ARJUN MEHTA</h2><p class="sample-role">Junior data analyst</p><p>Pune, India | arjun.mehta@example.com | Portfolio: [your link]</p></header>
+<h3>Profile</h3><p>Commerce graduate with hands-on projects in Excel, SQL and Power BI. Interested in turning business data into clear reports and practical recommendations.</p>
+<h3>Technical skills</h3><p>Excel: PivotTables, XLOOKUP, Power Query<br>SQL: joins, aggregations, data cleaning<br>Power BI: dashboards, DAX basics, data modelling</p>
+<h3>Selected projects</h3><h4>Retail sales dashboard | Academic project</h4><ul><li>Cleaned a sample dataset of 10,000 sales records and built a dashboard to compare revenue by region and category.</li><li>Created monthly trend views and documented data-quality checks.</li></ul><h4>Inventory tracker | Independent project</h4><ul><li>Built an Excel workbook to track stock movement, reorder levels and outstanding purchase orders.</li><li>Added validation rules and a summary sheet for weekly review.</li></ul>
+<h3>Internship</h3><h4>Reporting intern | Example Services Ltd.</h4><p class="sample-meta">January - April 2026</p><ul><li>Updated weekly Excel reports and checked source data for missing entries.</li><li>Prepared concise notes explaining changes in key business measures.</li></ul><h3>Education</h3><p>Bachelor of Commerce | Example College | 2026</p><h3>Additional strengths</h3><p>Attention to detail · Written communication · Structured problem-solving</p>''')
+    ],
+    "jd-builder": [
+        ("Corporate role", "A structured JD with clear responsibilities and requirements.", '''<header><h2>OPERATIONS EXECUTIVE</h2><p class="sample-role">Example Manufacturing Pvt. Ltd.</p><p>Bengaluru | Full-time | On-site</p></header><h3>About the role</h3><p>Support daily inventory operations and keep purchasing and stock records accurate. You will work with production, finance and suppliers to make sure materials are available when needed.</p><h3>Key responsibilities</h3><ul><li>Record receipts, issues and stock adjustments in the ERP system.</li><li>Reconcile physical stock with records and investigate discrepancies.</li><li>Prepare purchase documentation and follow up on deliveries.</li><li>Share weekly inventory reports and flag low-stock items.</li></ul><h3>Essential requirements</h3><ul><li>1-3 years of relevant stores, inventory or operations experience.</li><li>Working knowledge of Excel and an ERP system.</li><li>Accurate record-keeping and clear communication.</li></ul><h3>Desirable skills</h3><p>Experience with manufacturing inventory and purchase coordination.</p><h3>Pay and benefits</h3><p>Illustrative salary: Rs 3-4.2 lakh per year. Benefits and working hours will be confirmed by the employer before posting.</p><h3>How to apply</h3><p>Send a CV to careers@example.com with "Operations executive" in the subject. Applications are assessed on job-related skills and experience.</p>'''),
+        ("Skills-first hiring", "An inclusive JD with outcomes and realistic must-haves.", '''<header><h2>JUNIOR DATA ANALYST</h2><p class="sample-role">Example Analytics Studio</p><p>India | Full-time | Remote</p></header><h3>The opportunity</h3><p>Help our team turn business data into reliable reports. This entry-level role suits applicants who can demonstrate practical skills through projects, internships or relevant work.</p><h3>What you will do</h3><ul><li>Clean and validate datasets before reporting.</li><li>Build Excel reports and Power BI dashboards.</li><li>Write SQL queries to answer routine business questions.</li><li>Explain findings in plain language and document assumptions.</li></ul><h3>What you need</h3><ul><li>Confident use of Excel formulas and PivotTables.</li><li>Basic SQL skills, including joins and aggregations.</li><li>At least one project or work example showing data analysis.</li><li>A stable internet connection for remote work.</li></ul><h3>Useful, but not required</h3><p>Power BI, Python or experience with sales and operations data. A specific degree is not required if you can demonstrate the relevant skills.</p><h3>First 90 days</h3><p>Learn our reporting process, maintain one weekly report and deliver a small dashboard with documented checks.</p><h3>Pay and application</h3><p>Illustrative salary: Rs 4-5 lakh per year. Apply at careers@example.com with your CV and a project link. Tell us if you need an adjustment during the hiring process.</p>''')
+    ]
+}
+
+
+def paid_builder_page(slug: str) -> str:
+    spec = CAREER_TOOLS[slug]
+    cv = slug == "resume-builder"
+    noun = "CV" if cv else "JD"
+    price = 99 if cv else 149
+    product = "resume_improve" if cv else "jd_improve"
+    cards = ""
+    for i, (title, desc, sample) in enumerate(BUILDER_SAMPLES[slug]):
+        cards += f'''<article class="card sample-card"><span class="sample-number">0{i+1}</span><h2>{title}</h2><p>{desc}</p><details class="sample-preview"><summary class="btn ghost">View sample {noun}</summary><div class="sample-paper style-{i}">{sample}<p class="sample-disclaimer">FICTIONAL SAMPLE · All names, employers, figures and contact details are illustrative.</p></div></details></article>'''
+    cfg = json.dumps({"slug": slug, "fields": spec["fields"], "product": product, "price": price,
+                      "ready": payments_ready(), "title": spec["title"]})
+    body = '''<style>
+[hidden]{display:none!important}.builder-top{display:flex;justify-content:space-between;align-items:center;gap:24px}.builder-price{flex-shrink:0;background:#fff;border:1px solid #ded4f6;border-radius:18px;padding:22px 30px;text-align:center}.builder-price strong{display:block;font-size:34px;color:var(--accent)}.builder-price span{font-size:14px;color:var(--muted)}.sample-number{font-size:13px;color:var(--accent);font-weight:700}.sample-card h2{margin:8px 0;font-size:23px}.sample-preview summary{list-style:none;width:100%;text-align:center;margin-top:8px}.sample-preview summary::-webkit-details-marker{display:none}.sample-paper{background:#fff;border:1px solid #ddd;margin-top:20px;padding:30px 28px;color:#243044;font-family:Arial,sans-serif;font-size:13px;line-height:1.6;box-shadow:0 5px 18px #18203b10}.sample-paper header{border-bottom:2px solid #243044;padding-bottom:14px;margin-bottom:20px}.sample-paper h2{font-size:25px;margin:0;color:#192334;letter-spacing:1px}.sample-paper p{font-size:13px;line-height:1.6;color:#394454;margin:6px 0 12px}.sample-paper .sample-role{font-size:15px;font-weight:600;color:#243044}.sample-paper h3{font-size:12px;text-transform:uppercase;letter-spacing:1.1px;border-bottom:1px solid #dde1e7;padding-bottom:5px;margin:20px 0 8px;color:#243044}.sample-paper h4{font-size:13px;margin:10px 0 2px}.sample-paper ul{padding-left:18px;margin:6px 0 14px}.sample-paper li{margin-bottom:5px}.sample-paper .sample-meta{font-size:12px;color:#687285;margin:0 0 8px}.sample-paper.style-1{border-top:5px solid #7c3aed}.sample-paper.style-1 header{border-color:#7c3aed}.sample-paper.style-1 h3{color:#6b28c5}.sample-paper .sample-disclaimer{margin-top:28px;padding-top:12px;border-top:1px solid #ddd;font-size:10px;letter-spacing:.5px;color:#7b8490}.builder-unlock{border:1px solid #ded4f6;background:linear-gradient(120deg,#faf5ff,#fff);margin-top:28px}.builder-unlock p{max-width:700px}.builder-unlock .note{margin:16px 0 0}.builder-form{margin-top:24px}.builder-form label{display:block;margin-bottom:6px;font-weight:600}@media(max-width:640px){.builder-top{display:block}.builder-price{margin-top:20px;padding:16px}.sample-paper{padding:22px 18px}.sample-paper h2{font-size:22px}.sample-card{padding:20px}}
+</style><section class="page-hero"><div class="container builder-top"><div><span class="tag featured">Professional document service</span><h1 style="margin-top:12px">__TITLE__</h1><p>See the quality before you commit. Explore two professional samples, then unlock your own __NOUN__.</p></div><div class="builder-price"><strong>Rs __PRICE__</strong><span>per __NOUN__ · one-time payment</span></div></div></section><section class="section"><div class="container"><div class="section-head"><h2>Two professional styles</h2><p>View sample __NOUN__s below. Samples are free to view; personalised generation has no free trials.</p></div><div class="grid">__CARDS__</div><div class="card builder-unlock"><h2>Create your own __NOUN__</h2><p>Choose a style and provide your real details. One verified payment unlocks one generation with an editable Word download. Review the result before using it.</p><button class="btn" id="builderBuy" disabled>Online payment coming soon</button><p id="builderStatus" role="status" style="margin-top:14px">Razorpay UPI checkout is not live yet. Samples are available, but payment and personalised generation stay locked until checkout is tested.</p><div id="builderForm" class="builder-form" hidden><div class="field"><label for="builderStyle">Document style</label><select id="builderStyle"><option value="0">__STYLE0__</option><option value="1">__STYLE1__</option></select></div><div id="builderFields"></div><button class="btn" id="builderRun">Generate my __NOUN__</button></div><div class="result" id="builderResult" hidden></div><button class="btn ghost" id="builderDownload" hidden>Download Word (.docx)</button><div class="note">No sign-in needed for samples. Sign-in is required only when a paid process starts. No payment is taken on this page while checkout is unavailable.</div></div></div></section>
+<script>
+(function(){var C=__CONFIG__,buy=document.getElementById('builderBuy'),status=document.getElementById('builderStatus'),form=document.getElementById('builderForm'),last='';
+function msg(s){status.textContent=s}function login(){location.href='/login?next='+encodeURIComponent(location.pathname)}
+C.fields.forEach(function(f){var box=document.createElement('div');box.className='field';var label=document.createElement('label');label.textContent=f[1];label.htmlFor='bf_'+f[0];var input=document.createElement(f[3]==='textarea'?'textarea':'input');input.id=label.htmlFor;input.placeholder=f[2];box.append(label,input);document.getElementById('builderFields').append(box)});
+function unlocked(){buy.hidden=true;form.hidden=false;msg('One paid generation is unlocked. Add your details below. No employers, qualifications or achievements will be invented.')}
+if(C.ready){buy.disabled=false;buy.textContent='Unlock for Rs '+C.price;msg('Secure Razorpay checkout. Sign in when you are ready to pay.');fetch('/api/purchases').then(r=>r.json()).then(j=>{if(j.purchases&&j.purchases.some(p=>p.product===C.product&&p.unlocked))unlocked()}).catch(()=>{})}
+buy.onclick=function(){if(!C.ready)return;buy.disabled=true;fetch('/api/pay/order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product:C.product})}).then(r=>r.json()).then(o=>{buy.disabled=false;if(o.login){login();return}if(o.error){msg(o.error);return}var s=document.createElement('script');s.src='https://checkout.razorpay.com/v1/checkout.js';s.onerror=()=>msg('Checkout could not load. Please try again.');s.onload=function(){new Razorpay({key:o.key_id,amount:o.amount,currency:o.currency,order_id:o.order_id,name:'Nexora',description:C.title,prefill:{email:o.email},theme:{color:'#7c3aed'},handler:function(resp){msg('Verifying payment...');fetch('/api/pay/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(resp)}).then(r=>r.json()).then(v=>{if(v.ok)unlocked();else msg(v.error||'Payment could not be verified. Do not pay again until the payment status is checked.')}).catch(()=>msg('Verification interrupted. Do not pay again until the payment status is checked.'))}}).open()};document.body.append(s)}).catch(()=>{buy.disabled=false;msg('Could not start checkout. Please try again.')})};
+document.getElementById('builderRun').onclick=function(){var b=this,fields={};C.fields.forEach(f=>fields[f[0]]=document.getElementById('bf_'+f[0]).value.trim());fields.style=document.getElementById('builderStyle').value;b.disabled=true;msg('Creating your document...');fetch('/api/career/'+C.slug,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})}).then(r=>r.json()).then(j=>{b.disabled=false;if(j.error){msg(j.error);return}last=j.result;var result=document.getElementById('builderResult');result.hidden=false;result.textContent=last;result.style.whiteSpace='pre-wrap';document.getElementById('builderDownload').hidden=false;form.hidden=true;buy.hidden=false;buy.textContent='Unlock another for Rs '+C.price;msg('Your document is ready. Review every detail before using it.');result.scrollIntoView({behavior:'smooth'})}).catch(()=>{b.disabled=false;msg('Connection interrupted. Check your result and credit status before retrying.')})};
+document.getElementById('builderDownload').onclick=function(){if(!last)return;fetch('/api/download-docx',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:C.title,content:last})}).then(r=>{if(!r.ok)throw Error('Download failed');return r.blob()}).then(blob=>{var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=C.slug+'.docx';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}).catch(()=>msg('Download failed. Your result is still available above.'))};
+})();
+</script>'''
+    for key, val in {"TITLE": spec["title"], "NOUN": noun, "PRICE": str(price), "CARDS": cards,
+                     "STYLE0": BUILDER_SAMPLES[slug][0][0], "STYLE1": BUILDER_SAMPLES[slug][1][0], "CONFIG": cfg}.items():
+        body = body.replace("__" + key + "__", val)
+    return page(spec["title"], f"Professional {noun} creation. Two sample styles. Rs {price} per document. No free generation.", "/hr-career", body)
+
+
 def career_tool_page(slug: str) -> str:
+    if slug in BUILDER_SAMPLES:
+        return paid_builder_page(slug)
     spec = CAREER_TOOLS[slug]
     nxt = [["/career/" + s, CAREER_TOOLS[s]["title"]]
            for s in CAREER_NEXT.get(slug, [])]
@@ -1217,7 +1271,7 @@ def db_ready() -> bool:
     return bool(SUPABASE_URL and SUPABASE_SERVICE_KEY)
 
 
-def _db_request(method: str, path: str, payload=None):
+def _db_request(method: str, path: str, payload=None, return_rows=False):
     """Minimal PostgREST call using stdlib only. Returns parsed JSON or None."""
     import urllib.request
     import urllib.error
@@ -1229,7 +1283,7 @@ def _db_request(method: str, path: str, payload=None):
     req.add_header("apikey", SUPABASE_SERVICE_KEY)
     req.add_header("Authorization", "Bearer " + SUPABASE_SERVICE_KEY)
     req.add_header("Content-Type", "application/json")
-    req.add_header("Prefer", "return=minimal")
+    req.add_header("Prefer", "return=representation" if return_rows else "return=minimal")
     try:
         with urllib.request.urlopen(req, timeout=8) as r:
             body = r.read().decode()
@@ -1549,7 +1603,7 @@ def resume_service_page() -> str:
 <span class="rs-label">Nexora / Online document help</span>
 <h1>A clean resume.<br>A simpler next step.</h1>
 <p>Resume formatting and Word/PDF document cleanup, handled online through WhatsApp. No shop visit or physical meeting needed.</p>
-<div class="rs-actions"><a class="btn" href="__WHATSAPP__" rel="noopener noreferrer">Ask for a quote on WhatsApp</a><a class="btn ghost" href="/resume-builder">Try the resume builder</a></div>
+<div class="rs-actions"><a class="btn" href="__WHATSAPP__" rel="noopener noreferrer">Ask for a quote on WhatsApp</a><a class="btn ghost" href="/resume-builder">View CV samples</a></div>
 <p class="rs-small">Price and delivery time agreed before work starts. No payment is taken on this page.</p>
 </div><div class="rs-paper" aria-label="Illustrative resume layout"><h2>Your name</h2><small>Clear structure. Consistent formatting.</small><hr><strong>Profile</strong><div class="rs-line"></div><div class="rs-line short"></div><br><strong>Experience &amp; skills</strong><div class="rs-line"></div><div class="rs-line"></div><div class="rs-line short"></div><p class="rs-small">Illustrative layout, not a customer resume.</p></div></div></section>
 <section class="rs-section"><div class="container"><h2>What you can request</h2><div class="rs-grid">
@@ -1567,7 +1621,7 @@ def resume_service_page() -> str:
 <details><summary>How much does it cost?</summary><p>Request a quote for your document. The price depends on the work and is agreed before starting. There is no published fixed price or automatic charge.</p></details>
 <details><summary>Do I need to meet someone?</summary><p>No. Requests and delivery are handled online through WhatsApp. No in-person appointments are offered.</p></details>
 <details><summary>Will this guarantee an interview or ATS score?</summary><p>No. This is a formatting and document-cleanup service, not recruitment or a job guarantee. Hiring decisions and ATS systems vary.</p></details>
-<details><summary>Can I use Nexora myself instead?</summary><p>Yes. Try the <a href="/resume-builder">resume builder</a>, <a href="/resume-ats-checker">resume ATS checker</a> and <a href="/hr-career">HR and career tools</a>. Tool limits and any paid options are shown separately in the app.</p></details>
+<details><summary>Can I use Nexora myself instead?</summary><p>Yes. View the <a href="/resume-builder">CV samples (Rs 99 per personalised CV)</a>, <a href="/resume-ats-checker">resume ATS checker</a> and <a href="/hr-career">HR and career tools</a>. Tool limits and any paid options are shown separately in the app.</p></details>
 <div class="rs-actions"><a class="btn" href="__WHATSAPP__" rel="noopener noreferrer">Discuss your document on WhatsApp</a></div>
 </div></section>
 """.replace("__WHATSAPP__", RESUME_SERVICE_WHATSAPP)
@@ -2391,6 +2445,19 @@ def _docx_response(data: bytes, filename: str) -> StreamingResponse:
 
 @app.post("/api/career/{slug}")
 async def api_career(slug: str, request: Request) -> JSONResponse:
+    builder_product = TOOL_PRODUCT.get(slug) if slug in BUILDER_SAMPLES else None
+    builder_credit = None
+    if builder_product:
+        if not payments_ready():
+            return err_response(503, "Personalised generation is locked. Online payments are not live yet. You can view the samples without paying.")
+        user = _current_user(request)
+        if not user:
+            return JSONResponse({"error": "Please sign in to unlock this document.", "login": True}, status_code=401)
+        credits = _db_request("GET", "purchases?user_id=eq." + user["id"]
+                              + "&product=eq." + builder_product + "&unlocked=eq.true&select=id&limit=1")
+        if not (isinstance(credits, list) and credits):
+            return JSONResponse({"error": "A verified one-time payment is required. There are no free trials.", "pay_required": True}, status_code=402)
+        builder_credit = credits[0]["id"]
     spec = CAREER_TOOLS.get(slug)
     if not spec:
         return err_response(404, "Unknown tool.")
@@ -2399,7 +2466,7 @@ async def api_career(slug: str, request: Request) -> JSONResponse:
     ip = request.client.host if request.client else "unknown"
     if not rate_ok(ip):
         return err_response(429, "You have reached the free usage limit for now. Please try again later.")
-    limited = daily_limit_response(request, "doc", "documents")
+    limited = daily_limit_response(request, "doc", "documents") if not builder_product else None
     if limited:
         return limited
     try:
@@ -2435,11 +2502,20 @@ async def api_career(slug: str, request: Request) -> JSONResponse:
             return err_response(400, "Please fill in the form first.")
         doc = {"name": "your request", "text": text, "raw": None}
     prompt = spec["prompt"].format_map(_F(fields))
+    if builder_product:
+        style_index = 1 if fields.get("style") == "1" else 0
+        prompt += "\nUse the section order and tone of the " + BUILDER_SAMPLES[slug][style_index][0] + " style. Use only the user's facts, never the fictional sample's details."
+        # Atomic conditional claim: only one concurrent request can consume this credit.
+        claimed = _db_request("PATCH", "purchases?id=eq." + str(builder_credit) + "&unlocked=eq.true", {"unlocked": False}, return_rows=True)
+        if not (isinstance(claimed, list) and claimed):
+            return err_response(409, "This credit is already in use. Please check your result before retrying.")
     try:
         out = gemini_generate(doc, prompt)
     except Exception:
         traceback.print_exc()
-        return err_response(502, "The AI could not process this right now. Please try again.")
+        if builder_product:
+            _db_request("PATCH", "purchases?id=eq." + str(builder_credit), {"unlocked": True})
+        return err_response(502, "The AI could not process this right now. " + ("Your paid credit was not used; " if builder_product else "") + "please try again.")
     db_history(doc_id if doc_id else None, "career:" + slug,
                input_preview=json.dumps(fields)[:500], output_preview=out)
     db_usage("career:" + slug)
