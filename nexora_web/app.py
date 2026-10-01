@@ -1615,7 +1615,7 @@ def resume_service_page() -> str:
 <h1>A clean resume.<br>A simpler next step.</h1>
 <p>Resume formatting and Word/PDF document cleanup, handled online through WhatsApp. No shop visit or physical meeting needed.</p>
 <div class="rs-actions"><a class="btn" href="__WHATSAPP__" rel="noopener noreferrer">Ask for a quote on WhatsApp</a><a class="btn ghost" href="/resume-builder">View CV samples</a></div>
-<p class="rs-small">Price and delivery time agreed before work starts. No payment is taken on this page.</p>
+<p class="rs-small">Rs 99 per resume. Delivery within 24 hours. No payment is taken on this page.</p>
 </div><div class="rs-paper" aria-label="Illustrative resume layout"><h2>Your name</h2><small>Clear structure. Consistent formatting.</small><hr><strong>Profile</strong><div class="rs-line"></div><div class="rs-line short"></div><br><strong>Experience &amp; skills</strong><div class="rs-line"></div><div class="rs-line"></div><div class="rs-line short"></div><p class="rs-small">Illustrative layout, not a customer resume.</p></div></div></section>
 <section class="rs-section"><div class="container"><h2>What you can request</h2><div class="rs-grid">
 <article class="rs-box"><h3>Resume formatting</h3><p>A clearer layout for your existing resume: consistent headings, spacing, fonts and sections. Suitable for freshers and experienced applicants.</p></article>
@@ -1624,20 +1624,20 @@ def resume_service_page() -> str:
 </div></div></section>
 <section class="rs-section"><div class="container"><h2>From first message to final file</h2><div class="rs-grid">
 <article class="rs-box"><h3>1. Tell us what you need</h3><p>Message on WhatsApp with the document type, requested changes and deadline. A redacted sample is enough to start a quote.</p></article>
-<article class="rs-box"><h3>2. Agree the scope</h3><p>Confirm the price, delivery date and file format before work starts. Ask what changes are included.</p></article>
+<article class="rs-box"><h3>2. Agree the scope</h3><p>Confirm the file format and what changes are included before work starts. The price is Rs 99 per resume, with delivery within 24 hours.</p></article>
 <article class="rs-box"><h3>3. Review your file</h3><p>Check the finished document, names and facts before using it. Formatting does not change or verify your qualifications.</p></article>
 </div></div></section>
 <section class="rs-section"><div class="container"><div class="rs-note"><strong>Share only what is needed.</strong><br>Share only the information needed for the document. Please remove Aadhaar/PAN numbers, bank details and other sensitive data. Never send passwords or OTPs. This service is fully online; no home address or meeting location is published here.</div></div></section>
 <section class="rs-section"><div class="container rs-faq"><h2>Before you message</h2>
-<details><summary>How much does it cost?</summary><p>Request a quote for your document. The price depends on the work and is agreed before starting. There is no published fixed price or automatic charge.</p></details>
+<details><summary>How much does it cost?</summary><p>Resume formatting and cleanup is Rs 99 per resume, with delivery within 24 hours. Other documents are quoted on WhatsApp before work starts. Nothing is charged automatically on this page.</p></details>
 <details><summary>Do I need to meet someone?</summary><p>No. Requests and delivery are handled online through WhatsApp. No in-person appointments are offered.</p></details>
 <details><summary>Will this guarantee an interview or ATS score?</summary><p>No. This is a formatting and document-cleanup service, not recruitment or a job guarantee. Hiring decisions and ATS systems vary.</p></details>
 <details><summary>Can I use Nexora myself instead?</summary><p>Yes. View the <a href="/resume-builder">CV samples (Rs 99 per personalised CV)</a>, <a href="/resume-ats-checker">resume ATS checker</a> and <a href="/hr-career">HR and career tools</a>. Tool limits and any paid options are shown separately in the app.</p></details>
 <div class="rs-actions"><a class="btn" href="__WHATSAPP__" rel="noopener noreferrer">Discuss your document on WhatsApp</a></div>
 </div></section>
 """.replace("__WHATSAPP__", RESUME_SERVICE_WHATSAPP)
-    html = page("Online resume formatting & document cleanup", "Get help formatting your resume and cleaning up Word/PDF documents online through WhatsApp. Agree a quote and delivery date before starting. No physical meetings.", "/resume-service", body)
-    metadata = '<link rel="canonical" href="https://nexora-web-q7rn.onrender.com/resume-service"><meta name="robots" content="index,follow"><meta property="og:title" content="Online resume formatting - Nexora"><meta property="og:description" content="Resume and document formatting, fully online. Ask for a quote before work starts."><meta property="og:url" content="https://nexora-web-q7rn.onrender.com/resume-service"><meta property="og:type" content="website">'
+    html = page("Online resume formatting & document cleanup", "Get help formatting your resume and cleaning up Word/PDF documents online through WhatsApp. Rs 99 per resume, delivered within 24 hours. No physical meetings.", "/resume-service", body)
+    metadata = '<link rel="canonical" href="https://nexora-web-q7rn.onrender.com/resume-service"><meta name="robots" content="index,follow"><meta property="og:title" content="Online resume formatting - Nexora"><meta property="og:description" content="Resume and document formatting, fully online. Rs 99 per resume, delivery within 24 hours."><meta property="og:url" content="https://nexora-web-q7rn.onrender.com/resume-service"><meta property="og:type" content="website">'
     return html.replace("</head>", metadata + "</head>")
 
 
