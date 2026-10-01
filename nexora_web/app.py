@@ -355,6 +355,16 @@ def home_page() -> str:
   generate letters and do salary math - all in a few clicks, no sign-up
   needed.</p>
 </div></section>
+<section class="section" style="padding-bottom:0"><div class="container">
+  <div style="background:linear-gradient(135deg,#7c3aed 0%,#db2777 100%);color:#fff;border-radius:20px;padding:22px 26px;box-shadow:0 10px 30px rgba(124,58,237,.28);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px">
+    <div style="flex:1 1 320px">
+      <div style="display:inline-block;background:rgba(255,255,255,.22);border-radius:999px;padding:4px 12px;font-size:13px;font-weight:700;letter-spacing:.4px">BIG OFFER</div>
+      <h2 style="margin:10px 0 6px;font-size:26px;line-height:1.2;color:#fff">5 free uses every day, on any tool</h2>
+      <p style="margin:0;font-size:16px;opacity:.95">Pick any PDF, AI or document tool you like. No card, no sign-up needed to start.</p>
+    </div>
+    <a href="/pro" style="background:#fff;color:#7c3aed;font-weight:700;border-radius:999px;padding:12px 22px;text-decoration:none;white-space:nowrap">See Pro</a>
+  </div>
+</div></section>
 <section class="section"><div class="container">
   {pills}
   {grid}
@@ -1097,7 +1107,7 @@ def rate_ok(ip: str) -> bool:
 # In-memory counter (fast path); every consumed job is also logged to
 # Supabase usage for the record. Limits reset at midnight IST.
 # ----------------------------------------------------------------------
-DAILY_LIMITS = {"pdf": 5, "ai": 3, "doc": 5}
+DAILY_LIMITS = {"all": 5}  # one shared total per day across every tool
 # Single launch toggle: set LIMITS_ENABLED=on in the Render dashboard
 # when we go live. Until then every job passes (friends are testing).
 LIMITS_ENABLED = os.environ.get("LIMITS_ENABLED", "off").strip().lower() in ("1", "true", "on", "yes")
@@ -1117,7 +1127,8 @@ def daily_limit_response(request: Request, group: str,
     free daily limit for this group is already used up."""
     if not LIMITS_ENABLED:
         return None
-    limit = DAILY_LIMITS.get(group)
+    limit = DAILY_LIMITS.get("all")
+    group = "all"
     if not limit:
         return None
     ip = request.client.host if request.client else "unknown"
@@ -1130,9 +1141,9 @@ def daily_limit_response(request: Request, group: str,
         if used >= limit:
             return err_response(
                 429,
-                "That is your " + str(limit) + " free " + label + " for "
-                "today. They reset at midnight IST - or go Pro for "
-                "unlimited use: /pro")
+                "You have used your " + str(limit) + " free uses for today "
+                "across all tools. They reset at midnight IST - or go Pro "
+                "for unlimited use: /pro")
         DAILY_COUNTER[key] = used + 1
     db_usage("daily:" + group, {"day": day})
     return None
@@ -1544,8 +1555,8 @@ PRO_BODY = r"""
     <div class="card">
       <h3>Free</h3>
       <p class="price">&#8377;0 <span>/ forever</span></p>
-      <p>All 45 tools, every day: 5 PDF jobs, 3 AI runs and 5 documents
-      per day, files up to 25 MB. No sign-up needed.</p>
+      <p>All 45 tools, with 5 free uses every day in total across all
+      tools, files up to 25 MB. No sign-up needed.</p>
     </div>
     <div class="card">
       <h3>Pro <span class="tag pro">Launch offer</span></h3>
@@ -1557,7 +1568,7 @@ PRO_BODY = r"""
         style="opacity:.6;cursor:not-allowed">Checkout opens soon</button></p>
       <p style="margin-top:10px;font-size:14px;color:var(--ink-2,#666)">
       UPI checkout is being finished and tested. Until it opens,
-      everything stays free with the daily limits above - no card
+      everything stays free with the 5 free uses a day above - no card
       needed, nothing to cancel.</p>
     </div>
   </div>
