@@ -267,13 +267,24 @@ function quiz(l,i){const x=LEVELS[l-1].lessons[i];const all=[].concat(...LEVELS.
   `<div class="card"><div class="big">${ok} / ${qs.length}</div><div class="row" style="justify-content:center;margin-top:10px"><a class="btn alt" href="#/lesson/${l}/${i}">Practice again</a>${pass&&nx?`<a class="btn" href="#/lesson/${l}/${i+1}">Next lesson ›</a>`:''}<a class="btn alt" href="#/">All lessons</a></div></div>`;
   if(pass)speak('Well done!')}
  show()}
-function ask(){let h=`<h1>Ask the teacher</h1>`+tutorBox(`Write a sentence and I will correct it. Or ask me any English question. Simple words are okay.`)+
- `<div class="card chat" id="ch"></div><div class="card"><textarea id="q" rows="2" placeholder="Example: I am go to office yesterday"></textarea><div class="row" style="margin-top:8px"><button class="btn" id="go">Send</button><a class="btn alt" href="#/">Back</a></div><div class="note">Answers come from AI and can have mistakes.</div></div>`;
+function sayReply(t){const c=t.replace(/[*_#`]/g,'').replace(/\s+/g,' ').trim();const nat=(c.match(/[\u0C80-\u0CFF\u0900-\u097F][\u0C80-\u0CFF\u0900-\u097F\s.,\u0964?!]*/g)||[]).join(' ').trim();const en=c.replace(/[\u0C80-\u0CFF\u0900-\u097F][\u0C80-\u0CFF\u0900-\u097F\s.,\u0964?!]*/g,' ').replace(/\s+/g,' ').trim();
+ if(en)speak(en.slice(0,320),false,()=>{if(nat)speakL(nat.slice(0,220),S.lang)});else if(nat)speakL(nat.slice(0,220),S.lang)}
+function ask(kids){const TR='en';const SR=window.SpeechRecognition||window.webkitSpeechRecognition;S.mic=S.mic||'en';
+ let h=`<h1>${kids?'🧒 Ask your teacher':'Ask the teacher'}</h1>`+tutorBox(kids?`Hello friend! Ask me anything about learning. Tap the big mic or type.`:`Write a sentence and I will correct it. Or ask me any English question. Simple words are okay.`)+
+ `<div class="card chat" id="ch"></div><div class="card">${SR?`<button class="btn" id="mic" style="width:100%;font-size:20px;padding:14px;background:linear-gradient(120deg,#ec4899,#8b5cf6)">🎤 Tap and ask</button><div class="row" style="margin-top:6px"><button class="btn sm alt" id="ml"></button><span class="note">Speak or type. Typing always works.</span></div>`:`<div class="note">Voice input is not supported in this browser. Please type your question.</div>`}<textarea id="q" rows="2" style="margin-top:8px" placeholder="${kids?'Type your question here':Example: I am go to office yesterday}"></textarea><div class="row" style="margin-top:8px"><button class="btn" id="go">Send</button><a class="btn alt" href="${kids?'#/kids':'#/'}">Back</a></div><div class="note">${kids?'Ask only about learning. Never tell your name, phone or address. Ask a parent if unsure.':'Answers come from AI and can have mistakes. Do not share passwords, OTPs or personal details.'}</div></div>`;
  $('#app').innerHTML=h;const ch=$('#ch');
- $('#go').onclick=async()=>{const t=$('#q').value.trim();if(!t)return;$('#q').value='';ch.innerHTML+=`<div class="m u">${esc(t)}</div>`;
+ const mlab=()=>{const b=$('#ml');if(b)b.textContent='🌐 Voice: '+({en:'English',kn:'ಕನ್ನಡ',hi:'हिन्दी'})[S.mic]};mlab();
+ if($('#ml'))$('#ml').onclick=()=>{S.mic=S.mic==='en'?'kn':S.mic==='kn'?'hi':'en';mlab()};
+ const send=async()=>{const t=$('#q').value.trim();if(!t)return;$('#q').value='';ch.innerHTML+=`<div class="m u">${esc(t)}</div>`;
   const w=document.createElement('div');w.className='m t';w.textContent='...';ch.appendChild(w);ch.scrollTop=1e5;
-  try{const r=await fetch('/api/learn/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:t,persona:S.p,lang:S.lang,level:'Beginner',track:'en'})});const j=await r.json();w.textContent=j.reply;speak(j.reply.slice(0,200))}
-  catch(e){w.textContent='No internet. Please try again.'}ch.scrollTop=1e5}}
+  try{const r=await fetch('/api/learn/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:t,persona:S.p,lang:S.lang,level:'Beginner',track:kids?'kids':TR})});const j=await r.json();w.textContent=j.reply;const cp=$('.cap');if(cp)cp.textContent=j.reply.slice(0,140);sayReply(j.reply)}
+  catch(e){w.textContent='No internet. Please try again.'}ch.scrollTop=1e5};
+ $('#go').onclick=send;
+ if(SR&&$('#mic'))$('#mic').onclick=()=>{try{speechSynthesis.cancel()}catch(e){}const rc=new SR();rc.lang={en:'en-IN',kn:'kn-IN',hi:'hi-IN'}[S.mic];rc.interimResults=false;rc.maxAlternatives=1;const b=$('#mic');b.textContent='🎙️ Listening...';
+  rc.onresult=e=>{$('#q').value=e.results[0][0].transcript;send()};rc.onerror=e=>{$('#note')&&0;ch.innerHTML+=`<div class="m t">${e.error==='not-allowed'?'Please allow the microphone, or type your question.':'I could not hear you. Tap the mic again, or type.'}</div>`};rc.onend=()=>{b.textContent='🎤 Tap and ask'};try{rc.start()}catch(e){b.textContent='🎤 Tap and ask'}}}
+function fab(){let b=document.getElementById('askfab');const h=location.hash;if(/^#\/ask/.test(h)){b&&b.remove();return}
+ const k=/^#\/kids/.test(h);if(!b){b=document.createElement('a');b.id='askfab';b.style.cssText='position:fixed;right:14px;bottom:16px;z-index:50;padding:14px 18px;border-radius:30px;color:#fff;font-weight:800;font-size:16px;text-decoration:none;background:linear-gradient(120deg,#ec4899,#8b5cf6);box-shadow:0 6px 18px rgba(0,0,0,.3)';document.body.appendChild(b)}
+ b.href=k?'#/ask/kids':'#/ask';b.textContent=k?'🎤 Ask your teacher':'🎤 Ask teacher'}
 
 const KSETS={
  abc:{t:"ABC",e:"🔤",items:[["A","Apple","🍎"],["B","Ball","⚽"],["C","Cat","🐱"],["D","Dog","🐶"],["E","Elephant","🐘"],["F","Fish","🐟"],["G","Goat","🐐"],["H","Hat","🎩"],["I","Ice cream","🍦"],["J","Juice","🧃"],["K","Kite","🪁"],["L","Lion","🦁"],["M","Moon","🌙"],["N","Nest","🪺"],["O","Orange","🍊"],["P","Parrot","🦜"],["Q","Queen","👑"],["R","Rabbit","🐰"],["S","Sun","☀️"],["T","Tiger","🐯"],["U","Umbrella","☂️"],["V","Van","🚐"],["W","Watch","⌚"],["X","Xylophone","🎶"],["Y","Yo-yo","🪀"],["Z","Zebra","🦓"]]},
@@ -283,7 +294,7 @@ const KSETS={
  nums:{t:"Numbers",e:"🔢",items:[["1","One","⭐"],["2","Two","⭐⭐"],["3","Three","⭐⭐⭐"],["4","Four","⭐⭐⭐⭐"],["5","Five","⭐⭐⭐⭐⭐"],["6","Six","⭐⭐⭐⭐⭐⭐"],["7","Seven","⭐⭐⭐⭐⭐⭐⭐"],["8","Eight","⭐⭐⭐⭐⭐⭐⭐⭐"],["9","Nine","⭐⭐⭐⭐⭐⭐⭐⭐⭐"],["10","Ten","⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐"]]}
 };
 const KC=['#ef4444','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f97316'];
-function kidsHome(){S.ks=S.ks||0;let h=`<h1>🧒 Kids Zone</h1><div class="kg"><b>Hello little friend!</b> Tap a picture to hear the word. Play the game to win stars ⭐ <b>${S.ks}</b><div class="note">For parents: no ads, no chat, no sign-up, no personal data. Progress stays on this phone only.</div></div><div class="kt">`;
+function kidsHome(){S.ks=S.ks||0;let h=`<h1>🧒 Kids Zone</h1><div class="kg"><b>Hello little friend!</b> Tap a picture to hear the word. Play the game to win stars ⭐ <b>${S.ks}</b><a class="btn" href="#/ask/kids" style="display:block;text-align:center;margin:10px 0;font-size:20px;padding:14px;background:linear-gradient(120deg,#ec4899,#8b5cf6)">🎤 Ask your teacher</a><div class="note">For parents: no ads, no chat with strangers, no sign-up, no personal data. Progress stays on this phone only.</div></div><div class="kt">`;
  Object.keys(KSETS).forEach((k,i)=>h+=`<button style="background:${KC[i]}" onclick="location.hash='#/kids/${k}'"><span class="e">${KSETS[k].e}</span><span>${KSETS[k].t}</span></button>`);
  h+=`<button style="background:${KC[5]}" onclick="location.hash='#/kids/game'"><span class="e">🎮</span><span>Game</span></button></div><p><a class="btn alt" href="#/">‹ Back</a></p>`;$('#app').innerHTML=h}
 function kidsSet(k){const set=KSETS[k];let h=`<h1>${set.e} ${set.t}</h1><div class="kt">`;
@@ -299,8 +310,9 @@ function kidsGame(){const pool=[].concat(...['abc','animals','fruits'].map(k=>KS
    else{f.className='fb bad';f.textContent='Try again 🙂';speak('Try again')}})}
  function end(){$('#app').innerHTML=`<div class="kg" style="text-align:center"><div class="kbig">🏆</div><h2>You got ${sc} stars!</h2><p><button class="btn" onclick="location.hash='#/kids/game';route()">Play again</button> <a class="btn alt" href="#/kids">Kids Zone</a></p></div>`;speak('Well done! You are a star!')}
  q()}
-function route(){("speechSynthesis" in window)&&speechSynthesis.cancel();const p=location.hash.replace(/^#\/?/,'').split('/');window.scrollTo(0,0);
- if(p[0]==='lesson'&&LEVELS[p[1]-1]&&LEVELS[p[1]-1].lessons[p[2]])lesson(+p[1],+p[2]);else if(p[0]==='ask')ask();else if(p[0]==='kids'){!p[1]?kidsHome():p[1]==='game'?kidsGame():KSETS[p[1]]?kidsSet(p[1]):kidsHome()}else home()}
+function route0(){("speechSynthesis" in window)&&speechSynthesis.cancel();const p=location.hash.replace(/^#\/?/,'').split('/');window.scrollTo(0,0);
+ if(p[0]==='lesson'&&LEVELS[p[1]-1]&&LEVELS[p[1]-1].lessons[p[2]])lesson(+p[1],+p[2]);else if(p[0]==='ask')ask(p[1]==='kids');else if(p[0]==='kids'){!p[1]?kidsHome():p[1]==='game'?kidsGame():KSETS[p[1]]?kidsSet(p[1]):kidsHome()}else home()}
+function route(){route0();fab()}
 addEventListener('hashchange',route);hdr();route();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
 </script></body></html>
