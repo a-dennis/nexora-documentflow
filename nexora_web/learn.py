@@ -62,12 +62,20 @@ def _ip(request):
     return (request.headers.get("x-forwarded-for") or (request.client.host if request.client else "x")).split(",")[0].strip()
 
 
+RULES = (" Output format: return JSON with two fields. 'en' is your full answer in simple English (include any 'Tip:' line there). "
+         "'kn' is one short explanation in {lang} only. Never mix scripts inside a sentence: 'en' has only English, 'kn' has only {lang} script. "
+         "Write simple, natural spoken {lang} as in daily talk in Karnataka and India, using common words. Do not put English words or digits inside {lang} sentences (write numbers in {lang} words). "
+         "Do not transliterate English into {lang} script except for common loan words such as office, teacher and doctor. Each {lang} sentence must be under 12 words.")
+
+
 def ask_ai(track, persona, text, level, lang):
     key = os.environ.get("GEMINI_API_KEY", "")
     if not key:
         return None
-    body = {"system_instruction": {"parts": [{"text": SYSTEMS[track] + " Your name is " + persona + ". Learner level: " + level + ". Add the short explanation in " + lang + " script."}]},
-            "contents": [{"role": "user", "parts": [{"text": text[:600]}]}]}
+    body = {"system_instruction": {"parts": [{"text": SYSTEMS[track] + " Your name is " + persona + ". Learner level: " + level + ". Add the short explanation in " + lang + " script." + RULES.replace("{lang}", lang)}]},
+            "contents": [{"role": "user", "parts": [{"text": text[:600]}]}],
+            "generationConfig": {"temperature": 0.3, "responseMimeType": "application/json",
+                                 "responseSchema": {"type": "OBJECT", "properties": {"en": {"type": "STRING"}, "kn": {"type": "STRING"}}, "required": ["en", "kn"]}}}
     if track == "kids":
         body["safetySettings"] = [{"category": c, "threshold": "BLOCK_LOW_AND_ABOVE"} for c in ("HARM_CATEGORY_HARASSMENT", "HARM_CATEGORY_HATE_SPEECH", "HARM_CATEGORY_SEXUALLY_EXPLICIT", "HARM_CATEGORY_DANGEROUS_CONTENT")]
     for m in MODELS:
@@ -77,7 +85,14 @@ def ask_ai(track, persona, text, level, lang):
                 data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
             with urllib.request.urlopen(req, timeout=25) as r:
                 j = json.loads(r.read())
-            return j["candidates"][0]["content"]["parts"][0]["text"]
+            out = j["candidates"][0]["content"]["parts"][0]["text"]
+            try:
+                d = json.loads(out)
+                if isinstance(d, dict) and (d.get("en") or d.get("kn")):
+                    return {"en": str(d.get("en") or "").strip(), "kn": str(d.get("kn") or "").strip()}
+            except Exception:
+                pass
+            return out
         except Exception:
             continue
     return ""
@@ -164,6 +179,9 @@ def install(app):
             return JSONResponse({"reply": "Ask teacher is not switched on yet."})
         if not reply:
             return JSONResponse({"reply": "The teacher is busy. Please try again in a minute."})
+        if isinstance(reply, dict):
+            en, kn = reply.get("en", ""), reply.get("kn", "")
+            return JSONResponse({"reply": (en + ("\n" + kn if kn else "")).strip(), "en": en, "kn": kn})
         return JSONResponse({"reply": reply})
     # Run before the site's catch-all /{seo_slug} route.
     _new = app.router.routes[_n0:]
