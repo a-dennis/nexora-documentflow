@@ -88,7 +88,7 @@ function rmRow(b){b.parentNode.remove();}
 CSS = """<style>
 .sc-row{display:flex;gap:8px;margin-bottom:10px;align-items:center;flex-wrap:wrap}
 .sc-row input,.sc-row select,.sc-box input,.sc-box select{padding:11px 12px;border:1px solid #d9d6ee;border-radius:10px;font-size:16px;min-width:0;max-width:100%;background:#fff;box-sizing:border-box}
-.sc-row input.sc-n{flex:2 1 120px}.sc-row input.sc-a,.sc-row input.sc-b{flex:1 1 80px}.sc-row select{flex:1 1 110px}
+.sc-row input.sc-n{flex:2 1 120px}.sc-row input.sc-a,.sc-row input.sc-b{flex:1 1 80px}.sc-row select{flex:1 1 110px;width:auto}
 .sc-x{border:0;background:#f3f1fb;border-radius:10px;padding:10px 12px;cursor:pointer;font-size:16px}
 .sc-res{margin-top:16px;padding:16px;border-radius:14px;background:linear-gradient(135deg,#f3efff,#ffeef7)}
 .sc-res b.big{font-size:2rem;display:block}
