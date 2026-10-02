@@ -214,7 +214,7 @@ for(var i=0;i<6;i++)addRow();""")
 
 CONVERT_BODY = CSS + _hero("CGPA to Percentage and Percentage to CGPA", "Convert both ways with the rule your university uses. Pick the formula, type a value, see the result.") + _wrap("""
 <label for="f">Formula</label>
-<select class="full" id="f"><option value="vtu">(CGPA - 0.75) x 10 (VTU, JNTUH style)</option><option value="m05">(CGPA - 0.5) x 10 (JNTU-ACEP style)</option><option value="x10">CGPA x 10 (simple)</option><option value="x95">CGPA x 9.5 (CBSE style)</option></select>
+<select class="full" id="f"><option value="vtu">(CGPA - 0.75) x 10 (VTU, 2015 to 2018 schemes)</option><option value="m05">(CGPA - 0.5) x 10 (JNTUH R18, JNTU-ACEP)</option><option value="x10">CGPA x 10 (simple)</option><option value="x95">CGPA x 9.5 (CBSE style)</option></select>
 <div class="sc-two"><div><label for="cg">CGPA (0 to 10)</label><input class="full" id="cg" type="number" min="0" max="10" step="any" inputmode="decimal"></div>
 <div><label for="pc">Percentage (0 to 100)</label><input class="full" id="pc" type="number" min="0" max="100" step="any" inputmode="decimal"></div></div>
 <div class="toolbar"><button class="btn" type="button" onclick="run('cg')">CGPA to %</button><button class="btn ghost" type="button" onclick="run('pc')">% to CGPA</button></div>
@@ -372,6 +372,35 @@ async function run(){err("");var f=$("pf").files[0],w=num("pw"),h=num("ph"),kb=n
   out('<div class="sc-res"><b class="big">'+r2(b.size/1024).toFixed(1)+' KB</b><div>'+w+' x '+h+' px, JPEG (limit '+kb+' KB)</div><div style="margin:12px 0"><img src="'+u+'" alt="Resized preview" style="max-width:100%;max-height:320px;border:1px solid #d9d6ee;border-radius:8px"></div><a class="btn" download="nexora-resized.jpg" href="'+u+'">Download JPEG</a></div>');};
  img.onerror=function(){err("That file could not be read as an image.");};img.src=url;}""")
 
+def _uni_body(h1, intro, scale, off, k, note):
+    import json
+    sc = json.dumps(scale)
+    return CSS + _hero(h1, intro) + _wrap("""
+<div id="rows"></div>
+<div class="toolbar"><button class="btn ghost" type="button" onclick="addRow()">+ Add subject</button><button class="btn" type="button" onclick="run()">Calculate</button></div>
+<div class="hint">""" + note + """</div>""") + _script("var SC=" + sc + ";var OFF=" + str(off) + ",K=" + str(k) + r""";
+function opts(){var o='<option value="">Grade</option>';SC.forEach(function(g){o+='<option value="'+g[1]+'">'+g[0]+' ('+g[1]+')</option>';});return o;}
+function addRow(){var d=document.createElement("div");d.className="sc-row";
+ d.innerHTML='<input class="sc-n" placeholder="Subject (optional)"><input class="sc-a" type="number" min="0" step="0.5" inputmode="decimal" placeholder="Credits"><select>'+opts()+'</select><button type="button" class="sc-x" onclick="rmRow(this)" aria-label="Remove">x</button>';
+ $("rows").appendChild(d);}
+function run(){err("");var rows=[],bad=false;
+ document.querySelectorAll("#rows .sc-row").forEach(function(r){var c=r.querySelector(".sc-a").value,g=r.querySelector("select").value;
+  if(c===""&&g==="")return;if(c===""||g===""||Number(c)<0){bad=true;return;}rows.push([Number(c),Number(g)]);});
+ if(bad){err("Each subject needs credits and a grade.");return;}
+ var x=hubGpa(rows);if(x.gpa===null){err("Add at least one subject with credits.");return;}
+ var p=Math.max(0,(x.gpa-OFF)*K);
+ out('<div class="sc-res"><b class="big">'+r2(x.gpa).toFixed(2)+'</b><table><tr><td>Total credits</td><td>'+x.credits+'</td></tr><tr><td>Total credit points</td><td>'+x.points+'</td></tr><tr><td>Formula</td><td>'+x.points+' / '+x.credits+'</td></tr><tr><td>Percentage by the regulation formula</td><td>'+r2(p).toFixed(2)+'%</td></tr></table><div class="hint">Use the same steps for CGPA: enter every subject of every semester together, or weight each semester SGPA by its credits.</div></div>');}
+for(var i=0;i<6;i++)addRow();""")
+
+
+ANNA_BODY = _uni_body("Anna University GPA and CGPA Calculator (Regulations 2023)", "Add each course with its credits and grade to get your GPA. Grade points follow the Anna University B.E. / B.Tech. Regulations 2023.",
+    [["S", 10], ["A+", 9], ["A", 8], ["B+", 7], ["B", 6], ["C", 5], ["U (re-appear)", 0]], 0, 10,
+    "Grade points from Table 11 of the Anna University B.E. / B.Tech. Academic Regulations 2023 (Revision 1, 2024), clause 21: GPA = sum of (credits x grade points) / sum of credits. Clause 21.10 prints percentage as CGPA x 10. Older regulations (2017, 2021) use different tables, so check yours. Source: annauniv.edu/pdf, Academic Regulations 2023.")
+
+JNTUH_BODY = _uni_body("JNTUH SGPA and CGPA Calculator (R18 B.Tech)", "Add each subject with its credits and grade to get your SGPA. Grade points follow the JNTUH R18 B.Tech academic regulations.",
+    [["O", 10], ["A+", 9], ["A", 8], ["B+", 7], ["B", 6], ["C", 5], ["F / Ab", 0]], 0.5, 10,
+    "Grade points from clause 9.2 of the JNTUH R18 B.Tech Academic Regulations: O 10, A+ 9, A 8, B+ 7, B 6, C 5, F 0. SGPA and CGPA are credit-weighted (clauses 9.8 and 9.9). Clause 11.2 gives % of marks = (CGPA - 0.5) x 10. Other regulations (R16, R19, R22) may differ, so check your own. Source: jntuh.ac.in, R18 B.Tech Academic Regulations.")
+
 TOOLS = {
     "percentage-calculator": dict(
         name="Percentage Calculator", icon="%", short="Total marks and percentage across subjects.",
@@ -457,12 +486,26 @@ TOOLS = {
         body=PHOTO_BODY,
         faq=[["Is my photo uploaded?", "No. The image is resized in your browser and never leaves your device."],
              ["What if my form wants a different format or a minimum size?", "This tool outputs JPEG under your maximum KB. If your form also asks for a minimum size or another format, read its instructions and adjust the size boxes."]]),
+    "anna-university-gpa-calculator": dict(
+        name="Anna University GPA Calculator", icon="AU", short="GPA from credits and grades, Regulations 2023 scale.",
+        title="Anna University GPA and CGPA Calculator (Regulations 2023) | Nexora",
+        meta="Free Anna University GPA and CGPA calculator using the 2023 B.E. / B.Tech. grade points (S 10, A+ 9, A 8, B+ 7, B 6, C 5) and the CGPA x 10 percentage rule.",
+        body=ANNA_BODY,
+        faq=[["Which grade points does this use?", "The grade points in Table 11 of the Anna University B.E. / B.Tech. Academic Regulations 2023 (Revision 1, 2024): S 10, A+ 9, A 8, B+ 7, B 6, C 5, U 0."],
+             ["Is the percentage official?", "The regulations print percentage as CGPA x 10 in the consolidated grade sheet. Earlier regulations may differ, so check the one you joined under."]]),
+    "jntuh-sgpa-cgpa-calculator": dict(
+        name="JNTUH SGPA / CGPA Calculator", icon="JH", short="R18 B.Tech grade points and percentage rule.",
+        title="JNTUH SGPA and CGPA Calculator (R18 B.Tech) | Nexora",
+        meta="Free JNTUH R18 SGPA and CGPA calculator with the official grade points (O 10, A+ 9, A 8, B+ 7, B 6, C 5, F 0) and the (CGPA - 0.5) x 10 percentage rule.",
+        body=JNTUH_BODY,
+        faq=[["Which JNTUH regulation is this?", "R18 B.Tech regular students (admitted 2018-19 onwards until a newer regulation applies to you). Check your own regulation for the grade table."],
+             ["What is the JNTUH CGPA to percentage formula?", "Clause 11.2 of the R18 regulations says % of marks = (CGPA - 0.5) x 10."]]),
     "cgpa-percentage-converter": dict(
         name="CGPA / Percentage Converter", icon="CG", short="Convert CGPA to percentage and back, four formulas.",
         title="CGPA to Percentage and Percentage to CGPA Converter | Nexora",
-        meta="Free converter for CGPA to percentage and percentage to CGPA. Choose the (CGPA-0.75)x10, (CGPA-0.5)x10, CGPAx10 or CGPAx9.5 formula.",
+        meta="Free converter for CGPA to percentage and percentage to CGPA. Choose the (CGPA-0.75)x10, (CGPA-0.5)x10, CGPAx10 or CGPAx9.5 formula, with the university each one comes from.",
         body=CONVERT_BODY,
-        faq=[["Which CGPA to percentage formula should I use?", "Use the one your university states. VTU publishes (CGPA - 0.75) x 10 for some schemes, and CBSE uses CGPA x 9.5 for its 10-point grades. When unsure, ask your university office."],
+        faq=[["Which CGPA to percentage formula should I use?", "Use the one your university states. VTU publishes (CGPA - 0.75) x 10 for some schemes, JNTUH R18 regulations give (CGPA - 0.5) x 10, Anna University regulations 2023 give CGPA x 10, and CBSE uses CGPA x 9.5 for its 10-point grades. When unsure, ask your university office."],
              ["Is the result official?", "No. It is an estimate for forms and planning."]]),
 }
 
@@ -473,7 +516,7 @@ def _t(slug):
 
 
 LINK_GROUPS = [
-    ("Marks, grades and attendance", [_t(k) for k in ("percentage-calculator", "attendance-calculator", "final-marks-needed-calculator", "gpa-calculator", "cgpa-percentage-converter")] + [
+    ("Marks, grades and attendance", [_t(k) for k in ("percentage-calculator", "attendance-calculator", "final-marks-needed-calculator", "gpa-calculator", "cgpa-percentage-converter", "anna-university-gpa-calculator", "jntuh-sgpa-cgpa-calculator")] + [
         ("/vtu-sgpa-calculator", "VTU SGPA Calculator", "Semester SGPA from credits and grades."),
         ("/vtu-cgpa-calculator", "VTU CGPA Calculator", "CGPA across semesters, lateral entry too."),
         ("/cgpa-to-percentage-calculator", "CGPA to Percentage (VTU)", "VTU formula with a simple option.")]),
