@@ -2660,3 +2660,7 @@ async def not_found(request: Request, exc: Exception) -> HTMLResponse:
 </div></section>
 """
     return HTMLResponse(page("Page not found", "This page does not exist.", "", body), status_code=404)
+
+
+import payfix
+payfix.install(globals())
