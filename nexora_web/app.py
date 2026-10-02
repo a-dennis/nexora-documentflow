@@ -135,7 +135,7 @@ def footer_html() -> str:
         '<a class="brand" href="/">Nexo<span>ra</span></a>'
         "<span>AI-powered productivity tools for documents, HR &amp; careers.</span>"
         '<span style="margin-left:auto;opacity:.55;font-size:13px">Built with Instinct</span>'
-        '<a href="/resume-service">Online document help</a><a href="/excel-service">Excel &amp; PDF to Excel</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><span>&copy; 2026 Nexora</span>'
+        '<a href="https://nexora-english-web.onrender.com" target="_blank" rel="noopener">Nexora English</a><a href="https://nexora-markets-web.onrender.com" target="_blank" rel="noopener">Nexora Markets</a><a href="/resume-service">Online document help</a><a href="/excel-service">Excel &amp; PDF to Excel</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><span>&copy; 2026 Nexora</span>'
         "</div></footer>"
     )
 
