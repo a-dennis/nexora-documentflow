@@ -82,6 +82,8 @@ NAV_ITEMS = [
     ("/", "Home"),
     ("/document-ai", "Document AI"),
     ("/hr-career", "HR &amp; Career"),
+    ("/english", "English"),
+    ("/ai", "AI A-to-Z"),
     ("/resume-builder", "Resume Builder"),
     ("/jd-builder", "JD Builder"),
     ("/pro", "Pro"),
@@ -135,7 +137,7 @@ def footer_html() -> str:
         '<a class="brand" href="/">Nexo<span>ra</span></a>'
         "<span>AI-powered productivity tools for documents, HR &amp; careers.</span>"
         '<span style="margin-left:auto;opacity:.55;font-size:13px">Built with Instinct</span>'
-        '<a href="https://nexora-english-web.onrender.com" target="_blank" rel="noopener">Nexora English</a><a href="https://nexora-markets-web.onrender.com" target="_blank" rel="noopener">Nexora Markets</a><a href="/resume-service">Online document help</a><a href="/excel-service">Excel &amp; PDF to Excel</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><span>&copy; 2026 Nexora</span>'
+        '<a href="/english">Nexora English</a><a href="/ai">Nexora AI A-to-Z</a><a href="https://nexora-markets-web.onrender.com" target="_blank" rel="noopener">Nexora Markets</a><a href="/resume-service">Online document help</a><a href="/excel-service">Excel &amp; PDF to Excel</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><span>&copy; 2026 Nexora</span>'
         "</div></footer>"
     )
 
@@ -148,6 +150,7 @@ def page(title: str, description: str, active: str, body: str) -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{title} - Nexora</title>
 <meta name="description" content="{description}"><meta property="og:site_name" content="Nexora"><meta property="og:type" content="website"><meta property="og:title" content="{title} - Nexora"><meta property="og:description" content="{description}"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2714%27 fill=%27%237c3aed%27/%3E%3Ctext x=%2732%27 y=%2745%27 font-size=%2740%27 font-family=%27Arial%27 font-weight=%27700%27 text-anchor=%27middle%27 fill=%27white%27%3EN%3C/text%3E%3C/svg%3E">
+<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7c3aed"><link rel="apple-touch-icon" href="/icon-192.png">
 <style>{CSS}</style>
 </head>
 <body>
@@ -156,6 +159,7 @@ def page(title: str, description: str, active: str, body: str) -> str:
 {body}
 </main>
 {footer_html()}
+<script>if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(function(){{}});</script>
 </body>
 </html>"""
 
@@ -365,6 +369,15 @@ def home_page() -> str:
   needed.</p>
 </div></section>
 {student_hub.home_strip()}
+<section class="section" style="padding-bottom:0"><div class="container">
+  <h2 style="margin:0 0 12px">Everything in one Nexora app</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px">
+    <a class="card card-link" href="/english"><div class="card-icon">🗣️</div><h3>English</h3><p>Learn English step by step with a friendly AI teacher. Kannada, Hindi and English. Free to start.</p></a>
+    <a class="card card-link" href="/ai"><div class="card-icon">🤖</div><h3>AI A-to-Z</h3><p>Learn to use AI for study, jobs and daily life. Simple lessons, quizzes and a Kids Zone.</p></a>
+    <a class="card card-link" href="/document-ai"><div class="card-icon">📄</div><h3>Documents &amp; PDF</h3><p>30 PDF tools, Document AI, resumes and HR documents.</p></a>
+    <a class="card card-link" href="https://nexora-markets-web.onrender.com"><div class="card-icon">📈</div><h3>Markets</h3><p>Market tools and learning, opens Nexora Markets.</p></a>
+  </div>
+</div></section>
 <section class="section" style="padding-bottom:0"><div class="container">
   <div style="background:linear-gradient(135deg,#7c3aed 0%,#db2777 100%);color:#fff;border-radius:20px;padding:22px 26px;box-shadow:0 10px 30px rgba(124,58,237,.28);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px">
     <div style="flex:1 1 320px">
@@ -1692,7 +1705,7 @@ async def robots_txt() -> Response:
 
 @app.get("/sitemap.xml")
 async def sitemap_xml() -> Response:
-    paths = ["/", "/privacy", "/terms", "/resume-service", "/excel-service", "/document-ai", "/hr-career", "/resume-builder", "/jd-builder", "/hr/calculators", "/hr/documents"]
+    paths = ["/", "/privacy", "/terms", "/resume-service", "/excel-service", "/document-ai", "/hr-career", "/resume-builder", "/jd-builder", "/hr/calculators", "/hr/documents", "/english", "/ai"]
     paths += ["/" + s for s in student_calc.PAGES]
     paths += student_hub.all_paths()
     paths += ["/" + slug for slug in SEO_CALC_PAGES] + ["/" + slug for slug in SEO_CAREER_PAGES]
@@ -2664,3 +2677,6 @@ async def not_found(request: Request, exc: Exception) -> HTMLResponse:
 
 import payfix
 payfix.install(globals())
+
+import learn
+learn.install(app)
