@@ -709,7 +709,7 @@ EMOJI = {
 
 DOCUMENT_AI_BODY = r"""
 <section class="page-hero"><div class="container">
-  <span class="tag live">Live</span>
+  <span class="tag live">Document AI</span>
   <h1 style="margin-top:12px">Document AI Intelligence</h1>
   <p>Upload a document and let AI summarize it, answer your questions,
   extract the data inside and analyze it in depth.</p>
@@ -1264,7 +1264,7 @@ CAREER_TOOLS = {
 
 CAREER_BODY = """
 <section class="page-hero"><div class="container">
-  <span class="tag live">Live</span>
+  <span class="tag live">HR &amp; Career</span>
   <h1 style="margin-top:12px">__TITLE__</h1>
   <p>__TAGLINE__</p>
 </div></section>
@@ -1434,7 +1434,7 @@ function downloadDocx() {
 
 CALC_BODY = """
 <section class="page-hero"><div class="container">
-  <span class="tag live">Live</span>
+  <span class="tag live">Calculators</span>
   <h1 style="margin-top:12px">HR Calculators</h1>
   <p>Instant answers for the most common Indian salary questions. No sign-up,
   nothing stored - everything runs in your browser.</p>
@@ -1699,7 +1699,7 @@ SEO_CAREER_PAGES = {
 
 HRDOC_BODY = """
 <section class="page-hero"><div class="container">
-  <span class="tag live">Live</span>
+  <span class="tag live">HR Documents</span>
   <h1 style="margin-top:12px">HR Document Generator</h1>
   <p>Fill a short form, download a ready-to-edit Word document. Free, no
   sign-up, nothing stored.</p>
