@@ -342,6 +342,68 @@ async def api_purchases(request: Request):
 '''
 
 
+BUY_SRC = r'''
+from fastapi.responses import RedirectResponse as _Redir
+
+_BUY = {
+    "resume": ("Nexora resume formatting (1 resume)", 9900),
+    "excel": ("Nexora Excel cleanup / PDF to Excel (1 file)", 19900),
+}
+_BUY_HITS = {}
+_SITE = "https://nexora-web-q7rn.onrender.com"
+
+
+@app.get("/buy/{kind}")
+async def buy_link(kind: str, request: Request):
+    """Public ad link: makes a fresh Razorpay payment link and sends the
+    visitor to it. No sign-in needed. Rate limited per IP."""
+    spec = _BUY.get(kind)
+    if not spec or not (RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET):
+        return _Redir("/", status_code=302)
+    ip = request.client.host if request.client else "x"
+    now = time.time()
+    hits = [t for t in _BUY_HITS.get(ip, []) if now - t < 3600]
+    if len(hits) >= 15:
+        return _Redir("/" + ("resume-service" if kind == "resume" else "excel-service"),
+                      status_code=302)
+    hits.append(now)
+    _BUY_HITS[ip] = hits
+    status, data = _rzp_call("payment_links", {
+        "amount": spec[1], "currency": "INR", "accept_partial": False,
+        "description": spec[0],
+        "reference_id": "ad_" + kind + "_" + uuid.uuid4().hex[:12],
+        "callback_url": _SITE + "/pay-thanks", "callback_method": "get",
+        "notes": {"source": "ad_link", "kind": kind}})
+    url = data.get("short_url") if isinstance(data, dict) else None
+    if status in (200, 201) and url:
+        return _Redir(url, status_code=302)
+    return _Redir("/" + ("resume-service" if kind == "resume" else "excel-service"),
+                  status_code=302)
+
+
+@app.get("/pay-thanks", response_class=HTMLResponse)
+async def pay_thanks(request: Request):
+    pid = re.sub(r"[^A-Za-z0-9_]", "", request.query_params.get("razorpay_payment_id", ""))[:40]
+    ok = request.query_params.get("razorpay_payment_link_status", "") == "paid"
+    if ok:
+        wa = ("https://wa.me/919353006448?text=Hi%2C+I+paid+on+Nexora.+Payment+ID%3A+" + pid)
+        body = ('<section class="section"><div class="container"><div class="card">'
+                '<h1>Payment received. Thank you!</h1>'
+                '<p>Your payment ID is <strong>' + pid + '</strong>.</p>'
+                '<p>Next step: send your file on WhatsApp with this payment ID. '
+                'We deliver within 24 hours of confirming the scope.</p>'
+                '<p><a class="btn" href="' + wa + '" rel="noopener noreferrer">Send my file on WhatsApp</a></p>'
+                '</div></div></section>')
+    else:
+        body = ('<section class="section"><div class="container"><div class="card">'
+                '<h1>Payment not completed</h1>'
+                '<p>No money was taken, or the payment is still being confirmed. '
+                'If money was deducted, do not pay again: message us on WhatsApp 9353006448.</p>'
+                '<p><a class="btn" href="/">Back to Nexora</a></p></div></div></section>')
+    return page("Payment status", "Payment status", "", body)
+'''
+
+
 _CANON = {}
 
 
@@ -378,3 +440,7 @@ def install(g):
     app.router.routes = [r for r in app.router.routes
                          if getattr(r, "path", None) not in PATHS]
     exec(compile(SRC, "payfix_src", "exec"), g)
+    exec(compile(BUY_SRC, "payfix_buy", "exec"), g)
+    mine = [r for r in app.router.routes
+            if getattr(r, "path", None) in ("/buy/{kind}", "/pay-thanks")]
+    app.router.routes = mine + [r for r in app.router.routes if r not in mine]
