@@ -1000,7 +1000,7 @@ TOOLS = {
     "sign": dict(title="Sign PDF", icon="sign",
                  desc="Stamp your signature - type your name or attach a signature image.",
                  accept=".pdf", multiple=True,
-                 options=[dict(key="text", label="Your name (typed signature)", ph="A. Dennis"),
+                 options=[dict(key="text", label="Your name (typed signature)", ph="Your name"),
                           dict(key="page", label="Page (0 = last page)", ph="0"),
                           dict(key="x", label="X position % (0=left)", ph="60"),
                           dict(key="y", label="Y position % (0=top)", ph="85")],
