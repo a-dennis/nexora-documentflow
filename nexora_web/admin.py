@@ -104,6 +104,7 @@ def install(g):
         body = (f"<h1>Nexora admin</h1><p>Signed in as {e(user.get('email'))}. Read-only. You have Pro and unlimited use on this account.</p>"
                 f"<h2>Summary</h2>" + table(["Profiles", "Recent payments shown", "Verified", "Not verified", "Pro (30 days)"],
                                             [(len(profs) if isinstance(profs, list) else "-", len(pays), len(pays) - len(stuck), len(stuck), len(pro))])
+                + (g.get("_visitor_html") or (lambda: ""))()
                 + "<h2>Pro users (last 30 days)</h2>" + table(["Email", "Paid on", "Payment id"],
                     [(emails.get(p.get("user_id"), p.get("user_id")), str(p.get("created_at", ""))[:10], p.get("razorpay_payment_id") or "-") for p in pro])
                 + "<h2>Recent payments</h2>" + table(["Time (UTC)", "User", "Product", "Amount", "Status", "Payment id"], pay_rows(pays))
