@@ -40,6 +40,16 @@ def gpa(rows):
     return sum(c * g for c, g in rows) / tc if tc else None
 
 
+def study_plan(days_left, hours_per_day, weights, revision_days=0):
+    """weights = list of positive numbers (difficulty). -> (study_days, [total hours per subject], [hours per day per subject])"""
+    study_days = max(days_left - revision_days, 0)
+    total = study_days * hours_per_day
+    ws = sum(weights)
+    tot = [total * w / ws for w in weights]
+    per = [hours_per_day * w / ws for w in weights]
+    return study_days, tot, per
+
+
 CONVERT = {"vtu": (lambda c: (c - 0.75) * 10, lambda p: p / 10 + 0.75),
            "x10": (lambda c: c * 10, lambda p: p / 10),
            "x95": (lambda c: c * 9.5, lambda p: p / 9.5),
@@ -57,6 +67,9 @@ function hubFinal(parts,target,fw,fmax){var d=0;parts.forEach(function(p){d+=p[0
   var np=(target-d)/fw*100;return {done:d,needPct:np,needMarks:np*fmax/100};}
 function hubGpa(rows){var tc=0,cp=0;rows.forEach(function(r){tc+=r[0];cp+=r[0]*r[1];});
   return {credits:tc,points:cp,gpa:tc>0?cp/tc:null};}
+function hubPlan(days,hpd,ws,rev){var sd=Math.max(days-rev,0),tot=sd*hpd,sum=0;ws.forEach(function(w){sum+=w;});
+  return {sd:sd,tot:ws.map(function(w){return tot*w/sum;}),per:ws.map(function(w){return hpd*w/sum;})};}
+function hubDays(a,b){return Math.round((Date.UTC(b.getFullYear(),b.getMonth(),b.getDate())-Date.UTC(a.getFullYear(),a.getMonth(),a.getDate()))/86400000);}
 var HUB_CONV={vtu:[function(c){return (c-0.75)*10},function(p){return p/10+0.75}],
   x10:[function(c){return c*10},function(p){return p/10}],
   x95:[function(c){return c*9.5},function(p){return p/9.5}],
@@ -193,6 +206,100 @@ function run(from){err("");var f=HUB_CONV[$("f").value];
  else{var q=num("pc");if(isNaN(q)||q<0||q>100){err("Enter a percentage between 0 and 100.");return;}var g=f[1](q);if(g>10)g=10;
   $("cg").value=r2(g).toFixed(2);out('<div class="sc-res"><b class="big">CGPA '+r2(g).toFixed(2)+'</b>'+q+'% converted with the selected formula.</div>');}}""")
 
+COUNT_BODY = CSS + _hero("Exam Countdown Timer", "Add your exams and see the days and hours left for each one. Your list stays on this device only. Nothing is uploaded.") + _wrap("""
+<div class="sc-row"><input class="sc-n" id="en" placeholder="Exam name (e.g. Maths paper 1)"><input class="sc-a" id="ed" type="datetime-local"><button class="btn" type="button" onclick="addExam()">Add exam</button></div>
+<div id="list"></div>
+<div class="hint">Saved in your browser on this device. Clearing browser data removes the list. Pick the exam start time so the hours are right.</div>""") + _script(r"""
+var KEY="nexora_exams_v1";
+function load(){try{return JSON.parse(localStorage.getItem(KEY)||"[]");}catch(e){return [];}}
+function save(a){try{localStorage.setItem(KEY,JSON.stringify(a));}catch(e){}}
+function addExam(){err("");var n=$("en").value.trim(),d=$("ed").value;if(!n||!d){err("Type the exam name and pick the date and time.");return;}
+ var a=load();a.push({n:n,d:d});a.sort(function(x,y){return new Date(x.d)-new Date(y.d);});save(a);$("en").value="";render();}
+function del(i){var a=load();a.splice(i,1);save(a);render();}
+function render(){var a=load(),now=new Date(),h="";
+ if(!a.length)h='<p class="hint">No exams yet. Add the first one above.</p>';
+ a.forEach(function(x,i){var ms=new Date(x.d)-now,t;
+  if(ms<=0)t="Started or over";else{var m=Math.floor(ms/60000),dd=Math.floor(m/1440),hh=Math.floor(m%1440/60),mm=m%60;t=dd+" days "+hh+" h "+mm+" min";}
+  h+='<div class="sc-res" style="margin-top:10px"><b style="font-size:1.1rem">'+esc(x.n)+'</b><div>'+esc(new Date(x.d).toLocaleString([], {dateStyle:"medium",timeStyle:"short"}))+'</div><b class="big">'+t+'</b><button class="sc-x" type="button" onclick="del('+i+')">Remove</button></div>';});
+ $("list").innerHTML=h;}
+render();setInterval(render,30000);""")
+
+PLAN_BODY = CSS + _hero("Study Planner: Hours per Subject Before Your Exam", "Enter your exam date, hours you can study each day and your subjects. Weak or heavy subjects get more time. Get a clear daily split.") + _wrap("""
+<div class="sc-two"><div><label for="pd">Exam date</label><input class="full" id="pd" type="date"></div>
+<div><label for="ph">Study hours per day</label><input class="full" id="ph" type="number" min="0.5" max="16" step="0.5" value="4" inputmode="decimal"></div></div>
+<label for="pr">Keep last days for revision</label>
+<select class="full" id="pr"><option value="0">None</option><option value="1">1 day</option><option value="2" selected>2 days</option><option value="3">3 days</option></select>
+<div style="height:10px"></div><div id="rows"></div>
+<div class="toolbar"><button class="btn ghost" type="button" onclick="addRow()">+ Add subject</button><button class="btn" type="button" onclick="run()">Make plan</button></div>
+<div class="hint">Difficulty: 1 means easy for you, 5 means hard or heavy. A subject with 4 gets twice the time of a subject with 2.</div>""") + _script(r"""
+function addRow(){var d=document.createElement("div");d.className="sc-row";
+ d.innerHTML='<input class="sc-n" placeholder="Subject"><select class="sc-a"><option value="1">1 easy</option><option value="2">2</option><option value="3" selected>3 medium</option><option value="4">4</option><option value="5">5 hard</option></select><button type="button" class="sc-x" onclick="rmRow(this)" aria-label="Remove">x</button>';
+ $("rows").appendChild(d);}
+function run(){err("");var v=$("pd").value,hpd=num("ph"),rev=Number($("pr").value);
+ if(!v||isNaN(hpd)||hpd<=0){err("Pick the exam date and the hours you can study per day.");return;}
+ var p=v.split("-"),ex=new Date(Number(p[0]),Number(p[1])-1,Number(p[2])),days=hubDays(new Date(),ex);
+ if(days<=0){err("Pick an exam date after today.");return;}
+ var names=[],ws=[];document.querySelectorAll("#rows .sc-row").forEach(function(r,k){var n=r.querySelector(".sc-n").value.trim();if(!n&&k>=0&&r.querySelector(".sc-n").value==="")return;names.push(n);ws.push(Number(r.querySelector("select").value));});
+ if(!names.length){err("Add at least one subject.");return;}
+ var pl=hubPlan(days,hpd,ws,rev);
+ if(pl.sd<=0){err("Not enough days: lower the revision days or pick a later date.");return;}
+ var h='<div class="sc-res"><b class="big">'+days+' days left</b><div>'+pl.sd+' study days'+(rev?' + '+rev+' revision day'+(rev>1?'s':''):'')+', '+r2(pl.sd*hpd)+' study hours in total.</div><table><tr><td><b>Subject</b></td><td><b>Per day</b></td><td><b>Total</b></td></tr>';
+ names.forEach(function(n,i){h+='<tr><td>'+esc(n)+'</td><td>'+r2(pl.per[i]).toFixed(2)+' h</td><td>'+r2(pl.tot[i]).toFixed(1)+' h</td></tr>';});
+ out(h+'</table><div class="hint">Plan for a short break every hour. Use revision days for past papers and weak topics.</div></div>');}
+addRow();addRow();addRow();addRow();""")
+
+POMO_BODY = CSS + _hero("Pomodoro Study Timer", "Study in focused 25 minute blocks with short breaks. Change the times if you like. A soft beep tells you when to switch.") + _wrap("""
+<div class="sc-res" style="text-align:center"><div id="mode" style="font-weight:600">Focus</div><b class="big" id="clock" style="font-size:3.4rem">25:00</b><div id="round" class="hint">Round 1</div></div>
+<div class="toolbar" style="justify-content:center"><button class="btn" id="go" type="button" onclick="toggle()">Start</button><button class="btn ghost" type="button" onclick="reset()">Reset</button></div>
+<div class="sc-two" style="margin-top:12px"><div><label for="fo">Focus (min)</label><input class="full" id="fo" type="number" min="1" max="120" value="25" inputmode="numeric" onchange="reset()"></div>
+<div><label for="br">Short break (min)</label><input class="full" id="br" type="number" min="1" max="60" value="5" inputmode="numeric" onchange="reset()"></div></div>
+<div class="hint">After every 4 focus rounds you get a long break of 15 minutes. Keep this tab open while the timer runs.</div>""") + _script(r"""
+var mode="f",round=1,left=0,timer=null,end=0;
+function cfg(){var f=Math.max(1,num("fo")||25),b=Math.max(1,num("br")||5);return {f:f*60,b:b*60,l:900};}
+function fmt(s){var m=Math.floor(s/60),x=s%60;return (m<10?"0":"")+m+":"+(x<10?"0":"")+x;}
+function show(){$("clock").textContent=fmt(left);$("mode").textContent=mode==="f"?"Focus":mode==="b"?"Short break":"Long break";$("round").textContent="Round "+round;document.title=fmt(left)+" - Nexora Pomodoro";}
+function beep(){try{var c=new (window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);g.gain.value=0.08;o.frequency.value=660;o.start();setTimeout(function(){o.stop();c.close();},400);}catch(e){}}
+function next(){beep();var c=cfg();if(mode==="f"){if(round%4===0){mode="l";left=c.l;}else{mode="b";left=c.b;}}else{mode="f";round++;left=c.f;}end=Date.now()+left*1000;show();}
+function tick(){left=Math.max(0,Math.round((end-Date.now())/1000));if(left<=0){next();return;}show();}
+function toggle(){if(timer){clearInterval(timer);timer=null;$("go").textContent="Resume";return;}end=Date.now()+left*1000;timer=setInterval(tick,500);$("go").textContent="Pause";}
+function reset(){if(timer){clearInterval(timer);timer=null;}mode="f";round=1;left=cfg().f;$("go").textContent="Start";show();}
+reset();""")
+
+MAIL_BODY = CSS + _hero("Internship Application Email Generator", "Fill a few boxes and get a short, polite internship or job application email you can copy. Nothing is sent or stored.") + _wrap("""
+<div class="sc-two"><div><label for="nm">Your name</label><input class="full" id="nm" placeholder="Your full name"></div>
+<div><label for="ro">Role you want</label><input class="full" id="ro" placeholder="e.g. Data Analyst Intern"></div></div>
+<div class="sc-two"><div><label for="co">Company</label><input class="full" id="co" placeholder="Company name"></div>
+<div><label for="hr">Recipient name (optional)</label><input class="full" id="hr" placeholder="e.g. Ms Rao"></div></div>
+<label for="cl">College and course</label><input class="full" id="cl" placeholder="e.g. 3rd year B.E. Computer Science, ABC College">
+<label for="sk">Top skills (comma separated)</label><input class="full" id="sk" placeholder="e.g. Python, Excel, communication">
+<label for="pj">One project or achievement (optional)</label><input class="full" id="pj" placeholder="e.g. built an attendance tracker for my class">
+<div class="toolbar"><button class="btn" type="button" onclick="run()">Write email</button></div>""") + _script(r"""
+function run(){err("");var nm=$("nm").value.trim(),ro=$("ro").value.trim(),co=$("co").value.trim(),hr=$("hr").value.trim(),cl=$("cl").value.trim(),sk=$("sk").value.trim(),pj=$("pj").value.trim();
+ if(!nm||!ro||!co||!cl){err("Fill your name, role, company and college.");return;}
+ var skl=sk?sk.split(",").map(function(x){return x.trim();}).filter(Boolean):[],skt=skl.length?skl.slice(0,-1).join(", ")+(skl.length>1?" and ":"")+skl[skl.length-1]:"";
+ var t="Subject: Application for "+ro+" - "+nm+"\n\nDear "+(hr?hr:"Hiring Team")+",\n\nI am "+nm+", "+cl+". I am writing to apply for the "+ro+" position at "+co+".\n\n"+
+ (skt?"I have worked on "+skt+" during my studies and I want to use these skills on real work. ":"")+(pj?"Recently, "+pj+". ":"")+"I learn fast, I finish what I start, and I am ready to put in the effort this role needs.\n\nI have attached my resume. I would be glad to talk about how I can help your team, at a time that suits you.\n\nThank you for your time.\n\nRegards,\n"+nm;
+ out('<div class="sc-res"><textarea id="mailtxt" rows="14" style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #d9d6ee;border-radius:10px;font-size:15px;font-family:inherit">'+esc(t)+'</textarea><div class="toolbar"><button class="btn ghost" type="button" onclick="cp()">Copy email</button><span id="cpm" class="hint"></span></div><div class="hint">Add the resume as an attachment before you send. Read it once and change anything that does not sound like you.</div></div>');}
+function cp(){var e=$("mailtxt");e.select();try{document.execCommand("copy");$("cpm").textContent="Copied";}catch(x){$("cpm").textContent="Press Ctrl+C to copy";}}""")
+
+RESUME_BODY = CSS + _hero("Fresher Resume Guide for Students", "What to put on a first resume, in what order, and the mistakes that get resumes rejected. Then build yours in Nexora.") + """
+<section class="section"><div class="container" style="max-width:780px"><div class="card">
+<h2 style="margin-top:0">Resume order for freshers</h2>
+<ol style="line-height:1.8"><li><b>Name and contact</b>: name, phone, a professional email, city. Add a LinkedIn or GitHub link if it is tidy.</li>
+<li><b>Career objective</b>: two lines. Say the role you want and your strongest skill.</li>
+<li><b>Education</b>: degree, college, year, CGPA or percentage. Put the latest first.</li>
+<li><b>Projects</b>: two or three. For each, write what you built, the tools you used and the result.</li>
+<li><b>Skills</b>: only skills you can talk about in an interview.</li>
+<li><b>Internships, certificates, achievements</b>: short bullets with numbers where you can.</li>
+<li><b>Extra activities</b>: clubs, volunteering, sports, if space allows.</li></ol>
+<h2>Mistakes to avoid</h2>
+<ul style="line-height:1.8"><li>A resume longer than one page.</li><li>Photos, colourful designs and tables that job filters (ATS) cannot read.</li><li>Skill bars such as "Excel 80%". List the skill and show it in a project.</li><li>Spelling mistakes and an email like cooldude123@.</li><li>Sending the same resume for every role. Copy words from the job description that are true for you.</li></ul>
+<h2>Check before you send</h2>
+<ul style="line-height:1.8"><li>Save as PDF with your name in the file name.</li><li>Read it on your phone. Is it clear in 10 seconds?</li><li>Ask a friend to find one mistake.</li></ul>
+<div class="toolbar"><a class="btn" href="/resume-builder">Build my resume</a><a class="btn ghost" href="/career/ats-optimizer">Check ATS fit</a><a class="btn ghost" href="/students/internship-email-generator">Write application email</a></div>
+</div></div></section>"""
+
+
 TOOLS = {
     "percentage-calculator": dict(
         name="Percentage Calculator", icon="%", short="Total marks and percentage across subjects.",
@@ -222,6 +329,41 @@ TOOLS = {
         body=GPA_BODY,
         faq=[["How is GPA calculated?", "Multiply each subject's credits by its grade points, add them up, and divide by the total credits."],
              ["My college uses different grade points.", "Pick any grade, then type your own value in the Points box. The tool uses what is in that box."]]),
+    "exam-countdown": dict(
+        name="Exam Countdown", icon="D", short="Days and hours left for each exam, saved on your device.",
+        title="Exam Countdown Timer - Days Left for Your Exams | Nexora",
+        meta="Free exam countdown timer for students. Add your exams and see the days, hours and minutes left. Saved on your device, no sign-up.",
+        body=COUNT_BODY,
+        faq=[["Where is my exam list saved?", "In your own browser on this device. It is never uploaded, so it will not show on another phone or computer."],
+             ["Why does it show Started or over?", "The date and time you set has passed. Remove it or add the next exam."]]),
+    "study-planner": dict(
+        name="Study Planner", icon="S", short="Split your study hours across subjects before the exam.",
+        title="Study Planner - Hours per Subject Before Exam | Nexora",
+        meta="Free study planner for students. Enter exam date, daily study hours and subjects. Get hours per day and total hours for each subject.",
+        body=PLAN_BODY,
+        faq=[["How does the planner split the time?", "It multiplies your study days by your daily hours, then shares that time across subjects in proportion to the difficulty you give each one."],
+             ["Why keep revision days?", "A day or two at the end for revision and past papers helps you remember more than learning new topics at the last minute."]]),
+    "pomodoro-timer": dict(
+        name="Pomodoro Timer", icon="P", short="25 minute focus blocks with breaks and a soft beep.",
+        title="Pomodoro Study Timer - 25 Minute Focus Timer | Nexora",
+        meta="Free Pomodoro timer for studying. 25 minute focus rounds, 5 minute breaks and a long break after four rounds. Works on your phone.",
+        body=POMO_BODY,
+        faq=[["What is the Pomodoro method?", "You study with full focus for 25 minutes, rest for 5, and take a longer break after four rounds."],
+             ["Can I change the times?", "Yes. Change the focus and break boxes. The timer resets with your new values."]]),
+    "internship-email-generator": dict(
+        name="Internship Email Writer", icon="@", short="Write a clear internship or job application email in a minute.",
+        title="Internship Application Email Generator - Free | Nexora",
+        meta="Free internship and job application email writer for freshers. Fill your details and copy a polite, short email. Nothing is stored.",
+        body=MAIL_BODY,
+        faq=[["Should I attach my resume?", "Yes. Attach it as a PDF with your name in the file name, and mention it in the email."],
+             ["Can I edit the email?", "Yes. Edit the text in the box before you copy it so it sounds like you."]]),
+    "fresher-resume-guide": dict(
+        name="Fresher Resume Guide", icon="R", short="What to put on your first resume and what to skip.",
+        title="Fresher Resume Guide - Format, Order and Mistakes | Nexora",
+        meta="Simple guide to writing a fresher resume: section order, what to include, mistakes to avoid and a checklist. Then build yours free to preview.",
+        body=RESUME_BODY,
+        faq=[["How long should a fresher resume be?", "One page. Recruiters scan quickly, so keep only what supports the role."],
+             ["Do I need work experience?", "No. Projects, internships, certificates and activities show what you can do."]]),
     "cgpa-percentage-converter": dict(
         name="CGPA / Percentage Converter", icon="CG", short="Convert CGPA to percentage and back, four formulas.",
         title="CGPA to Percentage and Percentage to CGPA Converter | Nexora",
@@ -232,11 +374,17 @@ TOOLS = {
 }
 
 # Tools in the hub, grouped. Entries are (href, title, description).
+def _t(slug):
+    v = TOOLS[slug]
+    return ("/students/" + slug, v["name"], v["short"])
+
+
 LINK_GROUPS = [
-    ("Marks, grades and attendance", [("/students/" + k, v["name"], v["short"]) for k, v in TOOLS.items()] + [
+    ("Marks, grades and attendance", [_t(k) for k in ("percentage-calculator", "attendance-calculator", "final-marks-needed-calculator", "gpa-calculator", "cgpa-percentage-converter")] + [
         ("/vtu-sgpa-calculator", "VTU SGPA Calculator", "Semester SGPA from credits and grades."),
         ("/vtu-cgpa-calculator", "VTU CGPA Calculator", "CGPA across semesters, lateral entry too."),
         ("/cgpa-to-percentage-calculator", "CGPA to Percentage (VTU)", "VTU formula with a simple option.")]),
+    ("Plan and focus", [_t(k) for k in ("exam-countdown", "study-planner", "pomodoro-timer")]),
     ("PDF tools for assignments", [
         ("/pdf/merge", "Merge PDF", "Join notes and assignments into one file."),
         ("/pdf/compress", "Compress PDF", "Shrink a PDF to fit upload limits."),
@@ -244,7 +392,7 @@ LINK_GROUPS = [
         ("/pdf/scan-to-pdf", "Scan to PDF", "Make a clean PDF from phone photos."),
         ("/pdf/word-to-pdf", "Word to PDF", "Convert a report before you submit it."),
         ("/pdf/split", "Split PDF", "Pull out the pages you need.")]),
-    ("Resume and career", [
+    ("Resume, internships and jobs", [_t("fresher-resume-guide"), _t("internship-email-generator"),
         ("/resume-builder", "Resume Builder", "Build a fresher resume (Rs 99 per CV)."),
         ("/career/ats-optimizer", "ATS Resume Checker", "See if your resume passes job filters."),
         ("/career/cover-letter-builder", "Cover Letter Writer", "Write a cover letter for an internship or job.")]),
