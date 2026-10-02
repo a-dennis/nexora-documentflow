@@ -342,8 +342,39 @@ async def api_purchases(request: Request):
 '''
 
 
+_CANON = {}
+
+
 def install(g):
     app = g["app"]
+    _orig_current_user = g["_current_user"]
+
+    def _current_user(request):
+        """Same email = same account, even when a person signs in with
+        email/password on one visit and Google on another (two auth ids).
+        Payments and purchases are keyed to the first profile for that email."""
+        user = _orig_current_user(request)
+        if not user:
+            return user
+        email = (user.get("email") or "").strip().lower()
+        uid = user.get("id", "")
+        if not email or not uid:
+            return user
+        cid = _CANON.get(uid)
+        if not cid:
+            import urllib.parse
+            rows = g["_db_request"]("GET", "profiles?email=eq."
+                                    + urllib.parse.quote(email, safe="@.")
+                                    + "&select=id&limit=1")
+            cid = rows[0]["id"] if isinstance(rows, list) and rows else uid
+            if isinstance(rows, list) and rows:
+                _CANON[uid] = cid
+        if cid != uid:
+            user = dict(user)
+            user["id"] = cid
+        return user
+
+    g["_current_user"] = _current_user
     app.router.routes = [r for r in app.router.routes
                          if getattr(r, "path", None) not in PATHS]
     exec(compile(SRC, "payfix_src", "exec"), g)
