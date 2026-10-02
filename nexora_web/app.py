@@ -363,6 +363,7 @@ def home_page() -> str:
   generate letters and do salary math - all in a few clicks, no sign-up
   needed.</p>
 </div></section>
+{student_hub.home_strip()}
 <section class="section" style="padding-bottom:0"><div class="container">
   <div style="background:linear-gradient(135deg,#7c3aed 0%,#db2777 100%);color:#fff;border-radius:20px;padding:22px 26px;box-shadow:0 10px 30px rgba(124,58,237,.28);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px">
     <div style="flex:1 1 320px">
