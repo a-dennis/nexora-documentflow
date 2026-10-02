@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Nexora AI A-to-Z - Learn AI step by step (Kannada, Hindi, English)</title>
+<meta name="description" content="Learn how to use AI for study, jobs and daily life, step by step from A to Z. Simple lessons in Kannada, Hindi and English. Free to start.">
+<meta name="theme-color" content="#4f46e5">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--p:#4f46e5;--k:#06b6d4;--bg:#faf7ff;--ink:#1f1535;--mut:#6b6485;--ok:#16a34a;--bad:#dc2626}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Kannada",sans-serif;background:var(--bg);color:var(--ink);line-height:1.45}
+header{background:linear-gradient(120deg,var(--p),var(--k));color:#fff;padding:12px 16px;position:sticky;top:0;z-index:5}
+.hw{max-width:760px;margin:auto;display:flex;align-items:center;gap:10px;justify-content:space-between}
+.logo{font-weight:800;font-size:19px;color:#fff;text-decoration:none}
+.logo small{font-weight:500;opacity:.85;font-size:12px;display:block}
+.chips{display:flex;gap:8px;font-size:13px;font-weight:700}
+.chip{background:rgba(255,255,255,.2);padding:4px 10px;border-radius:99px}
+main{max-width:760px;margin:auto;padding:16px 16px 90px}
+h1{font-size:24px;margin:8px 0}h2{font-size:19px;margin:18px 0 8px}
+.card{background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 10px rgba(80,40,160,.08);margin-bottom:12px}
+.btn{display:inline-block;border:0;border-radius:12px;padding:12px 18px;font-size:16px;font-weight:700;cursor:pointer;background:linear-gradient(120deg,var(--p),var(--k));color:#fff;text-decoration:none;font-family:inherit}
+.btn.alt{background:#ede9fe;color:var(--p)}.btn.sm{padding:8px 12px;font-size:14px}.btn:disabled{opacity:.45}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.tutor{display:flex;gap:12px;align-items:center}
+.av{width:64px;height:64px;border-radius:50%;background:#f3e8ff;display:flex;align-items:center;justify-content:center;font-size:36px;flex:none}
+.av.talk{animation:pulse .7s infinite alternate}
+@keyframes pulse{to{box-shadow:0 0 0 10px rgba(79,70,229,.18)}}
+.bubble{background:#f3e8ff;border-radius:14px;padding:10px 12px;font-size:15px}
+.lv{border-left:5px solid var(--p)}.lv.soon{border-color:#cbd5e1;opacity:.75}
+.ls{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid #eee;text-decoration:none;color:inherit;gap:8px}
+.ls b{display:block}.ls span{font-size:13px;color:var(--mut)}
+.done{color:var(--ok);font-weight:800}
+.big{font-size:30px;font-weight:800;text-align:center;margin:10px 0 2px}
+.kn{font-size:24px;text-align:center;color:var(--p);margin:2px 0 8px}
+.say{text-align:center;color:var(--mut);font-size:14px}
+.prog{height:8px;background:#e9e3f7;border-radius:9px;overflow:hidden;margin-bottom:14px}.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--p),var(--k))}
+.opt{display:block;width:100%;text-align:left;margin:8px 0;padding:14px;border-radius:12px;border:2px solid #e5def7;background:#fff;font-size:18px;cursor:pointer;font-family:inherit}
+.opt.ok{border-color:var(--ok);background:#dcfce7}.opt.bad{border-color:var(--bad);background:#fee2e2}
+input[type=text],textarea{width:100%;padding:12px;border:2px solid #e5def7;border-radius:12px;font-size:17px;font-family:inherit}
+.fb{margin:10px 0;font-weight:700}.fb.ok{color:var(--ok)}.fb.bad{color:var(--bad)}
+.note{font-size:12.5px;color:var(--mut)}
+.tag{font-size:11px;background:#fde68a;color:#78350f;border-radius:6px;padding:2px 6px;font-weight:700}
+.tag.g{background:#bbf7d0;color:#14532d}
+footer{max-width:760px;margin:auto;padding:0 16px 40px;font-size:13px;color:var(--mut)}
+footer a{color:var(--p)}
+.chat{max-height:300px;overflow:auto}.m{margin:6px 0;padding:8px 10px;border-radius:12px;max-width:90%}.m.u{background:#ede9fe;margin-left:auto}.m.t{background:#fdf2f8}
+
+.av{width:72px;height:72px;overflow:hidden;background:linear-gradient(160deg,#ede9fe,#fce7f3)}
+.av svg{width:100%;height:100%}
+.av.talk{animation:none}.av.talk .mouth{animation:mth .22s infinite alternate}
+@keyframes mth{from{ry:2px}to{ry:7px}}
+.eye{animation:bl 4s infinite;transform-origin:center;transform-box:fill-box}
+@keyframes bl{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+.hero{background:linear-gradient(135deg,#4f46e5,#ec4899);border-radius:22px;color:#fff;padding:16px;margin:6px 0 14px;display:flex;align-items:flex-end;justify-content:space-between;gap:8px;overflow:hidden}
+.hero h1{margin:0 0 6px;font-size:22px}.hero p{margin:0 0 10px;font-size:14px;opacity:.95}
+.hero .chars{display:flex;gap:2px;flex:none}.hero .chars div{width:92px;height:110px;cursor:pointer;border-radius:16px 16px 0 0;background:rgba(255,255,255,.18);overflow:hidden;border:3px solid transparent}
+.hero .chars div.sel{border-color:#fde047;background:rgba(255,255,255,.35)}
+.hero .chars svg{width:100%;height:100%}
+.hero .btn{background:#fff;color:var(--p)}
+.goal{display:flex;gap:6px;align-items:center;font-size:13px;margin-top:6px}
+.bdg{display:inline-flex;align-items:center;gap:4px;background:#fff7ed;border:1px solid #fed7aa;border-radius:99px;padding:4px 10px;font-size:13px;font-weight:700;margin:3px 3px 0 0}
+.bdg.off{filter:grayscale(1);opacity:.45}
+.pop{position:fixed;left:50%;top:70px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:12px;z-index:9;font-weight:700;animation:pp 2.6s forwards}
+@keyframes pp{0%{opacity:0;top:50px}10%,80%{opacity:1;top:70px}100%{opacity:0}}
+
+.kt{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.kt button{border:0;border-radius:20px;padding:12px 4px;font-family:inherit;cursor:pointer;color:#fff;font-weight:800;font-size:15px;box-shadow:0 4px 0 rgba(0,0,0,.18)}
+.kt button:active{transform:translateY(3px);box-shadow:none}
+.kt .e{font-size:42px;display:block;line-height:1.1}
+.kt .l{font-size:22px;display:block}
+.kg{background:linear-gradient(135deg,#fde68a,#fbcfe8);border-radius:22px;padding:14px;margin-bottom:12px}
+.kb{display:inline-block;margin:4px;padding:10px 16px;border-radius:99px;border:0;font-size:16px;font-weight:800;color:#fff;font-family:inherit;cursor:pointer}
+.kbig{font-size:84px;text-align:center}
+</style></head><body>
+<style>.nxbar{background:#0f172a;color:#fff;font:600 13px system-ui,sans-serif;display:flex;gap:4px;overflow-x:auto;padding:6px 8px;align-items:center}.nxbar a{color:#cbd5e1;text-decoration:none;padding:6px 11px;border-radius:999px;white-space:nowrap}.nxbar a.on{background:#7c3aed;color:#fff}.nxbar a:first-child{font-weight:800;color:#fff}</style><nav class="nxbar"><a href="/">&larr; Nexora</a><a href="/english" class="">English</a><a href="/ai" class="on">AI A-to-Z</a><a href="/document-ai">Documents</a><a href="https://nexora-markets-web.onrender.com">Markets</a></nav>
+<header><div class="hw"><a class="logo" href="#/">Nexora AI A-to-Z<small id="sub">AI teacher - ಕನ್ನಡ + English</small></a>
+<div class="chips"><span class="chip" id="xp">0 XP</span><span class="chip" id="st">0 day</span></div></div></header>
+<div id="snd" style="display:none;background:#fef3c7;color:#78350f;padding:10px 16px;font-size:14px"><b>🔇 No sound?</b> Turn up the Media volume and tap <button class="btn sm" onclick="testSound()">🔊 Test sound</button>. If still silent: Android Settings &gt; search "Text-to-speech" &gt; choose Google, install voice data. You can still read and play without sound.</div>
+<main id="app"></main>
+<footer>
+<p><b>More from Nexora:</b> <a href="/">Home</a> | <a href="/english">English</a> | <a href="/ai">AI A-to-Z</a> | <a href="/document-ai">Documents &amp; PDF tools</a> | <a href="https://nexora-markets-web.onrender.com">Markets</a></p>
+<p>Free to start. Kannada and Hindi help is for learning only - please tell us if you see a mistake. AI can make mistakes - always check important facts. Built with Instinct.</p>
+</footer>
+<script>
+const $=s=>document.querySelector(s);
+const L=(en,kn,hi)=>({en,kn,hi,say:en});
+const LEVELS=[{id:1,name:"Level 1 - AI Basics",kn:"ಹಂತ 1 - ಎಐ ಮೂಲಗಳು",hi:"स्तर 1 - एआई की बुनियाद",lessons:[{t:"What is AI?",kn:"ಎಐ ಎಂದರೇನು?",hi:"एआई क्या है?",items:[L("AI means Artificial Intelligence.","ಎಐ ಎಂದರೆ ಕೃತಕ ಬುದ್ಧಿಮತ್ತೆ.","एआई का मतलब है कृत्रिम बुद्धिमत्ता।"),L("AI is a computer program that can learn.","ಎಐ ಕಲಿಯಬಲ್ಲ ಕಂಪ್ಯೂಟರ್ ಪ್ರೋಗ್ರಾಂ.","एआई एक कंप्यूटर प्रोग्राम है जो सीख सकता है।"),L("AI can answer questions.","ಎಐ ಪ್ರಶ್ನೆಗಳಿಗೆ ಉತ್ತರ ನೀಡಬಲ್ಲದು.","एआई सवालों के जवाब दे सकता है।"),L("AI can write and translate.","ಎಐ ಬರೆಯಬಲ್ಲದು ಮತ್ತು ಅನುವಾದಿಸಬಲ್ಲದು.","एआई लिख और अनुवाद कर सकता है।"),L("AI can make mistakes.","ಎಐ ತಪ್ಪು ಮಾಡಬಹುದು.","एआई गलती कर सकता है।"),L("You decide. AI only helps.","ನೀವೇ ನಿರ್ಧರಿಸಿ. ಎಐ ಕೇವಲ ಸಹಾಯ ಮಾಡುತ್ತದೆ.","आप तय करें। एआई सिर्फ़ मदद करता है।")]},
+ {t:"AI words",kn:"ಎಐ ಪದಗಳು",hi:"एआई के शब्द",items:[L("Prompt","ನೀವು ಎಐಗೆ ಬರೆದು ಹೇಳುವ ಮಾತು","जो आप एआई को लिखकर बताते हैं"),L("Chatbot","ಮಾತನಾಡುವ ಎಐ ಪ್ರೋಗ್ರಾಂ","बात करने वाला एआई प्रोग्राम"),L("Answer","ಉತ್ತರ","जवाब"),L("Question","ಪ್ರಶ್ನೆ","सवाल"),L("Data","ಮಾಹಿತಿ","जानकारी"),L("Translate","ಅನುವಾದಿಸು","अनुवाद करना"),L("Summary","ಸಾರಾಂಶ","सार"),L("Free","ಉಚಿತ","मुफ़्त")]},
+ {t:"How to ask AI",kn:"ಎಐಗೆ ಹೇಗೆ ಕೇಳುವುದು",hi:"एआई से कैसे पूछें",items:[L("Be clear.","ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳಿ.","साफ़ बताइए।"),L("Give details.","ವಿವರ ನೀಡಿ.","पूरी जानकारी दीजिए।"),L("Tell AI your goal.","ನಿಮ್ಮ ಗುರಿಯನ್ನು ಎಐಗೆ ಹೇಳಿ.","एआई को अपना लक्ष्य बताइए।"),L("Ask for simple words.","ಸರಳ ಪದಗಳಲ್ಲಿ ಹೇಳಲು ಕೇಳಿ.","आसान शब्दों में बताने को कहिए।"),L("Ask for steps.","ಹಂತ ಹಂತವಾಗಿ ಹೇಳಲು ಕೇಳಿ.","कदम-दर-कदम बताने को कहिए।"),L("Ask again if not clear.","ಅರ್ಥವಾಗದಿದ್ದರೆ ಮತ್ತೆ ಕೇಳಿ.","समझ न आए तो फिर पूछिए।")]},
+ {t:"Example prompts",kn:"ಉದಾಹರಣೆ ಪ್ರಾಂಪ್ಟ್‌ಗಳು",hi:"उदाहरण प्रॉम्प्ट",items:[L("Explain photosynthesis in simple words.","ಸರಳ ಪದಗಳಲ್ಲಿ ದ್ಯುತಿಸಂಶ್ಲೇಷಣೆಯನ್ನು ವಿವರಿಸಿ.","आसान शब्दों में प्रकाश संश्लेषण समझाइए।"),L("Translate this to Kannada.","ಇದನ್ನು ಕನ್ನಡಕ್ಕೆ ಅನುವಾದಿಸಿ.","इसे कन्नड़ में अनुवाद कीजिए।"),L("Write a short email to my manager.","ನನ್ನ ಮ್ಯಾನೇಜರ್‌ಗೆ ಒಂದು ಚಿಕ್ಕ ಇಮೇಲ್ ಬರೆಯಿರಿ.","मेरे मैनेजर के लिए एक छोटा ईमेल लिखिए।"),L("Give me five questions for practice.","ಅಭ್ಯಾಸಕ್ಕಾಗಿ ಐದು ಪ್ರಶ್ನೆಗಳನ್ನು ಕೊಡಿ.","अभ्यास के लिए पाँच सवाल दीजिए।"),L("Make a daily study plan.","ದಿನದ ಅಧ್ಯಯನ ಯೋಜನೆ ಮಾಡಿ.","रोज़ की पढ़ाई की योजना बनाइए।")]}]},
+{id:2,name:"Level 2 - AI in daily life",kn:"ಹಂತ 2 - ದೈನಂದಿನ ಜೀವನದಲ್ಲಿ ಎಐ",hi:"स्तर 2 - रोज़ की ज़िंदगी में एआई",lessons:[{t:"AI for study",kn:"ಓದಿಗೆ ಎಐ",hi:"पढ़ाई के लिए एआई",items:[L("Ask AI to explain a lesson.","ಪಾಠವನ್ನು ವಿವರಿಸಲು ಎಐಗೆ ಕೇಳಿ.","पाठ समझाने के लिए एआई से कहिए।"),L("Ask AI for a quiz.","ಕ್ವಿಜ್ ಮಾಡಲು ಎಐಗೆ ಕೇಳಿ.","एआई से क्विज़ माँगिए।"),L("Ask AI to check your writing.","ನಿಮ್ಮ ಬರವಣಿಗೆಯನ್ನು ಪರಿಶೀಲಿಸಲು ಕೇಳಿ.","अपना लिखा जँचवाने के लिए कहिए।"),L("Learn a little every day.","ಪ್ರತಿದಿನ ಸ್ವಲ್ಪ ಕಲಿಯಿರಿ.","रोज़ थोड़ा-थोड़ा सीखिए।"),L("Do not copy. Understand.","ನಕಲು ಮಾಡಬೇಡಿ. ಅರ್ಥಮಾಡಿಕೊಳ್ಳಿ.","नकल न करें। समझें।")]},
+ {t:"AI for jobs",kn:"ಉದ್ಯೋಗಕ್ಕೆ ಎಐ",hi:"नौकरी के लिए एआई",items:[L("Ask AI to improve your resume.","ನಿಮ್ಮ ರೆಸ್ಯೂಮ್ ಸುಧಾರಿಸಲು ಕೇಳಿ.","रिज़्यूमे सुधारने के लिए कहिए।"),L("Practice interview questions.","ಸಂದರ್ಶನ ಪ್ರಶ್ನೆಗಳ ಅಭ್ಯಾಸ ಮಾಡಿ.","इंटरव्यू के सवालों का अभ्यास कीजिए।"),L("Write a polite email.","ವಿನಯದ ಇಮೇಲ್ ಬರೆಯಿರಿ.","विनम्र ईमेल लिखिए।"),L("Use real facts about you.","ನಿಮ್ಮ ಬಗ್ಗೆ ನಿಜವಾದ ವಿವರಗಳನ್ನೇ ಬಳಸಿ.","अपने बारे में सच्ची जानकारी ही लिखिए।")]},
+ {t:"AI for daily work",kn:"ದೈನಂದಿನ ಕೆಲಸಕ್ಕೆ ಎಐ",hi:"रोज़ के काम के लिए एआई",items:[L("Summarize a long message.","ಉದ್ದದ ಸಂದೇಶದ ಸಾರಾಂಶ ಮಾಡಿ.","लंबे संदेश का सार बनाइए।"),L("Make a shopping list.","ಖರೀದಿ ಪಟ್ಟಿ ಮಾಡಿ.","ख़रीदारी की सूची बनाइए।"),L("Plan a trip.","ಪ್ರವಾಸ ಯೋಜಿಸಿ.","यात्रा की योजना बनाइए।"),L("Learn a new word.","ಹೊಸ ಪದ ಕಲಿಯಿರಿ.","नया शब्द सीखिए।"),L("Fix my spelling.","ನನ್ನ ಕಾಗುಣಿತ ಸರಿಪಡಿಸಿ.","मेरी स्पेलिंग ठीक कीजिए।")]},
+ {t:"Use AI safely",kn:"ಎಐ ಸುರಕ್ಷಿತವಾಗಿ ಬಳಸಿ",hi:"एआई सुरक्षित तरीके से इस्तेमाल करें",items:[L("Never share your password.","ನಿಮ್ಮ ಪಾಸ್‌ವರ್ಡ್ ಯಾರಿಗೂ ಹೇಳಬೇಡಿ.","अपना पासवर्ड किसी को न बताइए।"),L("Never share your OTP.","ನಿಮ್ಮ ಒಟಿಪಿ ಹಂಚಿಕೊಳ್ಳಬೇಡಿ.","अपना ओटीपी साझा न करें।"),L("Do not share bank details.","ಬ್ಯಾಂಕ್ ವಿವರಗಳನ್ನು ಹಂಚಿಕೊಳ್ಳಬೇಡಿ.","बैंक की जानकारी साझा न करें।"),L("AI can be wrong. Check facts.","ಎಐ ತಪ್ಪಾಗಬಹುದು. ಸತ್ಯ ಪರಿಶೀಲಿಸಿ.","एआई गलत हो सकता है। तथ्य जाँचिए।"),L("Ask a doctor for health problems.","ಆರೋಗ್ಯ ಸಮಸ್ಯೆಗೆ ವೈದ್ಯರನ್ನು ಕೇಳಿ.","सेहत की समस्या के लिए डॉक्टर से पूछिए।"),L("Do not trust fake offers.","ನಕಲಿ ಆಫರ್‌ಗಳನ್ನು ನಂಬಬೇಡಿ.","नकली ऑफ़र पर भरोसा न करें।")]}]},
+{id:3,name:"Level 3 - AI for jobs and business",kn:"ಹಂತ 3 - ಉದ್ಯೋಗ ಮತ್ತು ವ್ಯಾಪಾರಕ್ಕೆ ಎಐ",hi:"स्तर 3 - नौकरी और व्यापार के लिए एआई",soon:"Resume, interview, small business, Excel with AI",lessons:[]},
+{id:4,name:"Level 4 - Make things with AI",kn:"ಹಂತ 4 - ಎಐಯಿಂದ ರಚಿಸಿ",hi:"स्तर 4 - एआई से बनाइए",soon:"Images, videos, simple apps",lessons:[]}
+];
+const LV_HI={1:"स्तर 1 - एआई की बुनियाद",2:"स्तर 2 - रोज़ की ज़िंदगी में एआई",3:"स्तर 3 - नौकरी और व्यापार के लिए एआई",4:"स्तर 4 - एआई से बनाइए"};
+const TT={kn:{listen:'ಕೇಳಿ',speak:'ಹೇಳಿ',next:'ಮುಂದೆ',check:'ಪರಿಶೀಲಿಸಿ',ok:'ಸರಿ',lang:'ಕನ್ನಡ'},hi:{listen:'सुनिए',speak:'बोलिए',next:'आगे',check:'जाँचें',ok:'सही',lang:'हिन्दी'}};
+const tr=it=>it[S.lang]||it.kn;const tl=x=>x[S.lang]||x.kn;const T=k=>TT[S.lang||'kn'][k];
+const S=JSON.parse(localStorage.getItem('nai')||'{}');S.xp=S.xp||0;S.done=S.done||{};S.days=S.days||[];S.p=S.p||'Anaya';S.lang=S.lang||'';
+function save(){localStorage.setItem('nai',JSON.stringify(S));hdr()}
+function today(){return new Date().toISOString().slice(0,10)}
+function touch(){const t=today();if(!S.days.includes(t))S.days.push(t);S.days=S.days.slice(-400);save()}
+function streak(){let n=0,d=new Date();while(S.days.includes(d.toISOString().slice(0,10))){n++;d.setDate(d.getDate()-1)}return n}
+function hdr(){const sb=$('#sub');if(sb)sb.textContent='AI teacher - '+(S.lang==='hi'?'हिन्दी':'ಕನ್ನಡ')+' + English';$('#xp').textContent=S.xp+' XP';$('#st').textContent=streak()+' day'+(streak()==1?'':'s')}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm=s=>s.toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+const shuf=a=>a.map(x=>[Math.random(),x]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+/* speech */
+let voices=[];function lv(){try{voices=speechSynthesis.getVoices()||[]}catch(e){voices=[]}}
+if('speechSynthesis' in window){lv();speechSynthesis.onvoiceschanged=lv;setTimeout(lv,500);setTimeout(lv,1500)}
+function pickVoice(p){lv();const en=voices.filter(v=>/^en/i.test(v.lang));if(!en.length)return null;
+ const inn=en.filter(v=>/en[-_]IN/i.test(v.lang));const pool=inn.length?inn:en;
+ const fem=/female|heera|zira|samantha|aria|jenny|susan|karen|veena|priya|neerja/i,mal=/\bmale\b|ravi|david|daniel|mark|guy|prabhat|rishi|george/i;
+ const want=p==='Anaya'?fem:mal;return pool.find(v=>want.test(v.name)&&!(p==='Arjun'&&/female/i.test(v.name)))||pool[0]}
+function noSound(){const m=$('#snd');if(m)m.style.display='block'}
+function soundOK(){const m=$('#snd');if(m)m.style.display='none';S.snd=1}
+function unlock(){if(S._u||!('speechSynthesis' in window))return;S._u=1;try{const u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u)}catch(e){}}
+['pointerdown','touchend','click','keydown'].forEach(ev=>addEventListener(ev,unlock,{passive:true}));
+function speak(t,slow,done){if(!('speechSynthesis' in window)){noSound();done&&done();return}
+ const go=()=>{try{speechSynthesis.resume()}catch(e){}
+  const u=new SpeechSynthesisUtterance(t);const v=pickVoice(S.p);if(v){u.voice=v;u.lang=v.lang}else u.lang='en-IN';
+  u.rate=slow?0.7:0.9;u.pitch=S.p==='Anaya'?1.15:0.8;u.volume=1;
+  const av=$('.av');if(av)av.classList.add('talk');let st=false;
+  const w=setTimeout(()=>{if(!st)noSound()},3000);
+  u.onstart=()=>{st=true;clearTimeout(w);soundOK()};
+  u.onend=()=>{clearTimeout(w);const a=$('.av');if(a)a.classList.remove('talk');done&&done()};
+  u.onerror=e=>{clearTimeout(w);const a=$('.av');if(a)a.classList.remove('talk');if(!e||(e.error!=='canceled'&&e.error!=='interrupted'))noSound();done&&done()};
+  speechSynthesis.speak(u)};
+ if(speechSynthesis.speaking||speechSynthesis.pending){speechSynthesis.cancel();setTimeout(go,120)}else go()}
+function speakL(text,lang,done){const code=lang==='hi'?'hi':'kn';lv();const v=voices.find(x=>x.lang.toLowerCase().replace('_','-').startsWith(code));
+ if(v){const go=()=>{const u=new SpeechSynthesisUtterance(text);u.voice=v;u.lang=v.lang;u.rate=.85;u.onend=u.onerror=()=>done&&done();speechSynthesis.speak(u)};
+  if(speechSynthesis.speaking||speechSynthesis.pending){speechSynthesis.cancel();setTimeout(go,120)}else go();return}
+ try{const au=new Audio('/api/learn/tts?lang='+code+'&text='+encodeURIComponent(text.slice(0,200)));au.onended=()=>done&&done();au.onerror=()=>{pop('Voice for this language is not available now');done&&done()};au.play().catch(()=>{pop('Tap again to hear');})}catch(e){}}
+function greet(){unlock();const en=S.p==='Anaya'?'Hi! I am Anaya, your teacher. Pick a lesson and I will help you.':'Hi! I am Arjun, your teacher. Pick a lesson and I will help you.';
+ speak(en,false,()=>speakL(S.lang==='hi'?GREET_HI:GREET_KN,S.lang))}
+function testSound(){unlock();speak('Hello! Can you hear me?',false)}
+function listen(target,cb){const R=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!R){cb(null);return}const r=new R();r.lang='en-IN';r.interimResults=false;r.maxAlternatives=3;
+ r.onresult=e=>{const alts=[...e.results[0]].map(a=>a.transcript);cb(alts)};r.onerror=()=>cb([]);r.onend=()=>{};
+ try{r.start()}catch(e){cb([])}}
+function score(target,heard){const a=norm(target).split(' '),h=norm(heard).split(' ');let hit=0;a.forEach(w=>{if(h.includes(w))hit++});return Math.round(100*hit/a.length)}
+
+function svgChar(p,mood){const girl=p==='Anaya';mood=mood||'n';
+ const skin=girl?'#e8b08a':'#d9a07a',hair=girl?'#2b1b3a':'#1c1420',cloth=girl?'#ec4899':'#2563eb';
+ return `<svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+ ${girl?`<ellipse cx="50" cy="52" rx="34" ry="38" fill="${hair}"/><circle cx="50" cy="12" r="11" fill="${hair}"/><rect x="14" y="52" width="14" height="42" rx="7" fill="${hair}"/><rect x="72" y="52" width="14" height="42" rx="7" fill="${hair}"/>`:''}
+ <path d="M12 120 Q14 88 50 86 Q86 88 88 120Z" fill="${cloth}"/><path d="M40 86 L50 100 L60 86Z" fill="#fff" opacity=".9"/>
+ <rect x="43" y="72" width="14" height="16" rx="6" fill="${skin}"/>
+ <ellipse cx="50" cy="52" rx="27" ry="30" fill="${skin}"/>
+ ${girl?`<path d="M23 50 Q24 18 50 18 Q76 18 77 50 Q64 32 50 32 Q36 32 23 50Z" fill="${hair}"/><circle cx="24" cy="64" r="3" fill="#fde047"/><circle cx="76" cy="64" r="3" fill="#fde047"/><circle cx="50" cy="41" r="2" fill="#dc2626"/>`
+ :`<path d="M22 46 Q20 16 50 17 Q80 16 78 46 Q72 30 50 30 Q28 30 22 46Z" fill="${hair}"/><rect x="26" y="38" width="48" height="4" rx="2" fill="${hair}" opacity="0"/>`}
+ <ellipse cx="38" cy="54" rx="4.2" ry="5" fill="#fff"/><ellipse cx="62" cy="54" rx="4.2" ry="5" fill="#fff"/>
+ <ellipse class="eye" cx="38.5" cy="55" rx="2.6" ry="3.4" fill="#1f1535"/><ellipse class="eye" cx="62.5" cy="55" rx="2.6" ry="3.4" fill="#1f1535"/>
+ <path d="${mood==='s'?'M32 44 Q38 47 44 49M56 49 Q62 47 68 44':mood==='t'?'M32 45 Q38 41 44 45M56 47 Q62 47 68 47':'M32 47 Q38 43 44 47M56 47 Q62 43 68 47'}" stroke="${hair}" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+ <circle cx="30" cy="64" r="5" fill="#f9a8d4" opacity=".55"/><circle cx="70" cy="64" r="5" fill="#f9a8d4" opacity=".55"/>
+ ${mood==='h'?'<path class="sm" d="M40 67 Q50 82 60 67 Z" fill="#7f1d1d"/><path d="M43 69 Q50 74 57 69Z" fill="#fff"/>':mood==='s'?'<path d="M42 74 Q50 66 58 74" stroke="#7f1d1d" stroke-width="2.4" fill="none" stroke-linecap="round"/>':'<ellipse class="mouth" cx="50" cy="70" rx="7" ry="3" fill="#7f1d1d"/>'}
+ </svg>`}
+const BADGES=[["🚀","First lesson",()=>Object.keys(S.done).length>=1],["🔥","3-day streak",()=>streak()>=3],["⭐","100 XP",()=>S.xp>=100],["🏆","5 lessons",()=>Object.keys(S.done).length>=5],["💎","500 XP",()=>S.xp>=500]];
+function pop(t){const d=document.createElement('div');d.className='pop';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2700)}
+function checkBadges(){S.b=S.b||{};BADGES.forEach(b=>{if(!S.b[b[1]]&&b[2]()){S.b[b[1]]=1;pop(b[0]+' New badge: '+b[1])}});localStorage.setItem('nai',JSON.stringify(S))}
+const GREET_KN="ನಮಸ್ಕಾರ! ಎಐ ಕಲಿಯೋಣ.",GREET_HI="नमस्ते! चलिए एआई सीखें।";
+const avatar=()=>S.p==='Anaya'?'👩‍🏫':'👨‍🏫';
+function react(mood,msg,say){const b=$('#tb');if(b){b.innerHTML=tutorBox(msg,mood)}speak(say||msg.replace(/<[^>]+>/g,''),false,()=>{const b2=$('#tb');if(b2)b2.innerHTML=tutorBox(msg,'n')})}
+const GOOD=["Great job!","Super!","Perfect!","Well done!","Excellent!","You are doing great!"],BAD=["Nice try!","Almost there!","Do not worry, try again!","Good effort!"];
+const pk=a=>a[Math.floor(Math.random()*a.length)];
+function tutorBox(msg,mood){return `<div class="card tutor"><div class="av">${svgChar(S.p,mood)}</div><div class="bubble"><b>${S.p}</b>: ${msg}</div></div>`}
+/* views */
+function setG(g){S.g=g;if(g==='girl')S.p='Arjun';else if(g==='boy')S.p='Anaya';save();home()}
+function setL(l){S.lang=l;save();home()}
+function chooseLang(){$('#app').innerHTML=`<div class="hero"><div><h1>Nexora AI A-to-Z</h1><p>Choose your language to learn from.<br>ನಿಮ್ಮ ಭಾಷೆ ಆರಿಸಿ | अपनी भाषा चुनें</p></div><div class="chars"><div>${svgChar('Anaya')}</div><div>${svgChar('Arjun')}</div></div></div>
+ <div class="card"><div class="row"><button class="btn" style="flex:1" onclick="setL('kn')">ಕನ್ನಡ + English</button><button class="btn" style="flex:1" onclick="setL('hi')">हिन्दी + English</button></div><div class="note" style="margin-top:8px">You can change this later on the home page.</div></div>`}
+function welcome(){$('#app').innerHTML=`<div class="hero"><div><h1>Welcome! ಸ್ವಾಗತ</h1><p>Two friendly teachers are ready to help you learn AI.</p></div><div class="chars"><div>${svgChar('Anaya')}</div><div>${svgChar('Arjun')}</div></div></div>
+ <div class="card"><b>I am a... (optional)</b><div class="note">We use this only to suggest your teacher. It stays on your phone. You can change the teacher any time.</div>
+ <div class="row" style="margin-top:10px"><button class="btn" onclick="setG('girl')">Girl / Woman</button><button class="btn" onclick="setG('boy')">Boy / Man</button><button class="btn alt" onclick="setG('na')">Prefer not to say</button></div></div>`}
+function home(){
+ if(!S.lang)return chooseLang();
+ if(!S.g)return welcome();
+  let h=`<div class="hero"><div><h1>Learn AI with ${S.p}</h1><p>ಎಐ ಕಲಿಯಿರಿ | एआई सीखें - simple lessons, A to Z.</p><a class="btn sm" href="#/lesson/1/0">Start now ›</a></div>
+ <div class="chars"><div class="${S.p==='Anaya'?'sel':''}" onclick="pick('Anaya')">${svgChar('Anaya')}</div><div class="${S.p==='Arjun'?'sel':''}" onclick="pick('Arjun')">${svgChar('Arjun')}</div></div></div>`;
+ h+=`<div style="text-align:center;margin-bottom:10px"><button class="btn" onclick="greet()">🔊 Tap to hear your teacher</button> <button class="btn sm alt" onclick="testSound()">Test sound</button></div>`;
+ h+=tutorBox(S.p==='Anaya'?`Hi! I am Anaya, your AI teacher. Pick a lesson and I will help you. Small steps every day! 😊`:`Hi! I am Arjun, your AI teacher. Let us start. Small steps every day! 💪`);
+ h+=`<div class="card"><b>Your rewards</b><div class="goal">Today: ${S.days.includes(today())?'✅ lesson done':'⬜ finish 1 lesson'} | 🔥 ${streak()} day streak | ⭐ ${S.xp} XP</div><div>${BADGES.map(b=>`<span class="bdg ${(S.b||{})[b[1]]?'':'off'}">${b[0]} ${b[1]}</span>`).join('')}</div>
+ <div class="row" style="margin-top:10px"><span class="note">Tap a teacher above to switch.</span><a class="btn sm" style="background:linear-gradient(120deg,#f59e0b,#ef4444)" href="#/kids">🧒 Kids Zone</a><a class="btn sm alt" href="#/ask">💬 Ask teacher</a><button class="btn sm alt" onclick="setL(S.lang==='kn'?'hi':'kn')">🌐 ${S.lang==='kn'?'हिन्दी':'ಕನ್ನಡ'}</button></div>
+ <div class="note" style="margin-top:6px">Your teacher: ${S.p} ${S.g==='na'?'(you chose)':'(suggested for you)'}. Tap the other teacher above to switch. Voices come from your phone. Use Chrome for the best voice and speaking check.</div></div>`;
+ LEVELS.forEach(l=>{
+  if(l.soon){h+=`<div class="card lv soon"><b>${l.name}</b> <span class="tag">Coming soon</span><div class="note">${S.lang==='hi'?l.hi:l.kn} - ${l.soon}. Advanced levels will be added later.</div></div>`;return}
+  const n=l.lessons.filter((_,i)=>S.done[l.id+'-'+i]).length;
+  h+=`<div class="card lv"><b>${l.name}</b> <span class="tag g">Free</span><div class="note">${S.lang==='hi'?l.hi:l.kn} - ${n}/${l.lessons.length} lessons done</div><div class="prog" style="margin:8px 0 0"><i style="width:${100*n/l.lessons.length}%"></i></div>`;
+  l.lessons.forEach((x,i)=>{const d=S.done[l.id+'-'+i];h+=`<a class="ls" href="#/lesson/${l.id}/${i}"><div><b>${i+1}. ${x.t}</b><span>${tl(x)} - ${x.items.length} words</span></div><span class="${d?'done':''}">${d?'✓ Done':'Start ›'}</span></a>`});
+  h+=`</div>`});
+ $('#app').innerHTML=h}
+function pick(p){S.p=p;save();home()}
+function lesson(l,i){const x=LEVELS[l-1].lessons[i];let k=0;
+ function card(){const it=x.items[k];
+  $('#app').innerHTML=`<div class="prog"><i style="width:${100*k/x.items.length}%"></i></div>`+
+  tutorBox(k==0?`Lesson: <b>${x.t}</b>. Listen first, then say it out loud.`:`Good! Next one.`)+
+  `<div class="card"><div class="big">${esc(it.en)}</div><div class="kn">${tr(it)}</div><div class="say">${it.say!==it.en?esc(it.say):''}</div>
+  <div class="row" style="justify-content:center;margin-top:10px"><button class="btn sm" id="b1">🔊 Listen ${T('listen')}</button><button class="btn sm alt" id="b2">🐢 Slow</button><button class="btn sm alt" id="b4">🔊 ${T('lang')}</button><button class="btn sm alt" id="b3">🎤 Speak ${T('speak')}</button></div>
+  <div class="fb" id="fb" style="text-align:center"></div></div>
+  <div class="row"><button class="btn alt" id="pv" ${k?'':'disabled'}>‹ Back</button><button class="btn" id="nx">${k==x.items.length-1?'Start quiz ›':'Next '+T('next')+' ›'}</button></div>`;
+  $('#b4').onclick=()=>speakL(tr(it),S.lang);$('#b1').onclick=()=>speak(it.say);setTimeout(()=>speak(k==0?'Lesson. '+x.t+'. Listen and repeat after me. '+it.say:it.say),250);$('#b2').onclick=()=>speak(it.say,true);
+  $('#b3').onclick=()=>{const f=$('#fb');f.className='fb';f.textContent='Listening... speak now';
+   listen(it.say,a=>{if(a===null){f.textContent='Speaking check needs Chrome. Say it out loud anyway - you can do it!';return}
+    if(!a.length){f.className='fb bad';f.textContent='I could not hear you. Try again.';return}
+    const sc=Math.max(...a.map(t=>score(it.en,t)),...a.map(t=>score(it.say,t)));
+    if(sc>=80){f.className='fb ok';f.textContent='Great! I heard: "'+a[0]+'" ('+sc+'%)';S.xp+=2;save()}
+    else{f.className='fb bad';f.textContent='I heard: "'+a[0]+'" ('+sc+'%). Listen again and try once more.'}})};
+  $('#pv').onclick=()=>{k--;card()};$('#nx').onclick=()=>{if(k<x.items.length-1){k++;card()}else quiz(l,i)}}
+ card()}
+function quiz(l,i){const x=LEVELS[l-1].lessons[i];const all=[].concat(...LEVELS.flatMap(v=>v.lessons.map(z=>z.items)));
+ const near=(it,key,arr)=>arr.filter(z=>key(z)!==key(it)).sort((a,b)=>Math.abs(key(a).length-key(it).length)-Math.abs(key(b).length-key(it).length)||Math.random()-.5);
+ const items=shuf(x.items).slice(0,Math.min(8,x.items.length));const qs=[];
+ items.forEach((it,n)=>{const t=n%4;
+  if(t===0){const o=near(it,tr,x.items.concat(all)).filter((z,j,a)=>a.findIndex(y=>tr(y)===tr(z))===j).slice(0,3).map(z=>tr(z));qs.push({q:`What does <b>${esc(it.en)}</b> mean in ${S.lang==='hi'?'Hindi':'Kannada'}?`,o:shuf(o.concat(tr(it))),a:tr(it),listen:it.say})}
+  else if(t===1){const o=near(it,z=>z.en,x.items.concat(all)).filter((z,j,a)=>a.findIndex(y=>y.en===z.en)===j).slice(0,3).map(z=>z.en);qs.push({q:`Which one is <b>${tr(it)}</b>?`,o:shuf(o.concat(it.en)),a:it.en})}
+  else if(t===3)qs.push({q:`Say it out loud: <b>${esc(it.en)}</b>`,say:1,a:it.en,listen:it.say});
+  else if(it.en.length>24)qs.push({q:`Say it out loud: <b>${esc(it.en)}</b>`,say:1,a:it.en,listen:it.say});
+  else qs.push({q:`Type in English: <b>${tr(it)}</b>`,type:1,a:it.en,hint:it.en.split(' ').map(w=>w[0]+'_'.repeat(Math.max(0,w.length-1))).join(' ')})});
+ let k=0,ok=0;
+ function show(){const q=qs[k];let h=`<div class="prog"><i style="width:${100*k/qs.length}%"></i></div><div id="tb">${tutorBox(k==0?'Let us play a quick quiz. I will help you!':pk(['Next question!','Ready? Here we go!','You can do it!']))}</div><div class="card"><div class="note">Quiz ${k+1} of ${qs.length}</div><h2 style="margin-top:4px">${q.q}</h2>`;
+  if(q.listen)h+=`<button class="btn sm alt" id="ls">🔊 Listen</button> `;
+  if(q.say)h+=`<button class="btn sm" id="sy">🎤 Speak ${T('speak')}</button> <button class="btn sm alt" id="sk">Skip</button>`;
+  else if(q.type)h+=`<div class="note">Hint: ${q.hint}</div><input type="text" id="ti" autocomplete="off" autocapitalize="off" style="margin-top:8px"><button class="btn" id="ck" style="margin-top:10px">Check ${T('check')}</button> <button class="btn sm alt" id="hn">💡 Hint</button>`;
+  else{q.o.forEach((o,j)=>h+=`<button class="opt" data-j="${j}">${esc(o)}</button>`);h+=`<button class="btn sm alt" id="hn">💡 Hint</button>`}
+  h+=`<div class="fb" id="fb"></div><button class="btn" id="nq" style="display:none">Next ${T('next')} ›</button></div>`;$('#app').innerHTML=h;
+  if(q.listen)$('#ls').onclick=()=>speak(q.listen);
+  let tries=0;
+  const fin=good=>{const f=$('#fb');
+   if(good){ok++;S.xp+=5;f.className='fb ok';f.textContent='Correct '+T('ok')+'! +5 XP';const m=pk(GOOD);react('h','<b>'+m+'</b> 🎉',m)}
+   else{f.className='fb bad';f.textContent='Not correct. Answer: '+q.a;react('s','Nice try! The answer is <b>'+esc(q.a)+'</b>.','Nice try! The answer is '+q.a)}
+   save();const n=$('#nq');n.style.display='inline-block';n.onclick=()=>{k++;k<qs.length?show():end()}};
+  const hn=$('#hn');
+  if(q.say){
+   $('#sk').onclick=()=>{$('#fb').textContent='Skipped';const n=$('#nq');n.style.display='inline-block';n.onclick=()=>{k++;k<qs.length?show():end()}};
+   $('#sy').onclick=()=>{const f=$('#fb');f.className='fb';f.textContent='Listening...';listen(q.a,a=>{if(a===null){f.textContent='Speaking check needs Chrome. Tap Skip.';return}
+    if(!a.length){f.className='fb bad';f.textContent='I could not hear you. Try again.';react('t','I could not hear you. Please speak a little louder.');return}
+    const sc=Math.max(...a.map(t=>score(q.a,t)));
+    if(sc>=60){$('#sy').disabled=true;$('#sk').style.display='none';fin(true)}
+    else{tries++;f.className='fb bad';f.textContent='I heard: "'+a[0]+'" ('+sc+'%)';if(tries>=2){$('#sy').disabled=true;fin(false)}else react('t','I heard "'+esc(a[0])+'". Listen again and try once more.','Listen again and try once more.')}})};
+   setTimeout(()=>speak(q.a,true),400)}
+  else if(q.type){$('#ck').onclick=()=>{const ok1=norm($('#ti').value)===norm(q.a);if(!ok1&&tries<1){tries++;react('t','Almost! Try once more. Look at the hint.','Almost! Try once more.');$('#fb').className='fb bad';$('#fb').textContent='Try once more';return}$('#ck').disabled=true;$('#ti').disabled=true;fin(ok1)};$('#ti').addEventListener('keydown',e=>{if(e.key==='Enter')$('#ck').click()});
+   hn.onclick=()=>{const w=q.a.split(' ')[0];react('t','Hint: it starts with <b>'+esc(w.slice(0,2))+'</b>','Hint. It starts with '+w.slice(0,2));};if(q.listen)0}
+  else{document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{const g=q.o[+b.dataset.j]===q.a;document.querySelectorAll('.opt').forEach(z=>{z.disabled=true;if(q.o[+z.dataset.j]===q.a)z.classList.add('ok')});if(!g)b.classList.add('bad');fin(g)});
+   hn.onclick=()=>{const w=[...document.querySelectorAll('.opt')].filter(z=>!z.disabled&&q.o[+z.dataset.j]!==q.a);if(w[0]){w[0].disabled=true;w[0].style.opacity=.3}react('t','I removed one wrong answer. Think again!','I removed one wrong answer. Think again!')}}
+  setTimeout(()=>{if(!q.say)speak(q.type?'Type the English word.':q.listen?q.listen:'Choose the right answer.',false)},300)}
+ function end(){const pct=Math.round(100*ok/qs.length);const pass=pct>=60;if(pass){S.done[l+'-'+i]=1;S.xp+=10}touch();save();checkBadges();
+  const nx=LEVELS[l-1].lessons[i+1];
+  $('#app').innerHTML=tutorBox(pass?`Well done! You scored ${pct}%. +10 XP. Come back tomorrow to keep your streak. 🎉`:`You scored ${pct}%. No problem - practice the lesson once more, then try again.`)+
+  `<div class="card"><div class="big">${ok} / ${qs.length}</div><div class="row" style="justify-content:center;margin-top:10px"><a class="btn alt" href="#/lesson/${l}/${i}">Practice again</a>${pass&&nx?`<a class="btn" href="#/lesson/${l}/${i+1}">Next lesson ›</a>`:''}<a class="btn alt" href="#/">All lessons</a></div></div>`;
+  if(pass)speak('Well done!')}
+ show()}
+function ask(){let h=`<h1>Ask the teacher</h1>`+tutorBox(`Type a prompt, like you would to an AI. I will answer and tell you how to make your prompt better.`)+
+ `<div class="card chat" id="ch"></div><div class="card"><textarea id="q" rows="2" placeholder="Example: Explain AI in simple words"></textarea><div class="row" style="margin-top:8px"><button class="btn" id="go">Send</button><a class="btn alt" href="#/">Back</a></div><div class="note">Answers come from AI and can have mistakes.</div></div>`;
+ $('#app').innerHTML=h;const ch=$('#ch');
+ $('#go').onclick=async()=>{const t=$('#q').value.trim();if(!t)return;$('#q').value='';ch.innerHTML+=`<div class="m u">${esc(t)}</div>`;
+  const w=document.createElement('div');w.className='m t';w.textContent='...';ch.appendChild(w);ch.scrollTop=1e5;
+  try{const r=await fetch('/api/learn/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:t,persona:S.p,lang:S.lang,level:'Beginner',track:'ai'})});const j=await r.json();w.textContent=j.reply;speak(j.reply.slice(0,200))}
+  catch(e){w.textContent='No internet. Please try again.'}ch.scrollTop=1e5}}
+
+const KSETS={
+ robots:{t:"Robot words",e:"🤖",items:[["","Robot","🤖"],["","Computer","💻"],["","Phone","📱"],["","Camera","📷"],["","Brain","🧠"],["","Voice","🎤"],["","Book","📚"],["","Game","🎮"]]},
+ safe:{t:"Safe rules",e:"🛡️",items:[["","Ask a grown-up first","👪"],["","Be kind","💛"],["","Keep secrets safe","🔒"],["","Robots can be wrong","🤖"],["","Take a break","😴"],["","Say stop if scared","✋"]]}
+};
+const KC=['#ef4444','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f97316'];
+function kidsHome(){S.ks=S.ks||0;let h=`<h1>🧒 Kids Zone</h1><div class="kg"><b>Hello little friend!</b> Tap a picture to hear the word. Play the game to win stars ⭐ <b>${S.ks}</b><div class="note">For parents: no ads, no chat, no sign-up, no personal data. Progress stays on this phone only.</div></div><div class="kt">`;
+ Object.keys(KSETS).forEach((k,i)=>h+=`<button style="background:${KC[i]}" onclick="location.hash='#/kids/${k}'"><span class="e">${KSETS[k].e}</span><span>${KSETS[k].t}</span></button>`);
+ h+=`<button style="background:${KC[5]}" onclick="location.hash='#/kids/game'"><span class="e">🎮</span><span>Game</span></button></div><p><a class="btn alt" href="#/">‹ Back</a></p>`;$('#app').innerHTML=h}
+function kidsSet(k){const set=KSETS[k];let h=`<h1>${set.e} ${set.t}</h1><div class="kt">`;
+ set.items.forEach((it,i)=>h+=`<button style="background:${KC[i%KC.length]}" onclick="kSay('${k}',${i})"><span class="e">${it[2].length>8?'⭐':it[2]}</span><span class="l">${it[0]||''}</span><span>${it[1]}</span></button>`);
+ h+=`</div><div class="kbig" id="kb"></div><p><a class="btn alt" href="#/kids">‹ Back</a></p>`;$('#app').innerHTML=h}
+function kSay(k,i){const it=KSETS[k].items[i];$('#kb').textContent=it[2];speak(it[1],true)}
+function kidsGame(){const pool=[].concat(...['robots'].map(k=>KSETS[k].items)).filter(x=>x[2].length<8);let n=0,sc=0;
+ function q(){const a=pool[Math.floor(Math.random()*pool.length)];const o=shuf(shuf(pool.filter(x=>x!==a)).slice(0,2).concat([a]));
+  $('#app').innerHTML=`<h1>🎮 Listen and tap</h1><div class="kg">Round ${n+1} of 5 &nbsp; ⭐ ${sc}<div style="margin-top:8px"><button class="kb" style="background:#8b5cf6" id="kl">🔊 Hear the word</button></div></div><div class="kt">${o.map((x,i)=>`<button style="background:${KC[i]}" data-w="${x[1]}"><span class="e">${x[2]}</span></button>`).join('')}</div><div class="fb" id="fb" style="text-align:center;font-size:20px"></div><p><a class="btn alt" href="#/kids">‹ Back</a></p>`;
+  $('#kl').onclick=()=>speak(a[1],true);setTimeout(()=>speak(a[1],true),300);
+  document.querySelectorAll('.kt button').forEach(b=>b.onclick=()=>{const g=b.dataset.w===a[1];const f=$('#fb');
+   if(g){sc++;S.ks=(S.ks||0)+1;save();f.className='fb ok';f.textContent='⭐ Yes! '+a[1];speak('Yes! '+a[1]);setTimeout(()=>{n++;n<5?q():end()},1300)}
+   else{f.className='fb bad';f.textContent='Try again 🙂';speak('Try again')}})}
+ function end(){$('#app').innerHTML=`<div class="kg" style="text-align:center"><div class="kbig">🏆</div><h2>You got ${sc} stars!</h2><p><button class="btn" onclick="location.hash='#/kids/game';route()">Play again</button> <a class="btn alt" href="#/kids">Kids Zone</a></p></div>`;speak('Well done! You are a star!')}
+ q()}
+function route(){("speechSynthesis" in window)&&speechSynthesis.cancel();const p=location.hash.replace(/^#\/?/,'').split('/');window.scrollTo(0,0);
+ if(p[0]==='lesson'&&LEVELS[p[1]-1]&&LEVELS[p[1]-1].lessons[p[2]])lesson(+p[1],+p[2]);else if(p[0]==='ask')ask();else if(p[0]==='kids'){!p[1]?kidsHome():p[1]==='game'?kidsGame():KSETS[p[1]]?kidsSet(p[1]):kidsHome()}else home()}
+addEventListener('hashchange',route);hdr();route();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
+</script></body></html>
