@@ -23,7 +23,25 @@ self.addEventListener('fetch',e=>{});"""
 MODELS = ["gemini-flash-lite-latest", "gemini-flash-latest", "gemini-2.0-flash"]
 RATE = {}
 TTS_CACHE = {}
-SYSTEMS = {"en": ("You are a kind English teacher for Indian learners whose first language is Kannada or Hindi. "
+KIDS = ("You are a friendly, gentle teacher for children aged 5 to 12 in India (first language Kannada or Hindi). "
+ "Use very short, simple, happy sentences, at most 60 words. Only answer questions about learning: English words, letters, numbers, colors, animals, fruits, simple science, nature and good habits. "
+ "If asked about anything else (violence, adult topics, dating, money, politics, religion debates, social media, strangers, games with chat, medicine, or anything scary), say kindly that you can only help with learning and suggest asking a parent or teacher. "
+ "Never ask for or repeat the child's name, school, address, phone number or photos. If the child shares such details, tell them not to share it and ask a parent. "
+ "Never tell the child to meet anyone or go anywhere. Add one very short explanation in the learner language named below, and do not use any other language. Never use scary words.")
+import re as _re
+_PII = _re.compile(r"(\d[\d\s-]{8,}\d|@[a-z0-9_.]+|https?://|\botp\b|password|aadhaar|aadhar|\bpin\b)", _re.I)
+_BAD = _re.compile(r"\b(sex|porn|nude|kill|suicide|rape|drug|ganja|beer|whisky|alcohol|cigarette|gun|bomb|girlfriend|boyfriend|kiss|gamble|bet)\b", _re.I)
+
+
+def _guard(track, text):
+    if _PII.search(text):
+        return "Please do not share phone numbers, passwords, OTP or personal details. Ask a parent if you are unsure."
+    if track == "kids" and _BAD.search(text):
+        return "I can only help with learning, like English words, numbers, animals and fun facts. Please ask a parent or teacher about that."
+    return None
+
+
+SYSTEMS = {"kids": KIDS, "en": ("You are a kind English teacher for Indian learners whose first language is Kannada or Hindi. "
           "Use very simple English (short sentences). When useful, add one short explanation in the learner language named below, and do not use any other language. "
           "If the learner writes a sentence with mistakes, show the corrected sentence first, then explain the mistake in one or two lines. "
           "Keep answers under 90 words. Only talk about learning English. Never ask for personal details."),
@@ -50,6 +68,8 @@ def ask_ai(track, persona, text, level, lang):
         return None
     body = {"system_instruction": {"parts": [{"text": SYSTEMS[track] + " Your name is " + persona + ". Learner level: " + level + ". Add the short explanation in " + lang + " script."}]},
             "contents": [{"role": "user", "parts": [{"text": text[:600]}]}]}
+    if track == "kids":
+        body["safetySettings"] = [{"category": c, "threshold": "BLOCK_LOW_AND_ABOVE"} for c in ("HARM_CATEGORY_HARASSMENT", "HARM_CATEGORY_HATE_SPEECH", "HARM_CATEGORY_SEXUALLY_EXPLICIT", "HARM_CATEGORY_DANGEROUS_CONTENT")]
     for m in MODELS:
         try:
             req = urllib.request.Request(
@@ -131,7 +151,10 @@ def install(app):
         text = str(d.get("text", "")).strip()[:600]
         if not text:
             return JSONResponse({"reply": "Type a question first."})
-        track = "ai" if d.get("track") == "ai" else "en"
+        track = d.get("track") if d.get("track") in ("ai", "kids") else "en"
+        g = _guard(track, text)
+        if g:
+            return JSONResponse({"reply": g})
         persona = "Arjun" if d.get("persona") == "Arjun" else "Anaya"
         lang = "Hindi" if d.get("lang") == "hi" else "Kannada"
         level = str(d.get("level", "Beginner"))[:20]
