@@ -64,6 +64,7 @@ def ask_ai(track, persona, text, level, lang):
 
 
 def install(app):
+    _n0 = len(app.router.routes)
     @app.get("/english", response_class=HTMLResponse)
     async def learn_english():
         return HTMLResponse(_read("learn_en.html"))
@@ -141,3 +142,7 @@ def install(app):
         if not reply:
             return JSONResponse({"reply": "The teacher is busy. Please try again in a minute."})
         return JSONResponse({"reply": reply})
+    # Run before the site's catch-all /{seo_slug} route.
+    _new = app.router.routes[_n0:]
+    del app.router.routes[_n0:]
+    app.router.routes[0:0] = _new
