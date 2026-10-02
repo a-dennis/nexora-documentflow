@@ -19,6 +19,7 @@ var DONE=__DONE__;
 function say(s){msg.textContent=s}
 function login(){location.href='/login?next='+encodeURIComponent(location.pathname)}
 fetch('/api/config').then(function(r){return r.json()}).then(function(c){if(c.payments_ready){box.hidden=false;var pr=document.querySelectorAll('.nxpay-hide-when-ready');for(var i=0;i<pr.length;i++)pr[i].hidden=true}}).catch(function(){});
+fetch('/api/purchases').then(function(r){return r.json()}).then(function(j){if(product==='pro_pass'&&j.pro){btn.hidden=true;msg.textContent='Nexora Pro is active on your account. Thank you!'}}).catch(function(){});
 btn.onclick=function(){
 btn.disabled=true;say('Starting secure checkout...');
 fetch('/api/pay/order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product:product})}).then(function(r){return r.json()}).then(function(o){
