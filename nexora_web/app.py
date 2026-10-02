@@ -47,6 +47,7 @@ from fastapi import FastAPI, Request, UploadFile, File, HTTPException
 
 import student_calc
 import student_hub
+from paywidget import PRO_PAY, EXCEL_PAY
 from web_content import *  # noqa: F401,F403 - HTML/CSS/content constants
 from pdf_tools import TOOLS as PDF_TOOL_SPECS, ORDER as PDF_TOOL_ORDER, ToolError, run_tool
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, RedirectResponse, Response
@@ -1130,11 +1131,29 @@ def _ist_day() -> str:
                                                    minutes=30)).strftime("%Y-%m-%d")
 
 
+def _is_pro(request: Request) -> bool:
+    """True when the signed-in user has a verified Pro pass from the last 30 days."""
+    try:
+        user = _current_user(request)
+        if not user:
+            return False
+        from datetime import datetime, timedelta, timezone
+        since = (datetime.now(timezone.utc) - timedelta(days=30)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        rows = _db_request("GET", "payments?user_id=eq." + user["id"]
+                           + "&product=eq.pro_pass&status=eq.verified"
+                           + "&created_at=gte." + since + "&select=id&limit=1")
+        return bool(isinstance(rows, list) and rows)
+    except Exception:
+        return False
+
+
 def daily_limit_response(request: Request, group: str,
                          label: str) -> JSONResponse | None:
     """None when the job may run (and counts it); a friendly 429 when the
     free daily limit for this group is already used up."""
     if not LIMITS_ENABLED:
+        return None
+    if _is_pro(request):
         return None
     limit = DAILY_LIMITS.get("all")
     group = "all"
@@ -1573,12 +1592,14 @@ PRO_BODY = r"""
       <p>Unlimited jobs, files up to 100 MB, batch processing and
       priority speed. Pay by UPI in ten seconds. First month
       &#8377;99 for early users.</p>
+      <div class="nxpay-hide-when-ready">
       <p style="margin-top:16px"><button class="btn" disabled
         style="opacity:.6;cursor:not-allowed">Checkout opens soon</button></p>
       <p style="margin-top:10px;font-size:14px;color:var(--ink-2,#666)">
       UPI checkout is being finished and tested. Until it opens,
       everything stays free with the 5 free uses a day above - no card
       needed, nothing to cancel.</p>
+      </div>
     </div>
   </div>
 </section>
@@ -1590,7 +1611,8 @@ async def pro_page() -> str:
     return page("Nexora Pro - unlimited tools, one small price",
                 "Nexora Pro: unlimited PDF and AI tools, bigger files, "
                 "batch jobs and priority speed for one small monthly price.",
-                "/pro", PRO_BODY)
+                "/pro", PRO_BODY.replace("</section>\n", "</section>\n", 1)
+                + '<section class="section"><div class="container">' + PRO_PAY + '</div></section>')
 
 
 # Online resume/document service. No street address, coordinates or LocalBusiness schema.
@@ -1660,7 +1682,7 @@ from excel_service import EXCEL_BODY, EXCEL_META, EXCEL_TITLE, EXCEL_DESC
 
 @app.get("/excel-service", response_class=HTMLResponse)
 async def excel_service_landing() -> str:
-    return page(EXCEL_TITLE, EXCEL_DESC, "/excel-service", EXCEL_BODY).replace("</head>", EXCEL_META + "</head>")
+    return page(EXCEL_TITLE, EXCEL_DESC, "/excel-service", EXCEL_BODY + '<section class="xs-section"><div class="container">' + EXCEL_PAY + '</div></section>').replace("</head>", EXCEL_META + "</head>")
 
 
 @app.get("/robots.txt")
@@ -1988,6 +2010,17 @@ PAID_PRODUCTS = {
             "call to action. Output only the letter, ready to paste. "
             "Anything to emphasize (if any): {target}"),
     },
+    "excel_service": {
+        "name": "Excel Cleanup Service (1 file)",
+        "blurb": "Excel cleanup or PDF to Excel for one file, delivered within 24 hours.",
+        "price_paise": 19900,
+    },
+    "pro_pass": {
+        "name": "Nexora Pro (30 days)",
+        "blurb": "Unlimited tools, bigger files and priority speed for 30 days.",
+        "price_paise": 14900,
+        "first_price_paise": 9900,
+    },
 }
 
 
@@ -2102,9 +2135,16 @@ async def api_pay_order(request: Request):
     spec = PAID_PRODUCTS.get(product)
     if not spec:
         return err_response(404, "Unknown product.")
+    amount = spec["price_paise"]
+    if spec.get("first_price_paise"):
+        prior = _db_request("GET", "payments?user_id=eq." + user["id"]
+                            + "&product=eq." + product
+                            + "&status=eq.verified&select=id&limit=1")
+        if not (isinstance(prior, list) and prior):
+            amount = spec["first_price_paise"]
     receipt = "nx_" + uuid.uuid4().hex[:16]
     status, order = _rzp_call("orders", {
-        "amount": spec["price_paise"],
+        "amount": amount,
         "currency": "INR",
         "receipt": receipt,
         "notes": {"product": product, "email": user.get("email", "")},
@@ -2114,13 +2154,13 @@ async def api_pay_order(request: Request):
     db_insert("payments", {
         "user_id": user["id"],
         "razorpay_order_id": order["id"],
-        "amount_paise": spec["price_paise"],
+        "amount_paise": amount,
         "currency": "INR",
         "status": "created",
         "product": product,
     })
     return JSONResponse({
-        "order_id": order["id"], "amount": spec["price_paise"],
+        "order_id": order["id"], "amount": amount,
         "currency": "INR", "key_id": RAZORPAY_KEY_ID,
         "product": product, "name": spec["name"],
         "email": user.get("email", "")})
@@ -2168,7 +2208,7 @@ async def api_pay_verify(request: Request):
 @app.post("/api/premium/{product}")
 async def api_premium(product: str, request: Request):
     spec = PAID_PRODUCTS.get(product)
-    if not spec:
+    if not spec or not spec.get("prompt"):
         return err_response(404, "Unknown product.")
     if not db_ready():
         return err_response(503, "This feature is being set up. Please check back soon.")
