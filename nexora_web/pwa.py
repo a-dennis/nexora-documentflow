@@ -55,6 +55,7 @@ function make(label){
   btn.id='nxInstall';
   btn.setAttribute('style','position:fixed;right:14px;bottom:14px;z-index:9999;display:flex;align-items:center;gap:6px;background:#7c3aed;color:#fff;border-radius:999px;box-shadow:0 6px 20px rgba(0,0,0,.25);font:600 14px system-ui,Arial,sans-serif');
   btn.innerHTML='<button id="nxInstallGo" style="all:unset;cursor:pointer;padding:11px 8px 11px 16px">'+label+'</button><button id="nxInstallX" aria-label="Dismiss" style="all:unset;cursor:pointer;padding:11px 14px 11px 4px;opacity:.8">&times;</button>';
+  if(/^\/(english|ai)/.test(location.pathname)){btn.style.right='auto';btn.style.left='14px';}
   document.body.appendChild(btn);
   document.getElementById('nxInstallX').onclick=function(){btn.remove();try{localStorage.setItem('nxInstallHidden','1');}catch(e){}};
   document.getElementById('nxInstallGo').onclick=function(){
@@ -183,6 +184,12 @@ def install(g):
     from fastapi import Request
     from fastapi.responses import HTMLResponse, Response
 
+    # merge: drop the older manifest/sw routes registered by learn.py so this module's
+    # manifest + service worker (offline page, install button) are the single PWA setup.
+    # learn.py's /icon-192.png and /icon-512.png routes stay in place.
+    for _r in [r for r in app.router.routes if getattr(r, "path", None) in ("/manifest.webmanifest", "/sw.js")]:
+        app.router.routes.remove(_r)
+
     @app.get("/manifest.webmanifest")
     async def manifest():
         return Response(json.dumps(MANIFEST), media_type="application/manifest+json", headers={"Cache-Control": "public, max-age=3600"})
@@ -229,8 +236,9 @@ def install(g):
         body = b"".join([c async for c in resp.body_iterator])
         try:
             doc = body.decode("utf-8")
-            if "rel=\"manifest\"" not in doc and "</head>" in doc and "</body>" in doc:
-                doc = doc.replace("</head>", HEAD_TAGS + "</head>", 1)
+            if "</head>" in doc and "</body>" in doc and "nxInstallGo" not in doc:
+                if "rel=\"manifest\"" not in doc:
+                    doc = doc.replace("</head>", HEAD_TAGS + "</head>", 1)
                 i = doc.rfind("</body>")
                 doc = doc[:i] + INSTALL_JS + doc[i:]
             out = doc.encode("utf-8")
