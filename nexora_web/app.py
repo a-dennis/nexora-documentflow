@@ -45,6 +45,7 @@ from collections import defaultdict, deque
 
 from fastapi import FastAPI, Request, UploadFile, File, HTTPException
 
+import student_calc
 from web_content import *  # noqa: F401,F403 - HTML/CSS/content constants
 from pdf_tools import TOOLS as PDF_TOOL_SPECS, ORDER as PDF_TOOL_ORDER, ToolError, run_tool
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, RedirectResponse, Response
@@ -308,6 +309,12 @@ HOME_TOOLS = [
      "Gratuity payable under the Payment of Gratuity Act.", "calc"),
     ("/notice-period-calculator", "calendar", "Notice Period Calculator",
      "Find your exact last working day from your resignation date.", "calc"),
+    ("/vtu-sgpa-calculator", "calc", "SGPA Calculator",
+     "Semester SGPA from credits and grades.", "calc"),
+    ("/vtu-cgpa-calculator", "calc", "CGPA Calculator",
+     "Overall CGPA across semesters, lateral entry too.", "calc"),
+    ("/cgpa-to-percentage-calculator", "calc", "CGPA to Percentage",
+     "Convert CGPA to percentage and back.", "calc"),
     ("/hr/documents", "folder", "HR Document Generator",
      "Offer, appointment, increment, promotion, experience, relieving letters and more - as Word files.", "docs"),
 ]
@@ -504,7 +511,7 @@ def hr_career_page() -> str:
 def calculators_page() -> str:
     return page("HR Calculators",
                 "Free HR calculators: CTC breakdown, take-home pay, increment, gratuity and notice period for India.",
-                "/hr-career", CALC_BODY)
+                "/hr-career", CALC_BODY + student_calc.links_block())
 
 
 # ----------------------------------------------------------------------
@@ -1662,6 +1669,7 @@ async def robots_txt() -> Response:
 @app.get("/sitemap.xml")
 async def sitemap_xml() -> Response:
     paths = ["/", "/privacy", "/terms", "/resume-service", "/excel-service", "/document-ai", "/hr-career", "/resume-builder", "/jd-builder", "/hr/calculators", "/hr/documents"]
+    paths += ["/" + s for s in student_calc.PAGES]
     paths += ["/" + slug for slug in SEO_CALC_PAGES] + ["/" + slug for slug in SEO_CAREER_PAGES]
     urls = "".join("<url><loc>https://nexora-web-q7rn.onrender.com" + path + "</loc></url>" for path in dict.fromkeys(paths))
     return Response('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + urls + '</urlset>', media_type="application/xml")
@@ -1702,6 +1710,21 @@ async def privacy_policy() -> str:
 @app.get("/terms", response_class=HTMLResponse)
 async def terms_of_use() -> str:
     return legal_page("terms")
+
+
+@app.get("/vtu-sgpa-calculator", response_class=HTMLResponse)
+async def vtu_sgpa_page() -> str:
+    return student_calc.render("vtu-sgpa-calculator", page)
+
+
+@app.get("/vtu-cgpa-calculator", response_class=HTMLResponse)
+async def vtu_cgpa_page() -> str:
+    return student_calc.render("vtu-cgpa-calculator", page)
+
+
+@app.get("/cgpa-to-percentage-calculator", response_class=HTMLResponse)
+async def cgpa_pct_page() -> str:
+    return student_calc.render("cgpa-to-percentage-calculator", page)
 
 
 @app.get("/{seo_slug}", response_class=HTMLResponse)
