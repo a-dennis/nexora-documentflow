@@ -401,6 +401,71 @@ async def pay_thanks(request: Request):
                 'If money was deducted, do not pay again: message us on WhatsApp 9353006448.</p>'
                 '<p><a class="btn" href="/">Back to Nexora</a></p></div></div></section>')
     return page("Payment status", "Payment status", "", body)
+
+def _pro_ids(user):
+    import urllib.parse
+    ids = {user["id"]}
+    email = (user.get("email") or "").strip().lower()
+    if email:
+        rows = _db_request("GET", "profiles?email=ilike."
+                           + urllib.parse.quote(email.replace("_", "\\_"), safe="@.")
+                           + "&select=id")
+        if isinstance(rows, list):
+            ids.update(r["id"] for r in rows if r.get("id"))
+    return ids
+
+
+def _is_pro(request):
+    """True when the signed-in user (any account id with the same email) has a
+    verified Pro pass from the last 30 days."""
+    try:
+        user = _current_user(request)
+        if not user:
+            return False
+        from datetime import datetime, timedelta, timezone
+        since = (datetime.now(timezone.utc) - timedelta(days=30)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        ids = ",".join(sorted(_pro_ids(user)))
+        rows = _db_request("GET", "payments?user_id=in.(" + ids + ")"
+                           + "&product=eq.pro_pass&status=eq.verified"
+                           + "&created_at=gte." + since + "&select=id&limit=1")
+        print("PRO_CHECK", user.get("id"), "ids", len(ids.split(",")),
+              "rows", (len(rows) if isinstance(rows, list) else rows))
+        return bool(isinstance(rows, list) and rows)
+    except Exception:
+        traceback.print_exc()
+        return False
+
+
+@app.get("/api/pro-status")
+async def api_pro_status(request: Request):
+    user = _current_user(request)
+    if not user:
+        return JSONResponse({"authenticated": False, "pro": False})
+    try:
+        _recover_payments(user)
+    except Exception:
+        traceback.print_exc()
+    return JSONResponse({"authenticated": True, "pro": _is_pro(request)},
+                        headers={"Cache-Control": "no-store"})
+
+
+PRO_BADGE_JS = (
+    "<script>(function(){fetch('/api/pro-status',{credentials:'same-origin'})"
+    ".then(function(r){return r.json()}).then(function(j){if(!j.pro)return;"
+    "var st=document.createElement('style');st.textContent='.nx-pro-badge{background:linear-gradient(135deg,#7c3aed,#db2777)!important;color:#fff!important;border-radius:999px;padding:6px 14px;font-weight:700}';document.head.appendChild(st);"
+    "var as=document.querySelectorAll('a[href=\"/pro\"]');for(var i=0;i<as.length;i++){as[i].textContent='Pro \\u2713 Active';as[i].classList.add('nx-pro-badge')}"
+    "var m=document.getElementById('nxpay_pro');if(m){var b=m.querySelector('.nxpay-btn');if(b)b.hidden=true;var t=m.querySelector('.nxpay-msg');if(t)t.textContent='Nexora Pro is active on your account. Thank you!'}"
+    "}).catch(function(){})})();</script>")
+
+_orig_page = page
+
+
+def page(title, description, active, body):
+    html = _orig_page(title, description, active, body)
+    if "</body>" in html:
+        html = html.replace("</body>", PRO_BADGE_JS + "</body>", 1)
+    return html
+
 '''
 
 
@@ -408,6 +473,9 @@ _CANON = {}
 
 
 def install(g):
+    if g.get("_PAYFIX_DONE"):
+        return
+    g["_PAYFIX_DONE"] = True
     app = g["app"]
     _orig_current_user = g["_current_user"]
 
@@ -425,9 +493,9 @@ def install(g):
         cid = _CANON.get(uid)
         if not cid:
             import urllib.parse
-            rows = g["_db_request"]("GET", "profiles?email=eq."
-                                    + urllib.parse.quote(email, safe="@.")
-                                    + "&select=id&limit=1")
+            rows = g["_db_request"]("GET", "profiles?email=ilike."
+                                    + urllib.parse.quote(email.replace("_", "\\_"), safe="@.")
+                                    + "&select=id&order=created_at.asc&limit=1")
             cid = rows[0]["id"] if isinstance(rows, list) and rows else uid
             if isinstance(rows, list) and rows:
                 _CANON[uid] = cid
@@ -442,5 +510,5 @@ def install(g):
     exec(compile(SRC, "payfix_src", "exec"), g)
     exec(compile(BUY_SRC, "payfix_buy", "exec"), g)
     mine = [r for r in app.router.routes
-            if getattr(r, "path", None) in ("/buy/{kind}", "/pay-thanks")]
+            if getattr(r, "path", None) in ("/buy/{kind}", "/pay-thanks", "/api/pro-status")]
     app.router.routes = mine + [r for r in app.router.routes if r not in mine]
