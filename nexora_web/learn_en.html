@@ -74,6 +74,7 @@ footer a{color:var(--p)}
 .kg{background:linear-gradient(135deg,#fde68a,#fbcfe8);border-radius:22px;padding:14px;margin-bottom:12px}
 .kb{display:inline-block;margin:4px;padding:10px 16px;border-radius:99px;border:0;font-size:16px;font-weight:800;color:#fff;font-family:inherit;cursor:pointer}
 .kbig{font-size:84px;text-align:center}
+.stage{background:linear-gradient(135deg,#1e1b4b,#6d28d9 70%,#db2777);border-radius:18px;padding:12px;display:flex;gap:12px;align-items:center;color:#fff;margin-bottom:12px;box-shadow:0 8px 24px rgba(76,29,149,.3)}.stage .av{width:116px;height:116px;border-radius:16px;flex:none;border:2px solid rgba(255,255,255,.4)}.stage.talk .av{animation:bob .45s infinite alternate}@keyframes bob{to{transform:translateY(-4px) rotate(-1.5deg)}}.slide{flex:1;min-width:0;background:rgba(255,255,255,.14);border-radius:12px;padding:8px 10px}.live{font-size:10px;letter-spacing:1px;opacity:.9}.live{color:#fecaca}.cap{font-size:15px;margin-top:2px}.kar{margin-top:6px;font-size:14px;min-height:20px;opacity:.95}.kar span{padding:0 1px;border-radius:3px}.kar span.on{background:#fde047;color:#111}@media(max-width:420px){.stage .av{width:88px;height:88px}}
 </style></head><body>
 <style>.nxbar{background:#0f172a;color:#fff;font:600 13px system-ui,sans-serif;display:flex;gap:4px;overflow-x:auto;padding:6px 8px;align-items:center}.nxbar a{color:#cbd5e1;text-decoration:none;padding:6px 11px;border-radius:999px;white-space:nowrap}.nxbar a.on{background:#7c3aed;color:#fff}.nxbar a:first-child{font-weight:800;color:#fff}</style><nav class="nxbar"><a href="/">&larr; Nexora</a><a href="/english" class="on">English</a><a href="/ai" class="">AI A-to-Z</a><a href="/document-ai">Documents</a><a href="https://nexora-markets-web.onrender.com">Markets</a></nav>
 <header><div class="hw"><a class="logo" href="#/">Nexora English<small id="sub">AI teacher - ಕನ್ನಡ + English</small></a>
@@ -138,10 +139,10 @@ function speak(t,slow,done){if(!('speechSynthesis' in window)){noSound();done&&d
  const go=()=>{try{speechSynthesis.resume()}catch(e){}
   const u=new SpeechSynthesisUtterance(t);const v=pickVoice(S.p);if(v){u.voice=v;u.lang=v.lang}else u.lang='en-IN';
   u.rate=slow?0.7:0.9;u.pitch=S.p==='Anaya'?1.15:0.8;u.volume=1;
-  const av=$('.av');if(av)av.classList.add('talk');let st=false;
+  const av=$('.av');if(av)av.classList.add('talk');const sg=$('.stage');if(sg)sg.classList.add('talk');const kr=$('#kar');let ws=[];if(kr){kr.innerHTML=t.split(/(\s+)/).map(w=>/^\s+$/.test(w)?w:'<span>'+esc(w)+'</span>').join('');ws=[...kr.querySelectorAll('span')]}let st=false;u.onboundary=e=>{if(!ws.length)return;let c=0;ws.forEach(x=>{const e0=c;c+=x.textContent.length+1;x.classList.toggle('on',e.charIndex>=e0&&e.charIndex<c)})};
   const w=setTimeout(()=>{if(!st)noSound()},3000);
   u.onstart=()=>{st=true;clearTimeout(w);soundOK()};
-  u.onend=()=>{clearTimeout(w);const a=$('.av');if(a)a.classList.remove('talk');done&&done()};
+  u.onend=()=>{clearTimeout(w);const a=$('.av');if(a)a.classList.remove('talk');const g=$('.stage');if(g)g.classList.remove('talk');ws.forEach(x=>x.classList.remove('on'));done&&done()};
   u.onerror=e=>{clearTimeout(w);const a=$('.av');if(a)a.classList.remove('talk');if(!e||(e.error!=='canceled'&&e.error!=='interrupted'))noSound();done&&done()};
   speechSynthesis.speak(u)};
  if(speechSynthesis.speaking||speechSynthesis.pending){speechSynthesis.cancel();setTimeout(go,120)}else go()}
@@ -181,7 +182,7 @@ const avatar=()=>S.p==='Anaya'?'👩‍🏫':'👨‍🏫';
 function react(mood,msg,say){const b=$('#tb');if(b){b.innerHTML=tutorBox(msg,mood)}speak(say||msg.replace(/<[^>]+>/g,''),false,()=>{const b2=$('#tb');if(b2)b2.innerHTML=tutorBox(msg,'n')})}
 const GOOD=["Great job!","Super!","Perfect!","Well done!","Excellent!","You are doing great!"],BAD=["Nice try!","Almost there!","Do not worry, try again!","Good effort!"];
 const pk=a=>a[Math.floor(Math.random()*a.length)];
-function tutorBox(msg,mood){return `<div class="card tutor"><div class="av">${svgChar(S.p,mood)}</div><div class="bubble"><b>${S.p}</b>: ${msg}</div></div>`}
+function tutorBox(msg,mood){return `<div class="stage"><div class="av">${svgChar(S.p,mood)}</div><div class="slide"><div class="live">&#9679; LIVE LESSON</div><b>${S.p}</b><div class="cap">${msg}</div><div class="kar" id="kar"></div></div></div>`}
 /* views */
 function setG(g){S.g=g;if(g==='girl')S.p='Arjun';else if(g==='boy')S.p='Anaya';save();home()}
 function setL(l){S.lang=l;save();home()}
@@ -229,10 +230,10 @@ function quiz(l,i){const x=LEVELS[l-1].lessons[i];const all=[].concat(...LEVELS.
  const near=(it,key,arr)=>arr.filter(z=>key(z)!==key(it)).sort((a,b)=>Math.abs(key(a).length-key(it).length)-Math.abs(key(b).length-key(it).length)||Math.random()-.5);
  const items=shuf(x.items).slice(0,Math.min(8,x.items.length));const qs=[];
  items.forEach((it,n)=>{const t=n%4;
-  if(t===0){const o=near(it,tr,x.items.concat(all)).filter((z,j,a)=>a.findIndex(y=>tr(y)===tr(z))===j).slice(0,3).map(z=>tr(z));qs.push({q:`What does <b>${esc(it.en)}</b> mean in ${S.lang==='hi'?'Hindi':'Kannada'}?`,o:shuf(o.concat(tr(it))),a:tr(it),listen:it.say})}
-  else if(t===1){const o=near(it,z=>z.en,x.items.concat(all)).filter((z,j,a)=>a.findIndex(y=>y.en===z.en)===j).slice(0,3).map(z=>z.en);qs.push({q:`Which English is <b>${tr(it)}</b>?`,o:shuf(o.concat(it.en)),a:it.en})}
+  if(t===0){const o=near(it,tr,x.items.concat(all)).filter((z,j,a)=>a.findIndex(y=>tr(y)===tr(z))===j).slice(0,3).map(z=>tr(z));qs.push({spk:'What does '+it.en+' mean in '+(S.lang==='hi'?'Hindi':'Kannada')+'?',q:`What does <b>${esc(it.en)}</b> mean in ${S.lang==='hi'?'Hindi':'Kannada'}?`,o:shuf(o.concat(tr(it))),a:tr(it),listen:it.say})}
+  else if(t===1){const o=near(it,z=>z.en,x.items.concat(all)).filter((z,j,a)=>a.findIndex(y=>y.en===z.en)===j).slice(0,3).map(z=>z.en);qs.push({spk:'Which English word means this?',nat:tr(it),q:`Which English is <b>${tr(it)}</b>?`,o:shuf(o.concat(it.en)),a:it.en})}
   else if(t===3)qs.push({q:`Say it out loud: <b>${esc(it.en)}</b>`,say:1,a:it.en,listen:it.say});
-  else qs.push({q:`Type in English: <b>${tr(it)}</b>`,type:1,a:it.en,hint:it.en.split(' ').map(w=>w[0]+'_'.repeat(Math.max(0,w.length-1))).join(' ')})});
+  else qs.push({spk:'Type this in English.',nat:tr(it),q:`Type in English: <b>${tr(it)}</b>`,type:1,a:it.en,hint:it.en.split(' ').map(w=>w[0]+'_'.repeat(Math.max(0,w.length-1))).join(' ')})});
  let k=0,ok=0;
  function show(){const q=qs[k];let h=`<div class="prog"><i style="width:${100*k/qs.length}%"></i></div><div id="tb">${tutorBox(k==0?'Let us play a quick quiz. I will help you!':pk(['Next question!','Ready? Here we go!','You can do it!']))}</div><div class="card"><div class="note">Quiz ${k+1} of ${qs.length}</div><h2 style="margin-top:4px">${q.q}</h2>`;
   if(q.listen)h+=`<button class="btn sm alt" id="ls">🔊 Listen</button> `;
@@ -245,7 +246,7 @@ function quiz(l,i){const x=LEVELS[l-1].lessons[i];const all=[].concat(...LEVELS.
   const fin=good=>{const f=$('#fb');
    if(good){ok++;S.xp+=5;f.className='fb ok';f.textContent='Correct '+T('ok')+'! +5 XP';const m=pk(GOOD);react('h','<b>'+m+'</b> 🎉',m)}
    else{f.className='fb bad';f.textContent='Not correct. Answer: '+q.a;react('s','Nice try! The answer is <b>'+esc(q.a)+'</b>.','Nice try! The answer is '+q.a)}
-   save();const n=$('#nq');n.style.display='inline-block';n.onclick=()=>{k++;k<qs.length?show():end()}};
+   save();const n=$('#nq');n.style.display='inline-block';n.onclick=()=>{k++;k<qs.length?show():end()};if(good){const kk=k;setTimeout(()=>{if(k===kk&&document.body.contains(n))n.click()},2400)}};
   const hn=$('#hn');
   if(q.say){
    $('#sk').onclick=()=>{$('#fb').textContent='Skipped';const n=$('#nq');n.style.display='inline-block';n.onclick=()=>{k++;k<qs.length?show():end()}};
@@ -254,12 +255,12 @@ function quiz(l,i){const x=LEVELS[l-1].lessons[i];const all=[].concat(...LEVELS.
     const sc=Math.max(...a.map(t=>score(q.a,t)));
     if(sc>=60){$('#sy').disabled=true;$('#sk').style.display='none';fin(true)}
     else{tries++;f.className='fb bad';f.textContent='I heard: "'+a[0]+'" ('+sc+'%)';if(tries>=2){$('#sy').disabled=true;fin(false)}else react('t','I heard "'+esc(a[0])+'". Listen again and try once more.','Listen again and try once more.')}})};
-   setTimeout(()=>speak(q.a,true),400)}
+   setTimeout(()=>speak('Say it out loud. '+q.a,true),400)}
   else if(q.type){$('#ck').onclick=()=>{const ok1=norm($('#ti').value)===norm(q.a);if(!ok1&&tries<1){tries++;react('t','Almost! Try once more. Look at the hint.','Almost! Try once more.');$('#fb').className='fb bad';$('#fb').textContent='Try once more';return}$('#ck').disabled=true;$('#ti').disabled=true;fin(ok1)};$('#ti').addEventListener('keydown',e=>{if(e.key==='Enter')$('#ck').click()});
    hn.onclick=()=>{const w=q.a.split(' ')[0];react('t','Hint: it starts with <b>'+esc(w.slice(0,2))+'</b>','Hint. It starts with '+w.slice(0,2));};if(q.listen)0}
   else{document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{const g=q.o[+b.dataset.j]===q.a;document.querySelectorAll('.opt').forEach(z=>{z.disabled=true;if(q.o[+z.dataset.j]===q.a)z.classList.add('ok')});if(!g)b.classList.add('bad');fin(g)});
    hn.onclick=()=>{const w=[...document.querySelectorAll('.opt')].filter(z=>!z.disabled&&q.o[+z.dataset.j]!==q.a);if(w[0]){w[0].disabled=true;w[0].style.opacity=.3}react('t','I removed one wrong answer. Think again!','I removed one wrong answer. Think again!')}}
-  setTimeout(()=>{if(!q.say)speak(q.type?'Type the English word.':q.listen?q.listen:'Choose the right answer.',false)},300)}
+  setTimeout(()=>{if(q.say)return;const nx=()=>{if(q.nat)speakL(q.nat,S.lang,()=>{if(q.listen)speak(q.listen)});else if(q.listen)speak(q.listen)};speak(q.spk||'Choose the right answer.',false,nx)},300)}
  function end(){const pct=Math.round(100*ok/qs.length);const pass=pct>=60;if(pass){S.done[l+'-'+i]=1;S.xp+=10}touch();save();checkBadges();
   const nx=LEVELS[l-1].lessons[i+1];
   $('#app').innerHTML=tutorBox(pass?`Well done! You scored ${pct}%. +10 XP. Come back tomorrow to keep your streak. 🎉`:`You scored ${pct}%. No problem - practice the lesson once more, then try again.`)+
