@@ -127,26 +127,3 @@ def install(g):
     for r in mine:
         rs.remove(r)
     rs[0:0] = mine
-
-    ADMIN_LINK_JS = ('<script>fetch("/api/admin-status",{credentials:"same-origin",cache:"no-store"}).then(function(r){return r.json()}).then(function(d){'
-                     'if(!d.admin)return;var n=document.querySelector(".navlinks");if(!n||document.getElementById("nxAdminLink"))return;'
-                     'var a=document.createElement("a");a.href="/admin";a.id="nxAdminLink";a.textContent="Admin";n.insertBefore(a,n.firstChild);}).catch(function(){});</script>')
-
-    @app.middleware("http")
-    async def admin_link_mw(request: Request, call_next):
-        resp = await call_next(request)
-        p = request.url.path
-        if (request.method != "GET" or resp.status_code != 200 or p.startswith(("/api", "/admin", "/offline", "/icons", "/auth"))
-                or "text/html" not in resp.headers.get("content-type", "")):
-            return resp
-        body = b"".join([c async for c in resp.body_iterator])
-        out = body
-        try:
-            doc = body.decode("utf-8")
-            i = doc.rfind("</body>")
-            if i > 0 and "navlinks" in doc and "nxAdminLink" not in doc:
-                out = (doc[:i] + ADMIN_LINK_JS + doc[i:]).encode("utf-8")
-        except Exception as ex:
-            print("ADMIN_LINK_ERR", repr(ex))
-        h = {k: v for k, v in resp.headers.items() if k.lower() not in ("content-length", "content-type")}
-        return Response(out, status_code=200, headers=h, media_type="text/html")
