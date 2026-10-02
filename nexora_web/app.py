@@ -46,6 +46,7 @@ from collections import defaultdict, deque
 from fastapi import FastAPI, Request, UploadFile, File, HTTPException
 
 import student_calc
+import student_hub
 from web_content import *  # noqa: F401,F403 - HTML/CSS/content constants
 from pdf_tools import TOOLS as PDF_TOOL_SPECS, ORDER as PDF_TOOL_ORDER, ToolError, run_tool
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, RedirectResponse, Response
@@ -1670,6 +1671,7 @@ async def robots_txt() -> Response:
 async def sitemap_xml() -> Response:
     paths = ["/", "/privacy", "/terms", "/resume-service", "/excel-service", "/document-ai", "/hr-career", "/resume-builder", "/jd-builder", "/hr/calculators", "/hr/documents"]
     paths += ["/" + s for s in student_calc.PAGES]
+    paths += student_hub.all_paths()
     paths += ["/" + slug for slug in SEO_CALC_PAGES] + ["/" + slug for slug in SEO_CAREER_PAGES]
     urls = "".join("<url><loc>https://nexora-web-q7rn.onrender.com" + path + "</loc></url>" for path in dict.fromkeys(paths))
     return Response('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + urls + '</urlset>', media_type="application/xml")
@@ -1710,6 +1712,9 @@ async def privacy_policy() -> str:
 @app.get("/terms", response_class=HTMLResponse)
 async def terms_of_use() -> str:
     return legal_page("terms")
+
+
+student_hub.install(app, page, NAV_ITEMS)
 
 
 @app.get("/vtu-sgpa-calculator", response_class=HTMLResponse)
