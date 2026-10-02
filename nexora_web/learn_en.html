@@ -75,6 +75,81 @@ footer a{color:var(--p)}
 .kb{display:inline-block;margin:4px;padding:10px 16px;border-radius:99px;border:0;font-size:16px;font-weight:800;color:#fff;font-family:inherit;cursor:pointer}
 .kbig{font-size:84px;text-align:center}
 .stage{background:linear-gradient(135deg,#1e1b4b,#6d28d9 70%,#db2777);border-radius:18px;padding:12px;display:flex;gap:12px;align-items:center;color:#fff;margin-bottom:12px;box-shadow:0 8px 24px rgba(76,29,149,.3)}.stage .av{width:116px;height:116px;border-radius:16px;flex:none;border:2px solid rgba(255,255,255,.4)}.stage.talk .av{animation:bob .45s infinite alternate}@keyframes bob{to{transform:translateY(-4px) rotate(-1.5deg)}}.slide{flex:1;min-width:0;background:rgba(255,255,255,.14);border-radius:12px;padding:8px 10px}.live{font-size:10px;letter-spacing:1px;opacity:.9}.live{color:#fecaca}.cap{font-size:15px;margin-top:2px}.kar{margin-top:6px;font-size:14px;min-height:20px;opacity:.95}.kar span{padding:0 1px;border-radius:3px}.kar span.on{background:#fde047;color:#111}@media(max-width:420px){.stage .av{width:88px;height:88px}}
+/* ===== UI polish layer v1 ===== */
+:root{--p2:color-mix(in srgb,var(--p) 70%,#fff);--sh1:0 1px 2px rgba(40,20,90,.06),0 6px 18px rgba(60,30,140,.10);--sh2:0 10px 30px rgba(60,30,140,.18);--r:20px}
+html{scroll-behavior:smooth}
+body{font-family:"Inter","Segoe UI",system-ui,-apple-system,Roboto,"Noto Sans Kannada","Noto Sans Devanagari",sans-serif;background:radial-gradient(900px 420px at 100% -80px,color-mix(in srgb,var(--k) 16%,transparent),transparent 70%),radial-gradient(800px 400px at -10% 0,color-mix(in srgb,var(--p) 16%,transparent),transparent 70%),#faf8ff;background-attachment:fixed;letter-spacing:.005em;-webkit-font-smoothing:antialiased}
+nav.nxbar{background:rgba(15,23,42,.92);backdrop-filter:blur(10px);scrollbar-width:none;padding:7px 10px}
+nav.nxbar::-webkit-scrollbar{display:none}
+nav.nxbar a{transition:background .2s,color .2s}
+nav.nxbar a.on{background:linear-gradient(120deg,var(--p),var(--k));box-shadow:0 2px 10px rgba(0,0,0,.25)}
+header{background:linear-gradient(120deg,var(--p),var(--k));box-shadow:0 6px 22px rgba(60,30,140,.28);border-radius:0 0 22px 22px;padding:14px 18px 16px}
+.logo{font-size:20px;letter-spacing:-.01em}
+.chip{background:rgba(255,255,255,.22);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.3);padding:5px 12px}
+main{padding:18px 16px 100px;animation:fadeUp .35s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+h1{letter-spacing:-.02em;font-weight:800}
+h2{font-size:18px;font-weight:800;letter-spacing:-.01em;margin:22px 0 10px}
+.card{border-radius:var(--r);padding:18px;box-shadow:var(--sh1);border:1px solid rgba(124,58,237,.06);transition:transform .2s,box-shadow .2s}
+.btn{border-radius:14px;padding:13px 20px;box-shadow:0 6px 16px color-mix(in srgb,var(--p) 35%,transparent),inset 0 1px 0 rgba(255,255,255,.3);transition:transform .15s,box-shadow .15s,filter .15s;letter-spacing:.01em}
+.btn:hover{filter:brightness(1.06);transform:translateY(-1px)}
+.btn:active{transform:translateY(1px) scale(.98);box-shadow:0 2px 6px color-mix(in srgb,var(--p) 30%,transparent)}
+.btn.alt{background:color-mix(in srgb,var(--p) 11%,#fff);color:var(--p);box-shadow:none}
+.btn.sm{border-radius:12px}
+.hero{border-radius:26px;padding:20px 18px 0;box-shadow:var(--sh2);position:relative;background:radial-gradient(circle at 85% 10%,rgba(255,255,255,.25),transparent 45%),linear-gradient(135deg,var(--p),var(--k))}
+.hero h1{font-size:25px}
+.hero .btn{background:#fff;color:var(--p);box-shadow:0 6px 16px rgba(0,0,0,.18)}
+.hero .chars div{border-radius:18px 18px 0 0;transition:transform .2s,background .2s}
+.hero .chars div:hover{transform:translateY(-3px)}
+.hero .chars div.sel{box-shadow:0 0 0 3px rgba(253,224,71,.35)}
+.stage{border-radius:24px;padding:14px;gap:14px;box-shadow:var(--sh2);position:relative;overflow:hidden;background:radial-gradient(circle at 90% -10%,rgba(255,255,255,.22),transparent 50%),linear-gradient(135deg,#1e1b4b,#5b21b6 65%,var(--k))}
+.stage .av{border-radius:20px;border:2px solid rgba(255,255,255,.5);box-shadow:0 6px 18px rgba(0,0,0,.3)}
+.stage.talk .av{box-shadow:0 0 0 4px rgba(255,255,255,.25),0 0 28px rgba(255,255,255,.35)}
+.slide{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(8px);border-radius:16px;padding:10px 12px}
+.live{display:inline-block;background:rgba(239,68,68,.9);color:#fff;border-radius:99px;padding:2px 8px;font-size:10px;font-weight:800;margin-bottom:4px}
+.live::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:#fff;margin-right:5px;animation:blink 1.2s infinite}
+@keyframes blink{50%{opacity:.25}}
+.av{box-shadow:0 4px 14px rgba(60,30,140,.18)}
+.bubble{border-radius:18px 18px 18px 6px;background:color-mix(in srgb,var(--p) 9%,#fff)}
+.lv{border-left:0;position:relative;overflow:hidden}
+.lv::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:linear-gradient(180deg,var(--p),var(--k))}
+.lv.soon::before{background:#cbd5e1}
+.lv .ls{transition:background .15s,padding .15s;border-radius:12px}
+.lv .ls:active{background:color-mix(in srgb,var(--p) 8%,#fff)}
+.big{font-size:34px;letter-spacing:-.02em}
+.kn{font-size:26px;font-weight:700}
+.prog{height:10px;background:color-mix(in srgb,var(--p) 12%,#fff);border-radius:99px;box-shadow:inset 0 1px 2px rgba(0,0,0,.08)}
+.prog i{border-radius:99px;transition:width .5s cubic-bezier(.2,.8,.2,1);box-shadow:0 0 10px color-mix(in srgb,var(--k) 55%,transparent)}
+.opt{border-radius:16px;padding:15px 16px;border:2px solid color-mix(in srgb,var(--p) 14%,#fff);box-shadow:0 2px 8px rgba(60,30,140,.06);font-weight:600;transition:transform .15s,border-color .15s,background .15s,box-shadow .15s}
+.opt:hover{border-color:var(--p);transform:translateY(-1px);box-shadow:0 6px 16px rgba(60,30,140,.12)}
+.opt:active{transform:scale(.985)}
+.opt.ok{background:linear-gradient(120deg,#dcfce7,#bbf7d0);animation:pop .35s ease}
+.opt.bad{background:linear-gradient(120deg,#fee2e2,#fecaca);animation:shake .35s ease}
+@keyframes pop{50%{transform:scale(1.03)}}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.fb{font-size:17px;animation:fadeUp .25s ease both}
+input[type=text],textarea{border-radius:16px;border:2px solid color-mix(in srgb,var(--p) 16%,#fff);background:#fff;transition:border-color .15s,box-shadow .15s;outline:0}
+input[type=text]:focus,textarea:focus{border-color:var(--p);box-shadow:0 0 0 4px color-mix(in srgb,var(--p) 16%,transparent)}
+.chat{scrollbar-width:thin}.m{border-radius:18px 18px 6px 18px;animation:fadeUp .2s ease both}.m.t{border-radius:18px 18px 18px 6px;background:color-mix(in srgb,var(--k) 9%,#fff)}
+.bdg{background:linear-gradient(120deg,#fff7ed,#ffedd5);border-radius:99px;box-shadow:0 1px 3px rgba(251,146,60,.2)}
+.tag{border-radius:99px;padding:2px 8px}
+.pop{border-radius:99px;box-shadow:var(--sh2);background:linear-gradient(120deg,#111827,#312e81)}
+.kt{gap:12px}
+.kt button{border-radius:24px;padding:16px 4px 12px;box-shadow:0 6px 0 rgba(0,0,0,.16),0 12px 20px rgba(0,0,0,.12);background-image:linear-gradient(180deg,rgba(255,255,255,.22),transparent 55%);transition:transform .15s}
+.kt button:hover{transform:translateY(-2px)}
+.kt button:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(0,0,0,.16)}
+.kt .e{font-size:46px;filter:drop-shadow(0 4px 4px rgba(0,0,0,.2))}
+.kg{border-radius:26px;padding:16px;box-shadow:var(--sh1);background:radial-gradient(circle at 90% 0,rgba(255,255,255,.55),transparent 50%),linear-gradient(135deg,#fde68a,#fbcfe8 60%,#c7d2fe)}
+.kb{border-radius:99px;padding:11px 18px;box-shadow:0 4px 0 rgba(0,0,0,.15);transition:transform .12s}
+.kb:active{transform:translateY(3px);box-shadow:none}
+.kbig{font-size:92px;animation:bounceIn .5s ease both;filter:drop-shadow(0 8px 10px rgba(0,0,0,.15))}
+@keyframes bounceIn{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+footer{border-top:1px solid rgba(124,58,237,.1);padding-top:16px}
+#askfab{animation:fadeUp .4s ease both}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+@media (min-width:700px){.hero h1{font-size:30px}}
+.hero .chars div{width:78px;height:104px}.hero h1{font-size:23px;white-space:nowrap}
+/* ===== end polish ===== */
 </style></head><body>
 <style>.nxbar{background:#0f172a;color:#fff;font:600 13px system-ui,sans-serif;display:flex;gap:4px;overflow-x:auto;padding:6px 8px;align-items:center}.nxbar a{color:#cbd5e1;text-decoration:none;padding:6px 11px;border-radius:999px;white-space:nowrap}.nxbar a.on{background:#7c3aed;color:#fff}.nxbar a:first-child{font-weight:800;color:#fff}</style><nav class="nxbar"><a href="/">&larr; Nexora</a><a href="/english" class="on">English</a><a href="/ai" class="">AI A-to-Z</a><a href="/document-ai">Documents</a><a href="https://nexora-markets-web.onrender.com">Markets</a></nav>
 <header><div class="hw"><a class="logo" href="#/">Nexora English<small id="sub">AI teacher - ಕನ್ನಡ + English</small></a>
