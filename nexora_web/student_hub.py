@@ -35,6 +35,21 @@ def final_marks_needed(parts, target_pct, final_weight, final_max):
     return need_pct, need_pct * final_max / 100
 
 
+def word_stats(text):
+    words = text.split()
+    n = len(words)
+    chars = len(text)
+    nospace = len("".join(text.split()))
+    import re
+    sentences = len([x for x in re.split(r"[.!?]+", text) if x.strip()])
+    paras = len([p for p in re.split(r"\n\s*\n", text) if p.strip()])
+    return n, chars, nospace, sentences, paras
+
+
+def mm_to_px(mm, dpi):
+    return int(round(mm / 25.4 * dpi))
+
+
 def gpa(rows):
     tc = sum(c for c, _ in rows)
     return sum(c * g for c, g in rows) / tc if tc else None
@@ -70,6 +85,10 @@ function hubGpa(rows){var tc=0,cp=0;rows.forEach(function(r){tc+=r[0];cp+=r[0]*r
 function hubPlan(days,hpd,ws,rev){var sd=Math.max(days-rev,0),tot=sd*hpd,sum=0;ws.forEach(function(w){sum+=w;});
   return {sd:sd,tot:ws.map(function(w){return tot*w/sum;}),per:ws.map(function(w){return hpd*w/sum;})};}
 function hubDays(a,b){return Math.round((Date.UTC(b.getFullYear(),b.getMonth(),b.getDate())-Date.UTC(a.getFullYear(),a.getMonth(),a.getDate()))/86400000);}
+function hubWords(t){var w=t.split(/\s+/).filter(Boolean),n=w.length,ns=t.replace(/\s+/g,"").length,
+  se=t.split(/[.!?]+/).filter(function(x){return x.trim();}).length,pa=t.split(/\n\s*\n/).filter(function(x){return x.trim();}).length;
+  return {words:n,chars:t.length,nospace:ns,sentences:se,paras:pa};}
+function hubMm(mm,dpi){return Math.round(mm/25.4*dpi);}
 var HUB_CONV={vtu:[function(c){return (c-0.75)*10},function(p){return p/10+0.75}],
   x10:[function(c){return c*10},function(p){return p/10}],
   x95:[function(c){return c*9.5},function(p){return p/9.5}],
@@ -300,6 +319,59 @@ RESUME_BODY = CSS + _hero("Fresher Resume Guide for Students", "What to put on a
 </div></div></section>"""
 
 
+WORDS_BODY = CSS + _hero("Word Counter and Reading Time", "Paste your essay, assignment or answer. Get words, characters, sentences, paragraphs and reading time. Your text stays in your browser.") + _wrap("""
+<textarea id="wt" rows="10" style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #d9d6ee;border-radius:10px;font-size:16px;font-family:inherit" placeholder="Paste or type your text here" oninput="run()"></textarea>
+<div id="hub_out"></div>
+<div class="hint">Reading time uses 200 words a minute and speaking time uses 130 words a minute. These are common averages.</div>""".replace('<div id="hub_out"></div>\n','')) + _script(r"""
+function run(){var t=$("wt").value,s=hubWords(t);
+ out('<div class="sc-res"><b class="big">'+s.words+' words</b><table><tr><td>Characters (with spaces)</td><td>'+s.chars+'</td></tr><tr><td>Characters (no spaces)</td><td>'+s.nospace+'</td></tr><tr><td>Sentences</td><td>'+s.sentences+'</td></tr><tr><td>Paragraphs</td><td>'+s.paras+'</td></tr><tr><td>Reading time</td><td>'+r2(s.words/200).toFixed(1)+' min</td></tr><tr><td>Speaking time</td><td>'+r2(s.words/130).toFixed(1)+' min</td></tr></table></div>');}
+run();""")
+
+TIME_BODY = CSS + """<style>@media print{.topnav,footer,.page-hero,.sc-noprint,.err{display:none!important}.card{box-shadow:none!important;border:0!important}}
+.tt{width:100%;border-collapse:collapse;min-width:620px}.tt th,.tt td{border:1px solid #d9d6ee;padding:4px}.tt th{background:#f3efff;font-size:14px}
+.tt input{width:100%;border:0;padding:8px 4px;font-size:15px;background:transparent;box-sizing:border-box;text-align:center}.ttw{overflow-x:auto}</style>""" + _hero("Weekly Timetable Maker", "Type your classes or study slots into the grid. It saves on this device and prints cleanly on one page.") + _wrap("""
+<div class="ttw"><table class="tt" id="tt"></table></div>
+<div class="toolbar sc-noprint"><button class="btn ghost" type="button" onclick="addPeriod()">+ Add period</button><button class="btn ghost" type="button" onclick="delPeriod()">Remove last period</button><button class="btn" type="button" onclick="window.print()">Print / Save as PDF</button><button class="btn ghost" type="button" onclick="clearAll()">Clear all</button></div>
+<div class="hint sc-noprint">Saved only in this browser. In the print window choose "Save as PDF" to keep a copy. The time labels in the first column are editable.</div>""") + _script(r"""
+var KEY="nexora_timetable_v1",DAYS=["Mon","Tue","Wed","Thu","Fri","Sat"];
+var data=(function(){try{var d=JSON.parse(localStorage.getItem(KEY));if(d&&d.t&&d.c)return d;}catch(e){}return {t:["9:00","10:00","11:00","12:00","2:00","3:00"],c:{}};})();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(data));}catch(e){}}
+function draw(){var h="<tr><th>Time</th>"+DAYS.map(function(d){return "<th>"+d+"</th>";}).join("")+"</tr>";
+ data.t.forEach(function(t,i){h+='<tr><td><input value="'+esc(t)+'" data-t="'+i+'" aria-label="Time"></td>';
+  DAYS.forEach(function(d,j){h+='<td><input value="'+esc(data.c[i+"_"+j]||"")+'" data-c="'+i+"_"+j+'" aria-label="'+d+' period '+(i+1)+'"></td>';});h+="</tr>";});
+ $("tt").innerHTML=h;}
+document.addEventListener("input",function(e){var x=e.target;if(x.dataset&&x.dataset.t!==undefined){data.t[x.dataset.t]=x.value;save();}else if(x.dataset&&x.dataset.c){data.c[x.dataset.c]=x.value;save();}});
+function addPeriod(){data.t.push("");save();draw();}
+function delPeriod(){if(data.t.length<=1)return;var i=data.t.length-1;data.t.pop();DAYS.forEach(function(d,j){delete data.c[i+"_"+j];});save();draw();}
+function clearAll(){if(!confirm("Clear the whole timetable?"))return;data.c={};save();draw();}
+draw();""")
+
+PHOTO_BODY = CSS + _hero("Photo and Signature Resizer for Forms", "Resize a photo or signature to the pixel size and KB limit your admission, exam or job form asks for. It all happens in your browser. Nothing is uploaded.") + _wrap("""
+<label for="pf">Choose photo or signature</label><input class="full" id="pf" type="file" accept="image/*">
+<div class="sc-two"><div><label for="pw">Width (px)</label><input class="full" id="pw" type="number" min="20" max="4000" value="413" inputmode="numeric"></div>
+<div><label for="ph">Height (px)</label><input class="full" id="ph" type="number" min="20" max="4000" value="531" inputmode="numeric"></div></div>
+<div class="sc-two"><div><label for="pk">Maximum size (KB)</label><input class="full" id="pk" type="number" min="5" max="5000" value="50" inputmode="numeric"></div>
+<div><label for="pp">Size preset</label><select class="full" id="pp" onchange="preset()"><option value="">Custom</option><option value="413,531">3.5 x 4.5 cm photo (300 dpi, 413 x 531)</option><option value="300,300">Square 300 x 300</option><option value="200,230">200 x 230 photo</option><option value="140,60">Signature 140 x 60</option></select></div></div>
+<label for="pm">Fit</label><select class="full" id="pm"><option value="cover">Fill the size (crop the edges)</option><option value="contain">Keep whole image (white margins)</option></select>
+<div class="toolbar"><button class="btn" type="button" onclick="run()">Resize</button></div>
+<div class="hint">Check your form's instructions for the exact pixel size, KB range and format. Output is JPEG. Presets are common sizes only, not tied to any one exam. The 3.5 x 4.5 cm preset is computed as cm to inches times 300 dpi.</div>""") + _script(r"""
+function preset(){var v=$("pp").value;if(!v)return;var p=v.split(",");$("pw").value=p[0];$("ph").value=p[1];}
+function draw(img,w,h,mode){var c=document.createElement("canvas");c.width=w;c.height=h;var x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,w,h);
+ var sw=img.naturalWidth,sh=img.naturalHeight,k=mode==="cover"?Math.max(w/sw,h/sh):Math.min(w/sw,h/sh),dw=sw*k,dh=sh*k;x.drawImage(img,(w-dw)/2,(h-dh)/2,dw,dh);return c;}
+function blobAt(c,q){return new Promise(function(r){c.toBlob(r,"image/jpeg",q);});}
+async function fit(img,w,h,mode,maxB){var c=draw(img,w,h,mode),lo=0.05,hi=0.95,best=null;
+ var b=await blobAt(c,hi);if(b.size<=maxB)return b;
+ for(var i=0;i<8;i++){var m=(lo+hi)/2,t=await blobAt(c,m);if(t.size<=maxB){best=t;lo=m;}else hi=m;}
+ return best;}
+async function run(){err("");var f=$("pf").files[0],w=num("pw"),h=num("ph"),kb=num("pk");
+ if(!f){err("Choose an image first.");return;}if(isNaN(w)||isNaN(h)||isNaN(kb)||w<20||h<20||kb<5){err("Check width, height and maximum KB.");return;}
+ var url=URL.createObjectURL(f),img=new Image();
+ img.onload=async function(){var b=await fit(img,w,h,$("pm").value,kb*1024);URL.revokeObjectURL(url);
+  if(!b){err("Could not get under "+kb+" KB at "+w+" x "+h+". Try a larger KB limit or a smaller pixel size.");return;}
+  var u=URL.createObjectURL(b);
+  out('<div class="sc-res"><b class="big">'+r2(b.size/1024).toFixed(1)+' KB</b><div>'+w+' x '+h+' px, JPEG (limit '+kb+' KB)</div><div style="margin:12px 0"><img src="'+u+'" alt="Resized preview" style="max-width:100%;max-height:320px;border:1px solid #d9d6ee;border-radius:8px"></div><a class="btn" download="nexora-resized.jpg" href="'+u+'">Download JPEG</a></div>');};
+ img.onerror=function(){err("That file could not be read as an image.");};img.src=url;}""")
+
 TOOLS = {
     "percentage-calculator": dict(
         name="Percentage Calculator", icon="%", short="Total marks and percentage across subjects.",
@@ -364,6 +436,27 @@ TOOLS = {
         body=RESUME_BODY,
         faq=[["How long should a fresher resume be?", "One page. Recruiters scan quickly, so keep only what supports the role."],
              ["Do I need work experience?", "No. Projects, internships, certificates and activities show what you can do."]]),
+    "word-counter": dict(
+        name="Word Counter", icon="W", short="Words, characters, sentences and reading time.",
+        title="Word Counter - Words, Characters and Reading Time | Nexora",
+        meta="Free word counter for essays and assignments. Count words, characters, sentences and paragraphs, with reading and speaking time. Private, in your browser.",
+        body=WORDS_BODY,
+        faq=[["How are words counted?", "Any group of characters separated by spaces or line breaks counts as one word."],
+             ["Is my text saved?", "No. The counting happens in your browser and the text is never sent anywhere."]]),
+    "timetable-maker": dict(
+        name="Timetable Maker", icon="T", short="Weekly class or study timetable you can print.",
+        title="Weekly Timetable Maker - Free Printable Class Timetable | Nexora",
+        meta="Free weekly timetable maker for students. Fill a Monday to Saturday grid, add periods, save it on your device and print or save as PDF.",
+        body=TIME_BODY,
+        faq=[["Can I print my timetable?", "Yes. Press Print / Save as PDF. The menu and buttons are hidden in the printout."],
+             ["Where is it saved?", "In this browser on this device only. Print or save a PDF if you want a copy elsewhere."]]),
+    "photo-signature-resizer": dict(
+        name="Photo and Signature Resizer", icon="KB", short="Resize to exact pixels and a KB limit for forms.",
+        title="Photo and Signature Resizer - Reduce KB for Forms | Nexora",
+        meta="Free photo and signature resizer for admission, exam and job forms. Set width, height and maximum KB. Works in your browser, nothing is uploaded.",
+        body=PHOTO_BODY,
+        faq=[["Is my photo uploaded?", "No. The image is resized in your browser and never leaves your device."],
+             ["What if my form wants a different format or a minimum size?", "This tool outputs JPEG under your maximum KB. If your form also asks for a minimum size or another format, read its instructions and adjust the size boxes."]]),
     "cgpa-percentage-converter": dict(
         name="CGPA / Percentage Converter", icon="CG", short="Convert CGPA to percentage and back, four formulas.",
         title="CGPA to Percentage and Percentage to CGPA Converter | Nexora",
@@ -384,8 +477,8 @@ LINK_GROUPS = [
         ("/vtu-sgpa-calculator", "VTU SGPA Calculator", "Semester SGPA from credits and grades."),
         ("/vtu-cgpa-calculator", "VTU CGPA Calculator", "CGPA across semesters, lateral entry too."),
         ("/cgpa-to-percentage-calculator", "CGPA to Percentage (VTU)", "VTU formula with a simple option.")]),
-    ("Plan and focus", [_t(k) for k in ("exam-countdown", "study-planner", "pomodoro-timer")]),
-    ("PDF tools for assignments", [
+    ("Plan and focus", [_t(k) for k in ("exam-countdown", "study-planner", "timetable-maker", "pomodoro-timer", "word-counter")]),
+    ("PDF and form tools", [_t("photo-signature-resizer"),
         ("/pdf/merge", "Merge PDF", "Join notes and assignments into one file."),
         ("/pdf/compress", "Compress PDF", "Shrink a PDF to fit upload limits."),
         ("/pdf/jpg-to-pdf", "JPG to PDF", "Turn photos of handwritten pages into a PDF."),
@@ -397,6 +490,13 @@ LINK_GROUPS = [
         ("/career/ats-optimizer", "ATS Resume Checker", "See if your resume passes job filters."),
         ("/career/cover-letter-builder", "Cover Letter Writer", "Write a cover letter for an internship or job.")]),
 ]
+
+
+def home_strip():
+    return ('<section class="section" style="padding-bottom:0"><div class="container"><div style="background:#fff;border:1px solid #e6e1f7;border-radius:20px;padding:20px 24px;display:flex;flex-wrap:wrap;align-items:center;gap:14px;justify-content:space-between">'
+            '<div style="flex:1 1 300px"><h2 style="margin:0 0 4px;font-size:22px">For students</h2>'
+            '<p style="margin:0;color:#6b7280">CGPA, percentage and attendance calculators, study planner, PDF tools and a fresher resume. All free.</p></div>'
+            '<a class="btn" href="/students">Open student tools</a></div></div></section>')
 
 
 def all_paths():
