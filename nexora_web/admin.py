@@ -28,8 +28,13 @@ def install(g):
         if not user:
             return False
         em = (user.get("email") or "").strip().lower()
+        meta = user.get("user_metadata") if isinstance(user.get("user_metadata"), dict) else {}
         # email must be confirmed by Supabase (Google sign-in or confirmed email link)
-        return bool(em and em in _admin_emails() and user.get("email_confirmed_at"))
+        conf = bool(user.get("email_confirmed_at") or user.get("confirmed_at") or meta.get("email_verified")
+                    or (user.get("app_metadata") or {}).get("provider") == "google")
+        ok = bool(em and em in _admin_emails() and conf)
+        print("ADMIN_CHECK email=%s listed=%s confirmed=%s allow_n=%d ok=%s" % (em, em in _admin_emails(), conf, len(_admin_emails()), ok))
+        return ok
 
     def is_admin(request):
         try:
@@ -76,6 +81,8 @@ def install(g):
     @app.get("/admin")
     async def admin_page(request: Request):
         if not is_admin(request):
+            if not orig_cu(request):
+                print("ADMIN_CHECK no session user")
             return HTMLResponse("<!DOCTYPE html><title>Not found</title><h1>Page not found</h1>", status_code=404)
         user = orig_cu(request)
         emails = {}
