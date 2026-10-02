@@ -7,10 +7,10 @@ extract structured data (Excel export) and run a deep analysis.
 
 Routes:
   /                Home
-  /document-ai     Document AI workspace (live)
-  /hr-career       HR & Career hub (live)
-  /resume-builder  Resume Builder (AI, live) - same as /career/resume-builder
-  /jd-builder      JD Builder (AI, live) - same as /career/jd-builder
+  /document-ai     Document AI workspace 
+  /hr-career       HR & Career hub 
+  /resume-builder  Resume Builder (AI) - same as /career/resume-builder
+  /jd-builder      JD Builder (AI) - same as /career/jd-builder
   /health          JSON health check for Render
 
 API routes (Document AI):
@@ -429,7 +429,7 @@ def paid_builder_page(slug: str) -> str:
     spec = CAREER_TOOLS[slug]
     cv = slug == "resume-builder"
     noun = "CV" if cv else "JD"
-    price = 99 if cv else 149
+    price = 99 if cv else 99
     product = "resume_improve" if cv else "jd_improve"
     cards = ""
     for i, (title, desc, sample) in enumerate(BUILDER_SAMPLES[slug]):
@@ -1920,7 +1920,7 @@ PAID_PRODUCTS = {
     "jd_improve": {
         "name": "AI JD Improvement",
         "blurb": "The complete improved JD - restructured, bias-free, realistic requirements - ready to post, as an editable Word file.",
-        "price_paise": 14900,
+        "price_paise": 9900,
         "source_label": "your job description",
         "prompt": (
             "You are a senior HR consultant. Rewrite this job description into a "
@@ -2468,7 +2468,7 @@ async def api_career(slug: str, request: Request) -> JSONResponse:
     builder_credit = None
     if builder_product:
         if not payments_ready():
-            return err_response(503, "Personalised generation is locked. Online payments are not live yet. You can view the samples without paying.")
+            return err_response(503, "Personalised generation is locked. Online payments are not available yet. You can view the samples without paying.")
         user = _current_user(request)
         if not user:
             return JSONResponse({"error": "Please sign in to unlock this document.", "login": True}, status_code=401)
