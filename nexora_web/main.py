@@ -4,6 +4,11 @@ import payfix
 
 payfix.install(vars(_appmod))
 try:
+    import stats
+    stats.install(vars(_appmod))
+except Exception as _e:
+    print("STATS_INSTALL_FAILED", repr(_e))
+try:
     import admin
     admin.install(vars(_appmod))
 except Exception as _e:
