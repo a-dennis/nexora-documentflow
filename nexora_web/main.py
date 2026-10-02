@@ -4,6 +4,11 @@ import payfix
 
 payfix.install(vars(_appmod))
 try:
+    import admin
+    admin.install(vars(_appmod))
+except Exception as _e:
+    print("ADMIN_INSTALL_FAILED", repr(_e))
+try:
     import seo
     seo.install(vars(_appmod))
 except Exception as _e:  # SEO layer must never take the site down
