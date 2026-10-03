@@ -19,6 +19,7 @@ import urllib.request
 _DONE = {"v": False}
 WA = "https://wa.me/919353006448"
 MODELS = ["gemini-flash-lite-latest", "gemini-flash-latest", "gemini-2.0-flash"]
+LAST = {"e": ""}
 RATE = {}
 GLOBAL = []
 WA_HIST = {}
@@ -81,10 +82,14 @@ def _call(history, text, channel):
                 data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
             with urllib.request.urlopen(req, timeout=20) as r:
                 j = json.loads(r.read())
-            out = j["candidates"][0]["content"]["parts"][0]["text"].strip()
+            c0 = (j.get("candidates") or [{}])[0]
+            parts = (c0.get("content") or {}).get("parts") or []
+            out = "".join(p.get("text", "") for p in parts).strip()
             if out:
                 return out
-        except Exception:
+            LAST["e"] = "%s empty finish=%s block=%s" % (m, c0.get("finishReason"), (j.get("promptFeedback") or {}).get("blockReason"))
+        except Exception as e:
+            LAST["e"] = "%s %s %s" % (m, type(e).__name__, getattr(e, "code", ""))
             continue
     return ""
 
@@ -200,7 +205,10 @@ def install(g):
         except Exception:
             return JSONResponse({"reply": "Please try again."}, status_code=400)
         out = await asyncio.get_event_loop().run_in_executor(None, reply, str(d.get("message", "")), d.get("history") if isinstance(d.get("history"), list) else [], "web")
-        return JSONResponse({"reply": out})
+        res = {"reply": out}
+        if request.query_params.get("dbg") == "1":
+            res["dbg"] = LAST["e"]
+        return JSONResponse(res)
 
     @app.get("/api/bot/whatsapp")
     async def wa_verify(request: Request):
