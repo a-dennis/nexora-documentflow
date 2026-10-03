@@ -75,6 +75,7 @@ def _call(history, text, channel):
             "generationConfig": {"temperature": 0.4, "maxOutputTokens": 1000},
             "safetySettings": [{"category": c, "threshold": "BLOCK_LOW_AND_ABOVE"} for c in (
                 "HARM_CATEGORY_HARASSMENT", "HARM_CATEGORY_HATE_SPEECH", "HARM_CATEGORY_SEXUALLY_EXPLICIT", "HARM_CATEGORY_DANGEROUS_CONTENT")]}
+    LAST["e"] = ""
     for m in MODELS:
         try:
             req = urllib.request.Request(
@@ -87,9 +88,9 @@ def _call(history, text, channel):
             out = "".join(p.get("text", "") for p in parts).strip()
             if out:
                 return out
-            LAST["e"] = "%s empty finish=%s block=%s" % (m, c0.get("finishReason"), (j.get("promptFeedback") or {}).get("blockReason"))
+            LAST["e"] += " | %s empty finish=%s block=%s" % (m, c0.get("finishReason"), (j.get("promptFeedback") or {}).get("blockReason"))
         except Exception as e:
-            LAST["e"] = "%s %s %s" % (m, type(e).__name__, getattr(e, "code", ""))
+            LAST["e"] += " | %s %s %s" % (m, type(e).__name__, getattr(e, "code", ""))
             continue
     return ""
 
