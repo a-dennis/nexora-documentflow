@@ -205,11 +205,22 @@ function voiceRank(v,persona,code){
 }
 function pickVoice(p){lv();const en=voices.filter(v=>/^en[-_]/i.test(v.lang));
  return en.sort((a,b)=>voiceRank(b,p,'en')-voiceRank(a,p,'en'))[0]||null}
+let hindiAudio=null,hindiSeq=0;
+function stopSpeech(){hindiSeq++;if(hindiAudio){hindiAudio.pause();hindiAudio=null}try{speechSynthesis.cancel()}catch(e){}}
+function hindiSay(text,fallback,done){
+ const seq=++hindiSeq;let finished=false;
+ const clear=()=>{document.querySelectorAll('.talk').forEach(x=>x.classList.remove('talk'))};
+ const finish=()=>{if(finished||seq!==hindiSeq)return;finished=true;hindiAudio=null;clear();done()};
+ const fail=()=>{if(finished||seq!==hindiSeq)return;finished=true;hindiAudio=null;clear();fallback()};
+ const a=new Audio('/api/learn/hindi-clip?text='+encodeURIComponent(text));hindiAudio=a;
+ a.onplaying=()=>{if(seq!==hindiSeq){a.pause();return}soundOK();document.querySelectorAll('.av,.stage').forEach(x=>x.classList.add('talk'))};
+ a.onended=finish;a.onerror=fail;a.play().catch(fail);
+}
 function noSound(){const m=$('#snd');if(m)m.style.display='block'}
 function soundOK(){const m=$('#snd');if(m)m.style.display='none';S.snd=1}
 function unlock(){if(S._u||!('speechSynthesis' in window))return;S._u=1;try{const u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u)}catch(e){}}
 ['pointerdown','touchend','click','keydown'].forEach(ev=>addEventListener(ev,unlock,{passive:true}));
-function speak(t,slow,done){if(!('speechSynthesis' in window)){noSound();done&&done();return}
+function speak(t,slow,done){if(hindiAudio)stopSpeech();if(!('speechSynthesis' in window)){noSound();done&&done();return}
  const go=()=>{try{speechSynthesis.resume()}catch(e){}
   const u=new SpeechSynthesisUtterance(t);const v=pickVoice(S.p);if(v){u.voice=v;u.lang=v.lang}else u.lang='en-IN';
   u.rate=slow?0.78:0.96;u.pitch=1;u.volume=1;
@@ -219,17 +230,17 @@ function speak(t,slow,done){if(!('speechSynthesis' in window)){noSound();done&&d
   u.onend=()=>{clearTimeout(w);const a=$('.av');if(a)a.classList.remove('talk');const g=$('.stage');if(g)g.classList.remove('talk');ws.forEach(x=>x.classList.remove('on'));done&&done()};
   u.onerror=e=>{clearTimeout(w);const a=$('.av');if(a)a.classList.remove('talk');if(!e||(e.error!=='canceled'&&e.error!=='interrupted'))noSound();done&&done()};
   speechSynthesis.speak(u)};
- if(speechSynthesis.speaking||speechSynthesis.pending){speechSynthesis.cancel();setTimeout(go,120)}else go()}
+ if(speechSynthesis.speaking||speechSynthesis.pending){stopSpeech();setTimeout(go,120)}else go()}
 function knClean(t,code){let s=String(t||'').replace(/[*_#`]/g,' ').replace(/\//g,', ');if(code==='kn')s=s.replace(/[A-Za-z0-9]/g,' ');return s.replace(/\s+/g,' ').trim()}
 function sents(t,max){const out=[];(String(t).match(/[^.?!\u0964]+[.?!\u0964]*/g)||[]).forEach(p=>{p=p.trim();if(!p)return;while(p.length>max){let i=p.lastIndexOf(' ',max);if(i<20)i=max;out.push(p.slice(0,i).trim());p=p.slice(i).trim()}if(p)out.push(p)});return out}
 function clip(t,max){const a=sents(t,max);let o='';for(const s of a){if((o+' '+s).trim().length>max)break;o=(o+' '+s).trim()}return o||(a[0]||'')}
 function pickV(code){lv();return voices.filter(v=>(v.lang||'').toLowerCase().replace('_','-').startsWith(code+'-')).sort((a,b)=>voiceRank(b,S.p,code)-voiceRank(a,S.p,code))[0]||null}
 function devSay(p,v,code,cb){try{const u=new SpeechSynthesisUtterance(p);u.voice=v;u.lang=code==='kn'?'kn-IN':'hi-IN';u.rate=.96;u.pitch=1;u.onend=()=>cb();u.onerror=()=>cb();speechSynthesis.speak(u)}catch(e){cb()}}
 function srvSay(p,code,cb){try{const au=new Audio('/api/learn/tts?lang='+code+'&text='+encodeURIComponent(p));au.playbackRate=.9;au.onended=()=>cb();au.onerror=()=>{pop('Voice for this language is not available now');cb()};au.play().catch(()=>{pop('Tap again to hear');cb()})}catch(e){cb()}}
-function speakL(text,lang,done){const code=lang==='hi'?'hi':'kn';const parts=sents(knClean(text,code),150);if(!parts.length){done&&done();return}
+function speakL(text,lang,done){if(hindiAudio)stopSpeech();const code=lang==='hi'?'hi':'kn';const parts=sents(knClean(text,code),150);if(!parts.length){done&&done();return}
  const v=('speechSynthesis' in window)?pickV(code):null;let i=0;
- const next=()=>{if(i>=parts.length){done&&done();return}const p=parts[i++];if(v)devSay(p,v,code,next);else srvSay(p,code,next)};
- try{if(window.speechSynthesis&&(speechSynthesis.speaking||speechSynthesis.pending)){speechSynthesis.cancel();setTimeout(next,120);return}}catch(e){}
+ const next=()=>{if(i>=parts.length){done&&done();return}const p=parts[i++];const fallback=()=>{if(v)devSay(p,v,code,next);else srvSay(p,code,next)};if(code==='hi'&&S.p==='Anaya')hindiSay(p,fallback,next);else fallback()};
+ try{if(window.speechSynthesis&&(speechSynthesis.speaking||speechSynthesis.pending)){stopSpeech();setTimeout(next,120);return}}catch(e){}
  next()}
 function greet(){unlock();const en=S.p==='Anaya'?'Hi! I am Anaya, your teacher. Pick a lesson and I will help you.':'Hi! I am Arjun, your teacher. Pick a lesson and I will help you.';
  speak(en,false,()=>speakL(S.lang==='hi'?GREET_HI:GREET_KN,S.lang))}
@@ -267,7 +278,7 @@ function home(){
  h+=tutorBox(S.p==='Anaya'?`Hi! I am Anaya, your AI teacher. Pick a lesson and I will help you. Small steps every day! 😊`:`Hi! I am Arjun, your AI teacher. Let us start. Small steps every day! 💪`);
  h+=`<div class="card"><b>Your rewards</b><div class="goal">Today: ${S.days.includes(today())?'✅ lesson done':'⬜ finish 1 lesson'} | 🔥 ${streak()} day streak | ⭐ ${S.xp} XP</div><div>${BADGES.map(b=>`<span class="bdg ${(S.b||{})[b[1]]?'':'off'}">${b[0]} ${b[1]}</span>`).join('')}</div>
  <div class="row" style="margin-top:10px"><span class="note">Tap a teacher above to switch.</span><a class="btn sm" style="background:linear-gradient(120deg,#f59e0b,#ef4444)" href="#/kids">🧒 Kids Zone</a><a class="btn sm alt" href="#/ask">💬 Ask teacher</a><button class="btn sm alt" onclick="setL(S.lang==='kn'?'hi':'kn')">🌐 ${S.lang==='kn'?'हिन्दी':'ಕನ್ನಡ'}</button></div>
- <div class="note" style="margin-top:6px">Your teacher: ${S.p} ${S.g==='na'?'(you chose)':'(suggested for you)'}. Tap the other teacher above to switch. Uses the best available voice on your device at its natural pitch. Voice quality varies by phone; install Google voice data for your language. Both teachers may share a voice if your phone has only one.</div></div>`;
+ <div class="note" style="margin-top:6px">Your teacher: ${S.p} ${S.g==='na'?'(you chose)':'(suggested for you)'}. Tap the other teacher above to switch. Uses the best available voice on your device at its natural pitch. Voice quality varies by phone; install Google voice data for your language. Anaya uses pre-recorded AI Hindi for matching lesson lines. Other text uses your device voice; both teachers may share a voice if your phone has only one.</div></div>`;
  LEVELS.forEach(l=>{
   if(l.soon){h+=`<div class="card lv soon"><b>${l.name}</b> <span class="tag">Coming soon</span><div class="note">${S.lang==='hi'?l.hi:l.kn} - ${l.soon}. Advanced levels will be added later.</div></div>`;return}
   const n=l.lessons.filter((_,i)=>S.done[l.id+'-'+i]).length;
@@ -350,7 +361,7 @@ function ask(kids){const TR='ai';const SR=window.SpeechRecognition||window.webki
   try{const r=await fetch('/api/learn/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:t,persona:S.p,lang:S.lang,level:'Beginner',track:kids?'kids':TR})});const j=await r.json();w.textContent=j.reply;const cp=$('.cap');if(cp)cp.textContent=j.reply.slice(0,140);sayReply(j)}
   catch(e){w.textContent='No internet. Please try again.'}ch.scrollTop=1e5};
  $('#go').onclick=send;
- if(SR&&$('#mic'))$('#mic').onclick=()=>{try{speechSynthesis.cancel()}catch(e){}const rc=new SR();rc.lang={en:'en-IN',kn:'kn-IN',hi:'hi-IN'}[S.mic];rc.interimResults=false;rc.maxAlternatives=1;const b=$('#mic');b.textContent='🎙️ Listening...';
+ if(SR&&$('#mic'))$('#mic').onclick=()=>{try{stopSpeech()}catch(e){}const rc=new SR();rc.lang={en:'en-IN',kn:'kn-IN',hi:'hi-IN'}[S.mic];rc.interimResults=false;rc.maxAlternatives=1;const b=$('#mic');b.textContent='🎙️ Listening...';
   rc.onresult=e=>{$('#q').value=e.results[0][0].transcript;send()};rc.onerror=e=>{$('#note')&&0;ch.innerHTML+=`<div class="m t">${e.error==='not-allowed'?'Please allow the microphone, or type your question.':'I could not hear you. Tap the mic again, or type.'}</div>`};rc.onend=()=>{b.textContent='🎤 Tap and ask'};try{rc.start()}catch(e){b.textContent='🎤 Tap and ask'}}}
 function fab(){let b=document.getElementById('askfab');const h=location.hash;if(/^#\/ask/.test(h)){b&&b.remove();return}
  const k=/^#\/kids/.test(h);if(!b){b=document.createElement('a');b.id='askfab';b.style.cssText='position:fixed;right:14px;bottom:16px;z-index:50;padding:14px 18px;border-radius:30px;color:#fff;font-weight:800;font-size:16px;text-decoration:none;background:linear-gradient(120deg,#ec4899,#8b5cf6);box-shadow:0 6px 18px rgba(0,0,0,.3)';document.body.appendChild(b)}
@@ -377,7 +388,7 @@ function kidsGame(){const pool=[].concat(...['robots'].map(k=>KSETS[k].items)).f
    else{f.className='fb bad';f.textContent='Try again 🙂';speak('Try again')}})}
  function end(){$('#app').innerHTML=`<div class="kg" style="text-align:center"><div class="kbig">🏆</div><h2>You got ${sc} stars!</h2><p><button class="btn" onclick="location.hash='#/kids/game';route()">Play again</button> <a class="btn alt" href="#/kids">Kids Zone</a></p></div>`;speak('Well done! You are a star!')}
  q()}
-function route0(){("speechSynthesis" in window)&&speechSynthesis.cancel();const p=location.hash.replace(/^#\/?/,'').split('/');window.scrollTo(0,0);
+function route0(){stopSpeech();const p=location.hash.replace(/^#\/?/,'').split('/');window.scrollTo(0,0);
  if(p[0]==='lesson'&&LEVELS[p[1]-1]&&LEVELS[p[1]-1].lessons[p[2]])lesson(+p[1],+p[2]);else if(p[0]==='ask')ask(p[1]==='kids');else if(p[0]==='kids'){!p[1]?kidsHome():p[1]==='game'?kidsGame():KSETS[p[1]]?kidsSet(p[1]):kidsHome()}else home()}
 function route(){route0();fab()}
 addEventListener('hashchange',route);hdr();route();
