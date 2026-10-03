@@ -19,6 +19,11 @@ try:
 except Exception as _e:
     print("PWA_INSTALL_FAILED", repr(_e))
 try:
+    import chatbot
+    chatbot.install(vars(_appmod))
+except Exception as _e:
+    print("BOT_INSTALL_FAILED", repr(_e))
+try:
     import seo
     seo.install(vars(_appmod))
 except Exception as _e:  # SEO layer must never take the site down
