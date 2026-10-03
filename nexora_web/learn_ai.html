@@ -188,10 +188,23 @@ const shuf=a=>a.map(x=>[Math.random(),x]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
 /* speech */
 let voices=[];function lv(){try{voices=speechSynthesis.getVoices()||[]}catch(e){voices=[]}}
 if('speechSynthesis' in window){lv();speechSynthesis.onvoiceschanged=lv;setTimeout(lv,500);setTimeout(lv,1500)}
-function pickVoice(p){lv();const en=voices.filter(v=>/^en/i.test(v.lang));if(!en.length)return null;
- const inn=en.filter(v=>/en[-_]IN/i.test(v.lang));const pool=inn.length?inn:en;
- const fem=/female|heera|zira|samantha|aria|jenny|susan|karen|veena|priya|neerja/i,mal=/\bmale\b|ravi|david|daniel|mark|guy|prabhat|rishi|george/i;
- const want=p==='Anaya'?fem:mal;return pool.find(v=>want.test(v.name)&&!(p==='Arjun'&&/female/i.test(v.name)))||pool[0]}
+// Prefer natural/provider voices, not the first voice returned by the phone.
+function voiceRank(v,persona,code){
+ const name=v.name||'',lang=(v.lang||'').toLowerCase().replace('_','-');
+ const female=/female|heera|zira|samantha|aria|jenny|susan|karen|veena|priya|neerja|ananya|aarti|sapna|pallavi|swara/i;
+ const male=/\bmale\b|ravi|david|daniel|mark|guy|prabhat|rishi|george|gagan|madhur/i;
+ const want=persona==='Anaya'?female:male,other=persona==='Anaya'?male:female;
+ let score=/neural|natural|premium|enhanced/i.test(name)?80:0;
+ if(/google|microsoft|apple/i.test(name))score+=35;
+ if(v.localService===false)score+=20;
+ if(lang===code+'-in')score+=25;
+ if(want.test(name)&&!other.test(name))score+=30;
+ if(other.test(name)&&!want.test(name))score-=30;
+ if(/espeak|compact|robot/i.test(name))score-=50;
+ return score;
+}
+function pickVoice(p){lv();const en=voices.filter(v=>/^en[-_]/i.test(v.lang));
+ return en.sort((a,b)=>voiceRank(b,p,'en')-voiceRank(a,p,'en'))[0]||null}
 function noSound(){const m=$('#snd');if(m)m.style.display='block'}
 function soundOK(){const m=$('#snd');if(m)m.style.display='none';S.snd=1}
 function unlock(){if(S._u||!('speechSynthesis' in window))return;S._u=1;try{const u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u)}catch(e){}}
@@ -199,7 +212,7 @@ function unlock(){if(S._u||!('speechSynthesis' in window))return;S._u=1;try{cons
 function speak(t,slow,done){if(!('speechSynthesis' in window)){noSound();done&&done();return}
  const go=()=>{try{speechSynthesis.resume()}catch(e){}
   const u=new SpeechSynthesisUtterance(t);const v=pickVoice(S.p);if(v){u.voice=v;u.lang=v.lang}else u.lang='en-IN';
-  u.rate=slow?0.7:0.9;u.pitch=S.p==='Anaya'?1.15:0.8;u.volume=1;
+  u.rate=slow?0.78:0.96;u.pitch=1;u.volume=1;
   const av=$('.av');if(av)av.classList.add('talk');const sg=$('.stage');if(sg)sg.classList.add('talk');const kr=$('#kar');let ws=[];if(kr){kr.innerHTML=t.split(/(\s+)/).map(w=>/^\s+$/.test(w)?w:'<span>'+esc(w)+'</span>').join('');ws=[...kr.querySelectorAll('span')]}let st=false;u.onboundary=e=>{if(!ws.length)return;let c=0;ws.forEach(x=>{const e0=c;c+=x.textContent.length+1;x.classList.toggle('on',e.charIndex>=e0&&e.charIndex<c)})};
   const w=setTimeout(()=>{if(!st)noSound()},3000);
   u.onstart=()=>{st=true;clearTimeout(w);soundOK()};
@@ -210,8 +223,8 @@ function speak(t,slow,done){if(!('speechSynthesis' in window)){noSound();done&&d
 function knClean(t,code){let s=String(t||'').replace(/[*_#`]/g,' ').replace(/\//g,', ');if(code==='kn')s=s.replace(/[A-Za-z0-9]/g,' ');return s.replace(/\s+/g,' ').trim()}
 function sents(t,max){const out=[];(String(t).match(/[^.?!\u0964]+[.?!\u0964]*/g)||[]).forEach(p=>{p=p.trim();if(!p)return;while(p.length>max){let i=p.lastIndexOf(' ',max);if(i<20)i=max;out.push(p.slice(0,i).trim());p=p.slice(i).trim()}if(p)out.push(p)});return out}
 function clip(t,max){const a=sents(t,max);let o='';for(const s of a){if((o+' '+s).trim().length>max)break;o=(o+' '+s).trim()}return o||(a[0]||'')}
-function pickV(code){lv();const c=voices.filter(x=>x.lang.toLowerCase().replace('_','-').startsWith(code));return c.find(x=>/google|kannada|ಕನ್ನಡ|hindi|हिन्दी/i.test(x.name))||(code==='hi'?c[0]:null)||null}
-function devSay(p,v,code,cb){try{const u=new SpeechSynthesisUtterance(p);u.voice=v;u.lang=code==='kn'?'kn-IN':'hi-IN';u.rate=.8;u.onend=()=>cb();u.onerror=()=>cb();speechSynthesis.speak(u)}catch(e){cb()}}
+function pickV(code){lv();return voices.filter(v=>(v.lang||'').toLowerCase().replace('_','-').startsWith(code+'-')).sort((a,b)=>voiceRank(b,S.p,code)-voiceRank(a,S.p,code))[0]||null}
+function devSay(p,v,code,cb){try{const u=new SpeechSynthesisUtterance(p);u.voice=v;u.lang=code==='kn'?'kn-IN':'hi-IN';u.rate=.96;u.pitch=1;u.onend=()=>cb();u.onerror=()=>cb();speechSynthesis.speak(u)}catch(e){cb()}}
 function srvSay(p,code,cb){try{const au=new Audio('/api/learn/tts?lang='+code+'&text='+encodeURIComponent(p));au.playbackRate=.9;au.onended=()=>cb();au.onerror=()=>{pop('Voice for this language is not available now');cb()};au.play().catch(()=>{pop('Tap again to hear');cb()})}catch(e){cb()}}
 function speakL(text,lang,done){const code=lang==='hi'?'hi':'kn';const parts=sents(knClean(text,code),150);if(!parts.length){done&&done();return}
  const v=('speechSynthesis' in window)?pickV(code):null;let i=0;
@@ -254,7 +267,7 @@ function home(){
  h+=tutorBox(S.p==='Anaya'?`Hi! I am Anaya, your AI teacher. Pick a lesson and I will help you. Small steps every day! 😊`:`Hi! I am Arjun, your AI teacher. Let us start. Small steps every day! 💪`);
  h+=`<div class="card"><b>Your rewards</b><div class="goal">Today: ${S.days.includes(today())?'✅ lesson done':'⬜ finish 1 lesson'} | 🔥 ${streak()} day streak | ⭐ ${S.xp} XP</div><div>${BADGES.map(b=>`<span class="bdg ${(S.b||{})[b[1]]?'':'off'}">${b[0]} ${b[1]}</span>`).join('')}</div>
  <div class="row" style="margin-top:10px"><span class="note">Tap a teacher above to switch.</span><a class="btn sm" style="background:linear-gradient(120deg,#f59e0b,#ef4444)" href="#/kids">🧒 Kids Zone</a><a class="btn sm alt" href="#/ask">💬 Ask teacher</a><button class="btn sm alt" onclick="setL(S.lang==='kn'?'hi':'kn')">🌐 ${S.lang==='kn'?'हिन्दी':'ಕನ್ನಡ'}</button></div>
- <div class="note" style="margin-top:6px">Your teacher: ${S.p} ${S.g==='na'?'(you chose)':'(suggested for you)'}. Tap the other teacher above to switch. Voices come from your phone. Use Chrome for the best voice and speaking check.</div></div>`;
+ <div class="note" style="margin-top:6px">Your teacher: ${S.p} ${S.g==='na'?'(you chose)':'(suggested for you)'}. Tap the other teacher above to switch. Uses the best available voice on your device at its natural pitch. Voice quality varies by phone; install Google voice data for your language. Both teachers may share a voice if your phone has only one.</div></div>`;
  LEVELS.forEach(l=>{
   if(l.soon){h+=`<div class="card lv soon"><b>${l.name}</b> <span class="tag">Coming soon</span><div class="note">${S.lang==='hi'?l.hi:l.kn} - ${l.soon}. Advanced levels will be added later.</div></div>`;return}
   const n=l.lessons.filter((_,i)=>S.done[l.id+'-'+i]).length;
