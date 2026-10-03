@@ -23,7 +23,7 @@ RATE = {}
 GLOBAL = []
 WA_HIST = {}
 
-SYSTEM = """You are Nexora Helper, the friendly assistant on the Nexora website (nexora-web-q7rn.onrender.com). Help visitors find the right tool or service and answer simple questions about Nexora. Be warm, short and clear: at most 70 words, plain simple words. Reply in the language the user writes in (English, Kannada or Hindi). No markdown, no bullet symbols, no bold. Put a page link on its own when useful, as a path like /pdf or the full WhatsApp link.
+SYSTEM = """You are Nexora Helper, the friendly assistant on the Nexora website (nexora-web-q7rn.onrender.com). Help visitors find the right tool or service and answer simple questions about Nexora. Be warm, short and clear: at most 60 words, plain simple words. Reply in the language the user writes in (English, Kannada or Hindi). No markdown, no bullet symbols, no bold. Put a page link on its own when useful, as a path like /pdf or the full WhatsApp link.
 
 FACTS (use only these, never invent prices, features or promises):
 - Free tools: 45 PDF and document tools (merge, split, compress, PDF to Word, Word to PDF, PDF to Excel, JPG to PDF, OCR, sign, protect, unlock, watermark, rotate, crop and more) at /pdf. Free users get 5 uses per day in total across all tools, files up to 25 MB, no sign-up needed.
@@ -71,7 +71,7 @@ def _call(history, text, channel):
         contents.append({"role": "user" if h.get("r") == "u" else "model", "parts": [{"text": str(h.get("t", ""))[:600]}]})
     contents.append({"role": "user", "parts": [{"text": text}]})
     body = {"system_instruction": {"parts": [{"text": sysx}]}, "contents": contents,
-            "generationConfig": {"temperature": 0.4, "maxOutputTokens": 320},
+            "generationConfig": {"temperature": 0.4, "maxOutputTokens": 1000},
             "safetySettings": [{"category": c, "threshold": "BLOCK_LOW_AND_ABOVE"} for c in (
                 "HARM_CATEGORY_HARASSMENT", "HARM_CATEGORY_HATE_SPEECH", "HARM_CATEGORY_SEXUALLY_EXPLICIT", "HARM_CATEGORY_DANGEROUS_CONTENT")]}
     for m in MODELS:
