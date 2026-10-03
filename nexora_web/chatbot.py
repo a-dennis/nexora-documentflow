@@ -73,7 +73,7 @@ def _call(history, text, channel):
     contents.append({"role": "user", "parts": [{"text": text}]})
     body = {"system_instruction": {"parts": [{"text": sysx}]}, "contents": contents,
             "generationConfig": {"temperature": 0.4, "maxOutputTokens": 1000},
-            "safetySettings": [{"category": c, "threshold": "BLOCK_LOW_AND_ABOVE"} for c in (
+            "safetySettings": [{"category": c, "threshold": "BLOCK_MEDIUM_AND_ABOVE"} for c in (
                 "HARM_CATEGORY_HARASSMENT", "HARM_CATEGORY_HATE_SPEECH", "HARM_CATEGORY_SEXUALLY_EXPLICIT", "HARM_CATEGORY_DANGEROUS_CONTENT")]}
     LAST["e"] = ""
     for m in MODELS:
