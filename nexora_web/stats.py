@@ -49,10 +49,10 @@ def install(g):
             print("STATS_ERR", repr(e))
         return resp
 
-    def fetch(days=8):
+    def fetch(days=400):
         since = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
         rows = []
-        for k in range(20):
+        for k in range(50):
             part = g["_db_request"]("GET", "usage?event=eq.visit&created_at=gte." + since
                                     + "&select=created_at,meta&order=created_at.desc&limit=1000&offset=" + str(k * 1000))
             if not isinstance(part, list):
@@ -78,12 +78,18 @@ def install(g):
         days7 = [(now - timedelta(days=i)).strftime("%Y-%m-%d") for i in range(7)]
         per = {d: [0, set()] for d in days7}
         pages, srcs, vis7 = Counter(), Counter(), set()
+        all_views, all_vis, all_src, all_src_vis = 0, set(), Counter(), {}
         for r in rows:
             try:
                 d = (datetime.strptime(str(r["created_at"])[:19], "%Y-%m-%dT%H:%M:%S") + IST).strftime("%Y-%m-%d")
             except Exception:
                 continue
             m = r.get("meta") or {}
+            all_views += 1
+            all_vis.add((d, m.get("v")))
+            sk = m.get("src", "direct")
+            all_src[sk] += 1
+            all_src_vis.setdefault(sk, set()).add((d, m.get("v")))
             if d in per:
                 per[d][0] += 1
                 per[d][1].add(m.get("v"))
@@ -95,9 +101,20 @@ def install(g):
                      [("Today", *t(today)), ("Yesterday", *t(yday)),
                       ("Last 7 days", sum(v[0] for v in per.values()), len(vis7))])
         daily = table(["Day (IST)", "Page views", "Visitors"], [(d, per[d][0], len(per[d][1])) for d in days7])
-        return ("<h2>Visitors</h2>" + summ + "<h3>Per day</h3>" + daily
+        first = min((str(r.get("created_at", ""))[:10] for r in rows if r.get("created_at")), default="-")
+        wa = sorted(((k, v) for k, v in all_src.items() if "wa-status" in k), key=lambda x: -x[1])
+        wa_views = sum(v for _, v in wa)
+        wa_vis = len(set().union(*[all_src_vis[k] for k, _ in wa])) if wa else 0
+        alltime = table(["All time", "Count"],
+                        [("Visitors since start (approx, one per person per day)", len(all_vis)),
+                         ("Page views since start", all_views),
+                         ("wa-status link: page views", wa_views),
+                         ("wa-status link: visitors (approx)", wa_vis),
+                         ("First recorded day (UTC)", first)])
+        return ("<h2>Visitors</h2>" + alltime + "<h3>Last 7 days</h3>" + summ + "<h3>Per day</h3>" + daily
                 + "<h3>Top pages (7 days)</h3>" + table(["Page", "Views"], pages.most_common(15))
                 + "<h3>Sources (7 days)</h3>" + table(["Source", "Views"], srcs.most_common(10))
+                + "<h3>Sources (all time)</h3>" + table(["Source", "Views"], all_src.most_common(15))
                 + "<p style='font-size:13px;color:#52637a'>Counts page views of normal browsers; bots and link-preview fetchers are skipped. "
                   "Visitors are approximate (an anonymous hash that changes every day, so the 7-day figure counts a returning person once per day). "
                   "No IP or device details are stored. Many apps, including WhatsApp, send no referrer, so those show as direct. "
