@@ -181,8 +181,8 @@ function send(t){t=(t||'').trim();if(!t||busy)return;busy=true;Q.style.display='
  .catch(function(){ty.remove();add('Network problem. Please try again or message us on WhatsApp.','b')}).then(function(){busy=false});}
 ['Free PDF tools','Pro price','Resume help','Excel help','Learn English'].forEach(function(x){var b=document.createElement('button');b.type='button';b.textContent=x;b.onclick=function(){send(x==='Pro price'?'What is the Nexora Pro price?':x)};Q.appendChild(b)});
 add('Hi! I am Nexora Helper. I can help you pick a tool, explain Pro, or connect you with us on WhatsApp. What do you need?','b');
-B.onclick=function(){P.classList.add('o');B.style.display='none';setTimeout(function(){I.focus()},250)};
-document.getElementById('nxBotX').onclick=function(){P.classList.remove('o');vis()};
+B.onclick=function(){var ni=document.getElementById('nxInstall');if(ni)ni.style.display='none';P.classList.add('o');B.style.display='none';setTimeout(function(){I.focus()},250)};
+document.getElementById('nxBotX').onclick=function(){P.classList.remove('o');var ni=document.getElementById('nxInstall');if(ni)ni.style.display='';vis()};
 F.onsubmit=function(e){e.preventDefault();send(I.value)};
 })();</script>"""
 
