@@ -69,6 +69,10 @@ RULES = (" Output format: return JSON with two fields. 'en' is your full answer 
 
 
 def ask_ai(track, persona, text, level, lang):
+    # Kids questions never leave this server for an external AI provider.
+    if track == "kids":
+        return {"en": "Let's practise together! Try letters, numbers, colours or animals in Kids Zone. For other questions, ask a parent or teacher.",
+                "kn": ""}
     key = os.environ.get("GEMINI_API_KEY", "")
     if not key:
         return None
@@ -167,6 +171,10 @@ def install(app):
         if not text:
             return JSONResponse({"reply": "Type a question first."})
         track = d.get("track") if d.get("track") in ("ai", "kids") else "en"
+        if track == "kids":
+            return JSONResponse({"reply": "Let's practise together! Try letters, numbers, colours or animals in Kids Zone. For other questions, ask a parent or teacher.",
+                                 "en": "Let's practise together! Try letters, numbers, colours or animals in Kids Zone. For other questions, ask a parent or teacher.",
+                                 "kn": "", "mode": "curated"})
         g = _guard(track, text)
         if g:
             return JSONResponse({"reply": g})
