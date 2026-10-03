@@ -47,6 +47,7 @@ from fastapi import FastAPI, Request, UploadFile, File, HTTPException
 
 import student_calc
 import student_hub
+import homelearn
 from paywidget import PRO_PAY, EXCEL_PAY
 from web_content import *  # noqa: F401,F403 - HTML/CSS/content constants
 from pdf_tools import TOOLS as PDF_TOOL_SPECS, ORDER as PDF_TOOL_ORDER, ToolError, run_tool
@@ -360,6 +361,7 @@ def home_page() -> str:
                     ("career", "Career AI"), ("calc", "Calculators"),
                     ("docs", "HR Documents")])
     body = f"""
+{homelearn.block()}
 <section class="page-hero"><div class="container">
   <h1 style="max-width:760px">Every tool you need for PDF, document,
   HR &amp; career work, in one place</h1>
