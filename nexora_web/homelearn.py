@@ -33,6 +33,21 @@ _CSS = """<style>
 .hl-pdfh{margin:0 0 6px}
 .hl-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .hl-chips a{background:#f3effd;color:#6d28d9;border-radius:999px;padding:7px 14px;font-weight:600;font-size:14px;text-decoration:none}
+.hl-sl{margin:18px 0 0;position:relative}
+.hl-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;border-radius:18px}
+.hl-track::-webkit-scrollbar{display:none}
+.hl-slide{flex:0 0 100%;scroll-snap-align:start;box-sizing:border-box;color:#fff;text-decoration:none;padding:22px 20px 34px;min-height:150px;display:block}
+.hl-slide .e{font-size:34px;line-height:1}
+.hl-slide h3{margin:8px 0 6px;font-size:22px;color:#fff}
+.hl-slide p{margin:0 0 12px;font-size:15px;opacity:.96}
+.hl-slide span{display:inline-block;background:rgba(255,255,255,.25);border-radius:999px;padding:6px 14px;font-weight:700;font-size:14px}
+.hl-s1{background:linear-gradient(135deg,#7c3aed,#db2777)}
+.hl-s2{background:linear-gradient(135deg,#2563eb,#7c3aed)}
+.hl-s3{background:linear-gradient(135deg,#f59e0b,#ef4444)}
+.hl-s4{background:linear-gradient(135deg,#0d9488,#2563eb)}
+.hl-dots{position:absolute;left:0;right:0;bottom:10px;display:flex;justify-content:center;gap:8px}
+.hl-dots i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.5);display:block}
+.hl-dots i.on{background:#fff;width:20px;border-radius:8px}
 @media (prefers-reduced-motion:reduce){.hl-face,.hl-blink{animation:none}}
 </style>"""
 
@@ -68,6 +83,36 @@ h.addEventListener("click",function(){
 </script>"""
 
 
+_SLIDES = """<section class="section" style="padding-bottom:0"><div class="container"><div class="hl-sl" id="hlSl">
+<div class="hl-track" id="hlTrack">
+ <a class="hl-slide hl-s1" href="/english"><div class="e">&#128483;&#65039;</div><h3>Learn English with an AI teacher</h3><p>Spoken English practice in Kannada + English. Free to start.</p><span>Start learning &rarr;</span></a>
+ <a class="hl-slide hl-s2" href="/ai"><div class="e">&#129302;</div><h3>Learn AI from A to Z</h3><p>Simple lessons for beginners in Kannada, Hindi and English.</p><span>Explore AI &rarr;</span></a>
+ <a class="hl-slide hl-s3" href="/english#/kids"><div class="e">&#129490;</div><h3>Kids Zone</h3><p>Fun, safe lessons for children with an Ask your teacher box.</p><span>Open Kids Zone &rarr;</span></a>
+ <a class="hl-slide hl-s4" href="/pdf"><div class="e">&#128196;</div><h3>Free PDF, resume &amp; career tools</h3><p>Merge, compress, summarize PDFs and build your resume.</p><span>Open tools &rarr;</span></a>
+</div>
+<div class="hl-dots" id="hlDots"><i class="on"></i><i></i><i></i><i></i></div>
+</div></div></section>"""
+
+_SLJS = """<script>
+(function(){
+var t=document.getElementById("hlTrack"),d=document.getElementById("hlDots");
+if(!t||!d)return;
+var D=d.children,n=D.length,i=0,hold=0;
+function mark(){var k=Math.round(t.scrollLeft/(t.clientWidth||1));if(k<0)k=0;if(k>=n)k=n-1;i=k;for(var j=0;j<n;j++)D[j].className=j===k?"on":""}
+t.addEventListener("scroll",mark,{passive:true});
+function pause(){hold=Date.now()+8000}
+t.addEventListener("touchstart",pause,{passive:true});
+t.addEventListener("mouseenter",pause);
+t.addEventListener("pointerdown",pause);
+if(window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches)return;
+setInterval(function(){
+ if(document.hidden||Date.now()<hold)return;
+ var k=(i+1)%n;t.scrollTo({left:k*t.clientWidth,behavior:"smooth"})
+},4500);
+})();
+</script>"""
+
+
 def block() -> str:
     return f"""{_CSS}
 <section class="hl-hero"><div class="container"><div class="hl-wrap">
@@ -85,6 +130,7 @@ def block() -> str:
   <div class="hl-name">Anaya, your AI teacher</div>
  </div>
 </div></div></section>
+{_SLIDES}
 <section class="section" style="padding-bottom:0"><div class="container"><div class="hl-cards">
  <a class="hl-card hl-c1" href="/english"><div class="e">&#128483;&#65039;</div><h3>Nexora English</h3><p>Speak and write better English with a friendly AI teacher.</p><span>Start free &rarr;</span></a>
  <a class="hl-card hl-c2" href="/ai"><div class="e">&#129302;</div><h3>AI A-to-Z</h3><p>Learn to use AI for study, jobs and daily life, step by step.</p><span>Explore &rarr;</span></a>
@@ -95,4 +141,5 @@ def block() -> str:
  <p style="margin:0;color:#6b7280">Merge, split and compress PDFs, summarize documents, build resumes and more.</p>
  <div class="hl-chips"><a href="/pdf">All PDF tools</a><a href="/pdf/merge">Merge PDF</a><a href="/pdf/compress">Compress PDF</a><a href="/document-ai">Document AI</a><a href="/resume-builder">Resume Builder</a><a href="/students">Student tools</a></div>
 </div></section>
-{_JS}"""
+{_JS}
+{_SLJS}"""
