@@ -122,6 +122,21 @@ def _hindi_clip(text):
             _HINDI_CLIPS = {}
     return _HINDI_CLIPS.get(text.strip())
 
+# Fixed English clips: offline Kokoro-82M bf_emma, Apache-2.0.
+_ENGLISH_CLIPS = None
+
+def _english_clip(text):
+    global _ENGLISH_CLIPS
+    if _ENGLISH_CLIPS is None:
+        import importlib
+        _ENGLISH_CLIPS = {}
+        for i in range(80):
+            try:
+                _ENGLISH_CLIPS.update(importlib.import_module("english_audio_" + str(i)).CLIPS)
+            except ImportError:
+                pass
+    return _ENGLISH_CLIPS.get(text.strip())
+
 def install(app):
     _n0 = len(app.router.routes)
     @app.get("/english", response_class=HTMLResponse)
@@ -157,6 +172,16 @@ def install(app):
         if not text.strip() or len(text) > 150:
             return Response("not found", status_code=404)
         clip = _hindi_clip(text)
+        if not clip:
+            return Response("not found", status_code=404)
+        return Response(base64.b64decode(clip), media_type="audio/mpeg",
+                        headers={"Cache-Control": "public, max-age=604800"})
+
+    @app.get("/api/learn/english-clip")
+    async def english_clip(text: str = ""):
+        if not text.strip() or len(text) > 500:
+            return Response("not found", status_code=404)
+        clip = _english_clip(text)
         if not clip:
             return Response("not found", status_code=404)
         return Response(base64.b64decode(clip), media_type="audio/mpeg",
