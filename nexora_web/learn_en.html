@@ -220,12 +220,12 @@ function pickVoice(p){lv();const en=voices.filter(v=>/^en[-_]/i.test(v.lang));
  return en.sort((a,b)=>voiceRank(b,p,'en')-voiceRank(a,p,'en'))[0]||null}
 let hindiAudio=null,hindiSeq=0;
 function stopSpeech(){hindiSeq++;if(hindiAudio){hindiAudio.pause();hindiAudio=null}try{speechSynthesis.cancel()}catch(e){}}
-function hindiSay(text,fallback,done){
+function hindiSay(text,fallback,done,lang,slow){
  const seq=++hindiSeq;let finished=false;
  const clear=()=>{document.querySelectorAll('.talk').forEach(x=>x.classList.remove('talk'))};
  const finish=()=>{if(finished||seq!==hindiSeq)return;finished=true;hindiAudio=null;clear();done()};
  const fail=()=>{if(finished||seq!==hindiSeq)return;finished=true;hindiAudio=null;clear();fallback()};
- const a=new Audio('/api/learn/hindi-clip?text='+encodeURIComponent(text));hindiAudio=a;
+ const a=new Audio('/api/learn/'+(lang==='en'?'english':'hindi')+'-clip?text='+encodeURIComponent(text));hindiAudio=a;if(lang==='en')a.playbackRate=slow?.82:1;
  a.onplaying=()=>{if(seq!==hindiSeq){a.pause();return}soundOK();document.querySelectorAll('.av,.stage').forEach(x=>x.classList.add('talk'))};
  a.onended=finish;a.onerror=fail;a.play().catch(fail);
 }
@@ -233,7 +233,8 @@ function noSound(){const m=$('#snd');if(m)m.style.display='block'}
 function soundOK(){const m=$('#snd');if(m)m.style.display='none';S.snd=1}
 function unlock(){if(S._u||!('speechSynthesis' in window))return;S._u=1;try{const u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u)}catch(e){}}
 ['pointerdown','touchend','click','keydown'].forEach(ev=>addEventListener(ev,unlock,{passive:true}));
-function speak(t,slow,done){if(hindiAudio)stopSpeech();if(!('speechSynthesis' in window)){noSound();done&&done();return}
+function speak(t,slow,done){stopSpeech();if(S.p==='Anaya'){hindiSay(t,()=>deviceSpeak(t,slow,done),()=>{done&&done()},'en',slow);return}deviceSpeak(t,slow,done)}
+function deviceSpeak(t,slow,done){if(!('speechSynthesis' in window)){noSound();done&&done();return}
  const go=()=>{try{speechSynthesis.resume()}catch(e){}
   const u=new SpeechSynthesisUtterance(t);const v=pickVoice(S.p);if(v){u.voice=v;u.lang=v.lang}else u.lang='en-IN';
   u.rate=slow?0.78:0.96;u.pitch=1;u.volume=1;
