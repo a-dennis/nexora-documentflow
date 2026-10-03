@@ -111,7 +111,13 @@ def _hindi_clip(text):
     if _HINDI_CLIPS is None:
         try:
             from hindi_audio import CLIPS
-            _HINDI_CLIPS = CLIPS
+            _HINDI_CLIPS = dict(CLIPS)
+            import importlib
+            for i in range(9):
+                try:
+                    _HINDI_CLIPS.update(importlib.import_module("hindi_extra_" + str(i)).CLIPS)
+                except ImportError:
+                    pass
         except Exception:
             _HINDI_CLIPS = {}
     return _HINDI_CLIPS.get(text.strip())
