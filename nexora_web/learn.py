@@ -102,6 +102,20 @@ def ask_ai(track, persona, text, level, lang):
     return ""
 
 
+# Pre-generated synthetic Hindi audio. Kokoro-82M: Apache-2.0.
+# No model or private learner text is sent to an external provider.
+_HINDI_CLIPS = None
+
+def _hindi_clip(text):
+    global _HINDI_CLIPS
+    if _HINDI_CLIPS is None:
+        try:
+            from hindi_audio import CLIPS
+            _HINDI_CLIPS = CLIPS
+        except Exception:
+            _HINDI_CLIPS = {}
+    return _HINDI_CLIPS.get(text.strip())
+
 def install(app):
     _n0 = len(app.router.routes)
     @app.get("/english", response_class=HTMLResponse)
@@ -131,6 +145,16 @@ def install(app):
     @app.get("/api/learn/status")
     async def learn_status():
         return {"ai": bool(os.environ.get("GEMINI_API_KEY"))}
+
+    @app.get("/api/learn/hindi-clip")
+    async def hindi_clip(text: str = ""):
+        if not text.strip() or len(text) > 150:
+            return Response("not found", status_code=404)
+        clip = _hindi_clip(text)
+        if not clip:
+            return Response("not found", status_code=404)
+        return Response(base64.b64decode(clip), media_type="audio/mpeg",
+                        headers={"Cache-Control": "public, max-age=604800"})
 
     @app.get("/api/learn/tts")
     async def learn_tts(lang: str = "kn", text: str = ""):
