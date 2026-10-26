@@ -7,6 +7,8 @@ import re
 
 BASE = "https://nexora-web-q7rn.onrender.com"
 LASTMOD = "2026-10-02"
+# Same tool served at two URLs: point the /career/ copy at the short URL the site links to.
+DUP_CANON = {"/career/resume-builder": "/resume-builder", "/career/jd-builder": "/jd-builder"}
 _DONE = {"v": False}
 
 PDF_GROUPS = [
@@ -189,7 +191,7 @@ def install(g):
         resp = await old_sitemap()
         locs = re.findall(r"<loc>https?://[^/]+([^<]*)</loc>", resp.body.decode())
         paths = ["/", "/pdf", "/about", "/pro"] + locs + ["/pdf/" + s for s in order] + ["/career/" + c for c in careers]
-        paths = [p for p in dict.fromkeys(paths) if not p.startswith(("/api", "/auth", "/buy", "/pay-thanks"))]
+        paths = [p for p in dict.fromkeys(paths) if not p.startswith(("/api", "/auth", "/buy", "/pay-thanks")) and p not in DUP_CANON]
         urls = "".join(f"<url><loc>{BASE}{p}</loc><lastmod>{LASTMOD}</lastmod></url>" for p in paths)
         return Response('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + urls + "</urlset>", media_type="application/xml")
 
@@ -247,7 +249,7 @@ def install(g):
         elif path.startswith("/pdf/") and path[5:] in specs:
             doc = re.sub(r"(<h1[^>]*>)(.*?)(</h1>)", lambda mm: mm.group(1) + _esc(pdf_meta(path[5:])[0].split(" | ")[0]) + mm.group(3), doc, count=1, flags=re.S)
         # head extras
-        url = BASE + (path if path != "/" else "/")
+        url = BASE + DUP_CANON.get(path, path if path != "/" else "/")
         head = ["<!-- nx-seo -->"]
         if 'rel="canonical"' not in doc:
             head.append(f'<link rel="canonical" href="{url}">')
