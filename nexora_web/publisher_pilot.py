@@ -221,7 +221,11 @@ class Immediate:
  def response(self,j):return {k:v for k,v in j.items() if k not in ('owner','request_key')}|{'review_token':self.sign(j)}
  def status(self,request:Request,job_id:str):
   owner=self.owner(request);j=self.job(job_id,owner)
-  return {'draft':self.response(j),'youtube':self.ledger.read(job_id,'youtube','insert'),'facebook':{'state':'not_connected'},'instagram':{'state':'not_connected'}}
+  youtube=self.ledger.read(job_id,'youtube','insert')
+  if j.get('trial_id'):
+   upload=self.ledger.read_object('trial-'+j['trial_id']+'/upload.json')
+   if upload and youtube['state']=='ready':youtube={'state':'needs_check','result':{}}
+  return {'draft':self.response(j),'youtube':youtube,'facebook':{'state':'not_connected'},'instagram':{'state':'not_connected'}}
  def publish(self,request:Request,job_id:str,review_token:str=Form(...),confirm_private:str=Form(...),video:UploadFile=File(...)):
   owner=self.owner(request,True);j=self.job(job_id,owner)
   if confirm_private!='yes':raise HTTPException(400,'Confirm the exact Private upload first. Nothing sent.')
