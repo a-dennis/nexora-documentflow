@@ -289,5 +289,7 @@ def attach(app,current_user):
    return d['access_token']
   except Exception:raise RuntimeError('YouTube connection needs renewal') from None
  p=Immediate(current_user,os.environ['SUPABASE_URL'],os.environ['SUPABASE_SERVICE_KEY'],os.environ['SITE_URL'].rstrip('/'),token,os.environ['PUBLISHER_REVIEW_SECRET'])
+ start=len(app.router.routes)
  for route in p.router.routes:app.add_api_route(route.path,route.endpoint,methods=list(route.methods))
+ added=app.router.routes[start:];del app.router.routes[start:];app.router.routes[0:0]=added
  app.add_middleware(Guard,pilot=p)
