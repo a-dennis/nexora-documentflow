@@ -2682,3 +2682,8 @@ payfix.install(globals())
 
 import learn
 learn.install(app)
+
+
+# Owner-only publisher is absent unless explicitly enabled in server configuration.
+from publisher_pilot import attach as _attach_publisher_pilot
+_attach_publisher_pilot(app, _current_user)
