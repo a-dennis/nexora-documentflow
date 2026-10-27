@@ -248,6 +248,26 @@ from starlette.requests import Request
 class Guard:
  def __init__(self,app,pilot,cap=7*1024*1024):self.app,self.pilot,self.cap=app,pilot,cap
  async def __call__(self,scope,receive,send):
+  if scope['type']=='http':
+   auth_request=Request(scope)
+   if scope.get('path')=='/login' and auth_request.query_params.get('next')=='/publisher' and scope['method']=='GET':
+    body=b'<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sign in to Nexora Publisher</title><main style="font:18px/1.5 system-ui;max-width:520px;margin:50px auto;padding:22px"><p>NEXORA / OWNER-ONLY PILOT</p><h1>Sign in to Publisher</h1><p>Use your Nexora business Google account. After sign-in, you will return to the video-and-details form automatically.</p><p><a href="/auth/google?next=%2Fpublisher" style="display:block;padding:16px;background:#14213d;color:white;border-radius:8px;text-align:center">Continue with Google</a></p><p>Posting is OFF. Facebook and Instagram are not connected. No upload is needed for this sign-in check.</p></main></html>'
+    if auth_request.query_params.get('err'):body=body.replace(b'<p>Use your',b'<p style="color:#a52222">Sign-in did not finish. Nothing was uploaded.</p><p>Use your')
+    await send({'type':'http.response.start','status':200,'headers':[(b'content-type',b'text/html; charset=utf-8'),(b'cache-control',b'no-store'),(b'x-frame-options',b'DENY')]});await send({'type':'http.response.body','body':body});return
+   google_start=scope.get('path')=='/auth/google' and scope['method']=='GET'
+   publisher_start=google_start and auth_request.query_params.get('next')=='/publisher'
+   publisher_callback=scope.get('path')=='/auth/callback' and auth_request.cookies.get('nx_publisher_return')=='/publisher'
+   if google_start or publisher_callback:
+    async def auth_send(m):
+     if m['type']=='http.response.start':
+      headers=list(m.get('headers',[]));location=next((v for k,v in headers if k.lower()==b'location'),b'')
+      if publisher_callback and m['status'] in (302,303,307):
+       destination=b'/publisher' if location==b'/' else b'/login?next=%2Fpublisher&err=1'
+       headers=[(k,v) for k,v in headers if k.lower()!=b'location']+[(b'location',destination)]
+      cookie=(b'nx_publisher_return="/publisher"; HttpOnly; Max-Age=600; Path=/; SameSite=lax; Secure' if publisher_start else b'nx_publisher_return=""; HttpOnly; Max-Age=0; Path=/; SameSite=lax; Secure')
+      m['headers']=headers+[(b'set-cookie',cookie),(b'cache-control',b'no-store')]
+     await send(m)
+    return await self.app(scope,receive,auth_send)
   if scope['type']!='http' or not scope.get('path','').startswith('/publisher'):
    return await self.app(scope,receive,send)
   async def reject(status,text):
