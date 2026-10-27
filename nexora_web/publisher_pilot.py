@@ -288,5 +288,5 @@ def attach(app,current_user):
    if d.get('scope')!='https://www.googleapis.com/auth/youtube.upload':raise RuntimeError()
    return d['access_token']
   except Exception:raise RuntimeError('YouTube connection needs renewal') from None
- p=Immediate(current_user,os.environ['SUPABASE_URL'],os.environ['SUPABASE_SERVICE_KEY'],os.environ['SITE_URL'].rstrip('/'),token,os.environ['PUBLISHER_REVIEW_SECRET','PUBLISHER_OWNER_EMAIL'])
+ p=Immediate(current_user,os.environ['SUPABASE_URL'],os.environ['SUPABASE_SERVICE_KEY'],os.environ['SITE_URL'].rstrip('/'),token,os.environ['PUBLISHER_REVIEW_SECRET'])
  app.include_router(p.router);app.add_middleware(Guard,pilot=p)
