@@ -207,6 +207,9 @@ class Immediate:
   if os.environ.get('PUBLISHER_YOUTUBE_ENABLED')!='true':raise HTTPException(503,'Posting is not enabled. Nothing sent.')
   if not hmac.compare_digest(review_token,self.sign(j)):raise HTTPException(409,'Review changed.')
   if time.time()>j['expires']:raise HTTPException(410,'Review expired. Nothing sent.')
+  try:approved=json.loads(os.environ.get('PUBLISHER_APPROVED_TEST','{}'))
+  except Exception:approved={}
+  if any(j.get(k)!=approved.get(k) for k in ('title','caption','sha256','size','made_for_kids')) or approved.get('expires',0)<time.time():raise HTTPException(403,'Only the approved exact test is enabled. Nothing sent.')
   length=request.headers.get('content-length','')
   if not length.isdigit() or int(length)>CAP+1024*1024:raise HTTPException(413,'Use an MP4 under 6 MiB.')
   if video.content_type!='video/mp4':raise HTTPException(400,'Use MP4.')
