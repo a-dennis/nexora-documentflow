@@ -592,6 +592,14 @@ table.kv th { background: var(--tint); }
 .share-btn.li .dot { background: #0a66c2; }
 .share-btn.copy .dot { background: #7c3aed; }
 .share-btn.copy.copied { background: var(--green-tint); color: var(--green); border-color: #b7e4c9; }
+.btn-sharefile {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  margin: 10px 0 0 8px; padding: 12px 20px; border: 0; border-radius: 999px; cursor: pointer;
+  font-weight: 700; font-size: 15px; color: #3b2a00;
+  background: linear-gradient(135deg, #fde68a, #f59e0b);
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+}
+.btn-sharefile:hover { transform: translateY(-1px); }
 .share-note { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
 
 """
@@ -635,6 +643,9 @@ SUCCESS_JS = r"""
       h += '<a class="btn btn-download" href="' + opts.download.url
         + '" download="' + esc(opts.download.name || 'download') + '">&#11015; Download '
         + esc(opts.download.label || opts.download.name || 'file') + '</a>';
+      if (opts.download.blob) {
+        h += '<button class="btn btn-sharefile" type="button">&#10150; Share this file</button>';
+      }
     }
     if (opts.next && opts.next.length) {
       h += '<div class="success-next"><h4>Continue to...</h4><div class="next-tools">';
@@ -679,6 +690,31 @@ SUCCESS_JS = r"""
         done();
       }
     });
+    var shBtn = box.querySelector('.btn-sharefile');
+    if (shBtn && opts.download && opts.download.blob) {
+      var shLabel = shBtn.innerHTML;
+      var flash = function (t) {
+        shBtn.textContent = t;
+        setTimeout(function () { shBtn.innerHTML = shLabel; }, 2600);
+      };
+      shBtn.addEventListener('click', function () {
+        var d = opts.download, fname = d.name || 'file';
+        var file;
+        try { file = new File([d.blob], fname, { type: d.blob.type || 'application/octet-stream' }); } catch (e) { file = null; }
+        var title = opts.heading ? 'My file from Nexora' : 'My file from Nexora';
+        if (file && navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+          navigator.share({ files: [file], title: title, text: shareText }).catch(function () {});
+        } else if (navigator.share) {
+          navigator.share({ title: title, text: opts.shareText || 'I just used Nexora - free, no sign-up.', url: pageUrl }).catch(function () {});
+        } else {
+          var ta = document.createElement('textarea');
+          ta.value = shareText; document.body.appendChild(ta); ta.select();
+          try { document.execCommand('copy'); } catch (e) {}
+          ta.remove();
+          flash('Link copied - attach the downloaded file');
+        }
+      });
+    }
     box.style.display = 'block';
     box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   };
@@ -2089,7 +2125,7 @@ PDF_TOOL_BODY = r"""
           window.nexoraSuccess(doneBox, {
             heading: 'Done! Your file is ready',
             message: CFG.title + ' completed - your download started automatically.',
-            download: { url: url, name: fname, label: fname },
+            download: { url: url, name: fname, label: fname, blob: b },
             next: CFG.next || [],
             shareText: CFG.share || ('I just used Nexora ' + CFG.title + ' - free, no sign-up. Try it: '),
             path: '/pdf/' + CFG.slug
